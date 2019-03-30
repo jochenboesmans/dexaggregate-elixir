@@ -1,5 +1,5 @@
-defmodule KyberFetcher.Pair do
-	alias KyberFetcher.PairMarketData
+defmodule MarketFetchers.Structs.Pair do
+	alias MarketFetchers.Structs.PairMarketData
 	@moduledoc false
 
 	@enforce_keys [

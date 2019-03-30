@@ -1,4 +1,4 @@
-defmodule KyberFetcher.PairMarketData do
+defmodule MarketFetchers.Structs.PairMarketData do
 	@moduledoc false
 
 	@enforce_keys [

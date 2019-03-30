@@ -1,4 +1,4 @@
-defmodule KyberFetcher.Currency do
+defmodule MarketFetchers.Structs.Currency do
 	@moduledoc false
 
 	@enforce_keys [

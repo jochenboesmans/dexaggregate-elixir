@@ -1,11 +1,11 @@
-defmodule KyberFetcher do
+defmodule MarketFetchers.KyberFetcher do
   @moduledoc """
   Fetches the Kyber market.
   """
   use Task
-  alias KyberFetcher.Pair
-  alias KyberFetcher.PairMarketData
-  alias KyberFetcher.Currency
+  alias MarketFetchers.Structs.Pair
+  alias MarketFetchers.Structs.PairMarketData
+  alias MarketFetchers.Structs.Currency
 
   def start_link(_arg) do
     Task.start_link(&poll/0)
@@ -25,7 +25,6 @@ defmodule KyberFetcher do
   def add_currency_addresses(market) do
     currencies = transform_currencies(fetch_currencies())
     Enum.map(market, fn p ->
-      IO.inspect(p.quote_symbol)
       %Pair{
        base_symbol: p.base_symbol,
        quote_symbol: p.quote_symbol,
