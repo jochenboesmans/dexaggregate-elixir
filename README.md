@@ -1,16 +1,16 @@
-# ElixirDocs
+# dexaggregate_elixir
 
-**TODO: Add description**
+An Elixir port of the NodeJS back-end.
 
 ## Installation
 
 If [available in Hex](https://hex.pm/docs/publish), the package can be installed
-by adding `elixir_docs` to your list of dependencies in `mix.exs`:
+by adding `dexaggregate_elixir` to your list of dependencies in `mix.exs`:
 
 ```elixir
 def deps do
   [
-    {:elixir_docs, "~> 0.1.0"}
+    {:dexaggregate_elixir, "~> 0.1.0"}
   ]
 end
 ```
