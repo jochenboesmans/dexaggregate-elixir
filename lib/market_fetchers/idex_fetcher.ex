@@ -5,34 +5,45 @@ defmodule IdexFetcher do
 	use Task
 	alias MarketFetchers.Structs.Pair
 	alias MarketFetchers.Structs.PairMarketData
-	alias MarketFetchers.Structs.Currency
+	alias MarketFetchers.Structs.ExchangeMarket
 
 	def start_link(_arg) do
 		Task.start_link(&poll/0)
 	end
 
 	def poll() do
-		receive do
-		after
-			10_000 ->
-				transform_market(fetch_market())
-				|> add_currency_addresses()
-				|> IO.inspect()
-				poll()
-		end
+		Stream.interval(10_000)
+		|> Stream.map(fn _x -> complete_market() end)
+		|> Enum.each(fn x -> IO.inspect(x) end)
 	end
 
-	def add_currency_addresses(market) do
-		currencies = transform_currencies(fetch_currencies())
-		Enum.map(market, fn p ->
+	def complete_market() do
+		m = market()
+		c = currencies()
+		complete_market = Enum.map(m, fn p ->
 			%Pair{
 				base_symbol: p.base_symbol,
 				quote_symbol: p.quote_symbol,
-				base_address: currencies[p.base_symbol],
-				quote_address: currencies[p.quote_symbol],
+				base_address: c[p.base_symbol],
+				quote_address: c[p.quote_symbol],
 				market_data: p.market_data
 			}
 		end)
+
+		%ExchangeMarket{
+			exchange: :idex,
+			market: complete_market
+		}
+	end
+
+	def market() do
+		fetch_market()
+		|> transform_market()
+	end
+
+	def currencies() do
+		fetch_currencies()
+		|> transform_currencies()
 	end
 
 	def fetch_currencies() do
@@ -86,7 +97,7 @@ defmodule IdexFetcher do
 	end
 
 	def transform_currencies(currencies) do
-		result = Enum.reduce(currencies, %{}, fn ({k, c}, acc) ->
+		Enum.reduce(currencies, %{}, fn ({k, c}, acc) ->
 			Map.put(acc, k, c["address"])
 		end)
 	end
