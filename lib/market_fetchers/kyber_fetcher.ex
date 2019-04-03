@@ -19,6 +19,7 @@ defmodule MarketFetchers.KyberFetcher do
   def complete_market() do
     m = market()
     c = currencies()
+
     Enum.map(m, fn p ->
       %Pair{
         base_symbol: p.base_symbol,
@@ -50,9 +51,11 @@ defmodule MarketFetchers.KyberFetcher do
 
   def fetch_and_decode(url) do
     %HTTPoison.Response{body: received_body} = HTTPoison.get!(url)
+
     case Poison.decode(received_body) do
       {:ok, %{"data" => decoded_market}} ->
         decoded_market
+
       {:error, _message} ->
         nil
     end
@@ -72,14 +75,13 @@ defmodule MarketFetchers.KyberFetcher do
           base_volume: p["eth_24h_volume"],
           quote_volume: p["token_24h_volume"]
         }
-       }
+      }
     end)
   end
 
   def transform_currencies(currencies) do
-    Enum.reduce(currencies, %{}, fn (c, acc) ->
+    Enum.reduce(currencies, %{}, fn c, acc ->
       Map.put(acc, c["symbol"], c["address"])
     end)
   end
-
 end

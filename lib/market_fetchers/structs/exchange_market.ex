@@ -1,13 +1,13 @@
 defmodule MarketFetchers.Structs.ExchangeMarket do
-	@moduledoc false
+  @moduledoc false
 
-	@enforce_keys [
-		:exchange,
-		:market,
-	]
+  @enforce_keys [
+    :exchange,
+    :market
+  ]
 
-	defstruct(
-		exchange: nil,
-		market: nil
-	)
+  defstruct(
+    exchange: nil,
+    market: nil
+  )
 end
