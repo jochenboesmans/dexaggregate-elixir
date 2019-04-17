@@ -1,19 +1,36 @@
-defmodule MarketFetchers.KyberFetcher do
+defmodule KyberFetcher do
   @moduledoc """
   Fetches the Kyber market.
   """
-  use Task
-  alias MarketFetchers.Structs.Pair
-  alias MarketFetchers.Structs.PairMarketData
+  use GenServer
 
-  def start_link(_arg) do
-    Task.start_link(&poll/0)
+  def start_link(_initial_state) do
+    GenServer.start_link(__MODULE__, [%{}], name: __MODULE__)
+  end
+
+  @impl true
+  def init(_initial_market) do
+    {:ok, poll()}
+  end
+
+  @impl true
+  def handle_call(:get, _from, market) do
+    {:reply, market, market}
+  end
+
+  @impl true
+  def handle_cast({:update, new_market}, _market) do
+    {:noreply, new_market}
+  end
+
+  def get_market() do
+    GenServer.call(__MODULE__, :get)
   end
 
   def poll() do
     Stream.interval(10_000)
     |> Stream.map(fn _x -> complete_market() end)
-    |> Enum.each(fn x -> IO.inspect(x) end)
+    |> Enum.each(fn x -> GenServer.cast(__MODULE__, {:update, x}) end)
   end
 
   def complete_market() do

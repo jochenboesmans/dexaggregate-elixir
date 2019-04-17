@@ -1,5 +1,4 @@
-defmodule MarketFetchers.Structs.Pair do
-  alias MarketFetchers.Structs.PairMarketData
+defmodule Pair do
   @moduledoc false
 
   @enforce_keys [:base_symbol, :quote_symbol, :base_address, :quote_address, :market_data]

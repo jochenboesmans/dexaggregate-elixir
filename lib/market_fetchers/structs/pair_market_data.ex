@@ -1,4 +1,4 @@
-defmodule MarketFetchers.Structs.PairMarketData do
+defmodule PairMarketData do
   @moduledoc false
 
   @enforce_keys [:last_traded, :current_bid, :current_ask, :base_volume, :quote_volume]

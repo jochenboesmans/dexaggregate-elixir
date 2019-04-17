@@ -1,4 +1,4 @@
-defmodule MarketFetchers.Structs.ExchangeMarket do
+defmodule ExchangeMarket do
   @moduledoc false
 
   @enforce_keys [

@@ -1,10 +1,21 @@
 defmodule Market do
-  use GenServer
-  alias MarketFetchers.Structs.ExchangeMarket
   @moduledoc false
 
-  def start_link() do
-    GenServer.start_link(__MODULE__, %{})
+  use GenServer
+
+  def get(pid) do
+    GenServer.call(pid, :get)
+  end
+
+  def update(pid, exchange_market) do
+    GenServer.cast(pid, {:update, exchange_market})
+  end
+
+  def start_link(_options) do
+    children = [
+      {FetcherSupervisor, name: FetcherSupervisor},
+    ]
+    Supervisor.start_link(children, strategy: :one_for_one)
   end
 
   def init(initial_market) do
@@ -29,11 +40,5 @@ defmodule Market do
     end)
   end
 
-  def get(pid) do
-    GenServer.call(pid, :get)
-  end
 
-  def update(pid, exchange_market) do
-    GenServer.cast(pid, {:update, exchange_market})
-  end
 end
