@@ -30,22 +30,21 @@ defmodule IdexFetcher do
   def poll() do
     Stream.interval(10_000)
     |> Stream.map(fn _x -> complete_market() end)
-    |> Enum.each(fn x -> GenServer.cast(__MODULE__, {:update, x}) end)
+    |> Enum.each(fn x -> Market.update(x) end)
   end
 
   defp complete_market() do
     m = market()
     c = currencies()
 
-    complete_market =
-      Enum.map(m, fn p ->
-        %Pair{
-          base_symbol: p.base_symbol,
-          quote_symbol: p.quote_symbol,
-          base_address: c[p.base_symbol],
-          quote_address: c[p.quote_symbol],
-          market_data: p.market_data
-        }
+    complete_market = Enum.map(m, fn p ->
+      %Pair{
+        base_symbol: p.base_symbol,
+        quote_symbol: p.quote_symbol,
+        base_address: c[p.base_symbol],
+        quote_address: c[p.quote_symbol],
+        market_data: p.market_data
+      }
       end)
 
     %ExchangeMarket{

@@ -7,19 +7,21 @@ defmodule Market do
     GenServer.call(pid, :get)
   end
 
-  def update(pid, exchange_market) do
-    GenServer.cast(pid, {:update, exchange_market})
+  def update(exchange_market) do
+    GenServer.cast(__MODULE__, {:update, exchange_market})
   end
 
   def start_link(_options) do
-    children = [
-      {FetcherSupervisor, name: FetcherSupervisor},
+    children = []
+    options = [
+      strategy: :one_for_one,
+      name: __MODULE__
     ]
-    Supervisor.start_link(children, strategy: :one_for_one)
+    GenServer.start_link(__MODULE__, children, options)
   end
 
   def init(initial_market) do
-    {:ok, initial_market}
+    {:ok, %{}}
   end
 
   def handle_call(:get, _from, market) do
@@ -33,11 +35,12 @@ defmodule Market do
   defp merge(market, exchange_market) do
     %ExchangeMarket{exchange: e, market: m} = exchange_market
 
-    Enum.reduce(m, fn p, market ->
-      old_entry = market["#{p.base_symbol}/#{p.quote_symbol}"] || %{}
+    market = Enum.reduce(m, market, fn (p, acc) ->
+      old_entry = acc["#{p.base_symbol}/#{p.quote_symbol}"] || %{}
       new_entry = Map.put(old_entry, e, p)
-      market = Map.put(market, "#{p.base_symbol}/#{p.quote_symbol}", new_entry)
+      acc = Map.put(acc, "#{p.base_symbol}/#{p.quote_symbol}", new_entry)
     end)
+    IO.inspect(market)
   end
 
 

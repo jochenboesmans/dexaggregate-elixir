@@ -30,14 +30,14 @@ defmodule KyberFetcher do
   def poll() do
     Stream.interval(10_000)
     |> Stream.map(fn _x -> complete_market() end)
-    |> Enum.each(fn x -> GenServer.cast(__MODULE__, {:update, x}) end)
+    |> Enum.each(fn x -> Market.update(x) end)
   end
 
-  def complete_market() do
+  defp complete_market() do
     m = market()
     c = currencies()
 
-    Enum.map(m, fn p ->
+    complete_market = Enum.map(m, fn p ->
       %Pair{
         base_symbol: p.base_symbol,
         quote_symbol: p.quote_symbol,
@@ -46,27 +46,32 @@ defmodule KyberFetcher do
         market_data: p.market_data
       }
     end)
+
+    %ExchangeMarket{
+      exchange: :kyber,
+      market: complete_market
+    }
   end
 
-  def market() do
+  defp market() do
     fetch_market()
     |> transform_market()
   end
 
-  def currencies() do
+  defp currencies() do
     fetch_currencies()
     |> transform_currencies()
   end
 
-  def fetch_currencies() do
+  defp fetch_currencies() do
     fetch_and_decode("https://api.kyber.network/currencies")
   end
 
-  def fetch_market() do
+  defp fetch_market() do
     fetch_and_decode("https://api.kyber.network/market")
   end
 
-  def fetch_and_decode(url) do
+  defp fetch_and_decode(url) do
     %HTTPoison.Response{body: received_body} = HTTPoison.get!(url)
 
     case Poison.decode(received_body) do
@@ -78,7 +83,7 @@ defmodule KyberFetcher do
     end
   end
 
-  def transform_market(market) do
+  defp transform_market(market) do
     Enum.map(market, fn p ->
       %Pair{
         base_symbol: p["base_symbol"],
@@ -96,7 +101,7 @@ defmodule KyberFetcher do
     end)
   end
 
-  def transform_currencies(currencies) do
+  defp transform_currencies(currencies) do
     Enum.reduce(currencies, %{}, fn c, acc ->
       Map.put(acc, c["symbol"], c["address"])
     end)

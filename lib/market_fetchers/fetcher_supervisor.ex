@@ -3,15 +3,20 @@ defmodule FetcherSupervisor do
 
 	use Supervisor
 
-	def start_link(_init_arg) do
+	def start_link(init_arg) do
+		Supervisor.start_link(__MODULE__, init_arg, name: __MODULE__)
+	end
+
+	@impl true
+	def init(_init_arg) do
 		children = [
-			{IdexFetcher, [%{}]},
 			{KyberFetcher, [%{}]},
+			{IdexFetcher, [%{}]}
 		]
 		options = [
 			strategy: :one_for_one,
 			name: __MODULE__,
-    ]
-		Supervisor.start_link(children, options)
+		]
+		Supervisor.init(children, options)
 	end
 end
