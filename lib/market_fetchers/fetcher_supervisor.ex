@@ -10,8 +10,9 @@ defmodule FetcherSupervisor do
 	@impl true
 	def init(_init_arg) do
 		children = [
-			{KyberFetcher, [%{}]},
-			{IdexFetcher, [%{}]}
+			#{KyberFetcher, [%{}]},
+			#{IdexFetcher, [%{}]},
+			#{OasisFetcher, [%{}]},
 		]
 		options = [
 			strategy: :one_for_one,
