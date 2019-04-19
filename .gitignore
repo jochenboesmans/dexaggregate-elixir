@@ -25,3 +25,6 @@ elixir_docs-*.tar
 # idea
 .idea
 
+# Configuration
+/config/
+

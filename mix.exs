@@ -1,5 +1,6 @@
 defmodule DexAggregate.MixProject do
   use Mix.Project
+  @moduledoc false
 
   def project do
     [
@@ -15,7 +16,7 @@ defmodule DexAggregate.MixProject do
   def application do
     [
       extra_applications: [:logger],
-      mod: {DexAggregate.Application, []}
+      mod: {DexAggregate.Application, []},
     ]
   end
 
