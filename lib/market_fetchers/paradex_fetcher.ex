@@ -60,11 +60,15 @@ defmodule ParadexFetcher do
 	end
 
 	def fetch_market() do
-		fetch_and_decode("https://api.radarrelay.com/v2/markets?include=base,ticker,stats")
+		fetch_and_decode("https://api.paradex.io/consumer/v1/markets")
+	end
+
+	def fetch_currencies() do
+		fetch_and_decode("https://api.paradex.io/api/v1/tokens")
 	end
 
 	defp fetch_and_decode(url) do
-		%HTTPoison.Response{body: received_body} = HTTPoison.get!(url)
+		%HTTPoison.Response{body: received_body} = HTTPoison.get!(url, [{"API-KEY", api_key()}])
 
 		case Poison.decode(received_body) do
 			{:ok, decoded_market} ->
@@ -95,7 +99,7 @@ defmodule ParadexFetcher do
 		end)
 	end
 
-	defp api_key() do
-		Application.get_env("PARADEX_API_KEY")
+	def api_key() do
+		Application.get_env(:dexaggregate_elixir, :PARADEX_API_KEY)
 	end
 end
