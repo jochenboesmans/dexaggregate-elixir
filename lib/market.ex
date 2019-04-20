@@ -3,11 +3,13 @@ defmodule Market do
 
   use GenServer
 
-  def get(pid) do
-    GenServer.call(pid, :get)
+  def get() do
+    GenServer.call(__MODULE__, :get)
   end
 
   def update(exchange_market) do
+    %ExchangeMarket{exchange: exchange, market: _} = exchange_market
+
     GenServer.cast(__MODULE__, {:update, exchange_market})
   end
 
@@ -36,11 +38,17 @@ defmodule Market do
     %ExchangeMarket{exchange: e, market: m} = exchange_market
 
     market = Enum.reduce(m, market, fn (p, acc) ->
-      old_entry = acc["#{p.base_symbol}/#{p.quote_symbol}"] || %{}
+      old_entry = get_old_entry(acc, "#{p.base_symbol}/#{p.quote_symbol}")
       new_entry = Map.put(old_entry, e, p)
       acc = Map.put(acc, "#{p.base_symbol}/#{p.quote_symbol}", new_entry)
     end)
-    IO.inspect(market)
+  end
+
+  defp get_old_entry(acc, key) do
+    case Map.has_key?(acc, key) do
+      true -> acc[key]
+      false -> %{}
+    end
   end
 
 

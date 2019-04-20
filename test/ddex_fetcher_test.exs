@@ -1,4 +1,4 @@
-defmodule ElixirDocsTest do
+defmodule DdexFetcherTest do
   use ExUnit.Case
   doctest ElixirDocs
 

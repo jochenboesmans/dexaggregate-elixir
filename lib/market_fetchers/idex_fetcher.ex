@@ -2,29 +2,10 @@ defmodule IdexFetcher do
   @moduledoc """
   Fetches the Idex market.
   """
-  use GenServer
+  use Task, restart: :permanent
 
-  def start_link(_initial_state) do
-    GenServer.start_link(__MODULE__, [%{}], name: __MODULE__)
-  end
-
-  @impl true
-  def init(_initial_market) do
-    {:ok, poll()}
-  end
-
-  @impl true
-  def handle_call(:get, _from, market) do
-    {:reply, market, market}
-  end
-
-  @impl true
-  def handle_cast({:update, new_market}, _market) do
-    {:noreply, new_market}
-  end
-
-  def get_market() do
-    GenServer.call(__MODULE__, :get)
+  def start_link(_arg) do
+    Task.start_link(__MODULE__, :poll, [])
   end
 
   def poll() do
@@ -77,7 +58,6 @@ defmodule IdexFetcher do
     case Poison.decode(received_body) do
       {:ok, data} ->
         data
-
       {:error, _message} ->
         nil
     end
@@ -124,6 +104,19 @@ defmodule IdexFetcher do
     end)
   end
 
+  @doc """
+    Transforms a given map of currencies to a map with token symbols as keys and token addresses as values.
+
+  ## Examples
+    iex> IdexFetcher.transform_currencies(%{
+        "ETH" => %{
+          "address" => "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+          "decimals" => 18,
+          "name" => "Ether"
+        }
+      })
+    %{"ETH" => "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"}
+  """
   defp transform_currencies(currencies) do
     Enum.reduce(currencies, %{}, fn {k, c}, acc ->
       Map.put(acc, k, c["address"])

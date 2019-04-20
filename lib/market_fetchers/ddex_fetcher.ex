@@ -1,36 +1,21 @@
 defmodule DdexFetcher do
 	@moduledoc """
 	Fetches the Ddex market.
+
+	Unimplemented.
+
+	TODO: Implement via WebSockets.
 	"""
-	use GenServer
+	use Task, restart: :permanent
 
-	def start_link(_initial_state) do
-		GenServer.start_link(__MODULE__, [%{}], name: __MODULE__)
-	end
-
-	@impl true
-	def init(_initial_market) do
-		{:ok, poll()}
-	end
-
-	@impl true
-	def handle_call(:get, _from, market) do
-		{:reply, market, market}
-	end
-
-	@impl true
-	def handle_cast({:update, new_market}, _market) do
-		{:noreply, new_market}
-	end
-
-	def get_market() do
-		GenServer.call(__MODULE__, :get)
+	def start_link(_arg) do
+		Task.start_link(__MODULE__, :poll, [])
 	end
 
 	def poll() do
 		Stream.interval(10_000)
 		|> Stream.map(fn _x -> complete_market() end)
-		|> Enum.each(fn x -> IO.inspect(x) end)
+		|> Enum.each(fn x -> Market.update(x) end)
 	end
 
 	defp complete_market() do
@@ -110,7 +95,16 @@ defmodule DdexFetcher do
 		end)
 	end
 
-	defp transform_rate(rate) do
+	@doc """
+		Transforms a given string "rate" into the inverse rate as a float.
+
+	## Examples
+
+		iex> DdexFetcher.transform_rate("10")
+		0.1
+
+	"""
+	def transform_rate(rate) do
 		:math.pow(elem(Float.parse(rate), 0), -1)
 	end
 end
