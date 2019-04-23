@@ -37,10 +37,11 @@ defmodule Market do
   defp merge(market, exchange_market) do
     %ExchangeMarket{exchange: e, market: m} = exchange_market
 
-    market = Enum.reduce(m, market, fn (p, acc) ->
-      old_entry = get_old_entry(acc, "#{p.base_symbol}/#{p.quote_symbol}")
+    Enum.reduce(m, market, fn (p, acc) ->
+      pair_id = Base.encode64(:crypto.hash(:sha512, "#{p.base_symbol}/#{p.quote_symbol}"))
+      old_entry = get_old_entry(acc, pair_id)
       new_entry = Map.put(old_entry, e, p)
-      acc = Map.put(acc, "#{p.base_symbol}/#{p.quote_symbol}", new_entry)
+      acc = Map.put(acc, pair_id, new_entry)
     end)
   end
 
