@@ -7,6 +7,9 @@ defmodule Rebasing do
 		Rebases all pairs in a given market to a token with a given market_rebase_address.
 	"""
 	def rebase_market(market, market_rebase_address) do
+		Enum.map(market, fn {pKey, p} ->
+			{pKey, %{p | market_data: rebase_market_data(p)}}
+		end)
 		@doc """
 			Rebases a given rate of a pair based in a token with a given base_address to a token with a given rebase_address.
 		"""
@@ -26,7 +29,7 @@ defmodule Rebasing do
 			end
 		end
 
-		def get_total_volume_across_exchanges(base_address, quote_address) do
+		def combined_volume_across_exchanges(base_address, quote_address) do
 			pair_id = Base.encode64(:crypto.hash(:sha512, "#{base_address}/#{quote_address}"))
 			pair = market[pair_id]
 			Map.reduce(pair, 0, fn (sum, pair_on_exchange) -> sum + pair_on_exchange[:market_data][:base_volume] end)
@@ -44,11 +47,11 @@ defmodule Rebasing do
 					start_sums = %{:volume_weighted_sum => 0, :combined_volume => 0}
 
 					sums = Enum.reduce(level2_rebases(), start_sums, fn (acc, l2_rebase) ->
-						phase1_volume = get_total_volume_across_exchanges(original_pair[:base_address], original_pair[:quote_address])
+						phase1_volume = combined_volume_across_exchanges(original_pair[:base_address], original_pair[:quote_address])
 						rebased_phase1_volume = rebase_rate(l2_rebase[:p1][:base_address], base_address, phase1_volume)
-						phase2_volume = get_total_volume_across_exchanges(l2_rebase[:p1][:base_address], l2_rebase[:p1][:quote_address])
+						phase2_volume = combined_volume_across_exchanges(l2_rebase[:p1][:base_address], l2_rebase[:p1][:quote_address])
 						rebased_phase2_volume = rebase_rate(l2_rebase[:p2][:base_address], l2_rebase[:p1][:base_address], phase2_volume)
-						phase3_volume = get_total_volume_across_exchanges(l2_rebase[:p2][:base_address], l2_rebase[:p2][:quote_address])
+						phase3_volume = combined_volume_across_exchanges(l2_rebase[:p2][:base_address], l2_rebase[:p2][:quote_address])
 						rebased_phase3_volume = rebase_rate(rebase_address, l2_rebase[:p2][:base_address], phase3_volume)
 
 						rebased_path_volume = rebased_phase1_volume + rebased_phase2_volume + rebased_phase3_volume
@@ -108,6 +111,35 @@ defmodule Rebasing do
 					end
 				end)
 			end
+		end
+
+		def volume_weighted_spread_average(base_address, quote_address) do
+			pair_id = Base.encode64(:crypto.hash(:sha512, "#{base_address}/#{quote_address}"))
+			pair = market[pair_id]
+			combined_volume = combined_volume_across_exchanges(base_address, quote_address)
+			weighted_sum_of_current_bids = Enum.reduce(pair[:market_data], 0, fn (result, emd) ->
+				result + (emd[:base_volume] * emd[:current_bid])
+			end)
+			weighted_sum_of_current_asks = Enum.reduce(pair[:market_data], 0, fn (result, emd) ->
+				result + (emd[:base_volume] * emd[:current_ask])
+			end)
+			volume_weighted_bid_average = weighted_sum_of_current_bids / combined_volume
+			volume_weighted_ask_average = weighted_sum_of_current_asks / combined_volume
+			(volume_weighted_bid_average + volume_weighted_ask_average) / 2
+		end
+
+		def rebase_market_data(p) do
+			Enum.reduce(p[:market_data], %{}, fn (result, {exchange_id, emd}) ->
+				rebased_market_data = %{
+					exchange: exchange_id,
+					rebased_last_price: rebase_rate(market_rebase_address, p[:base_address], p[:quote_address], emd[:last_price]),
+					rebased_current_bid: rebase_rate(market_rebase_address, p[:base_address], p[:quote_address], emd[:current_bid]),
+					rebased_current_ask: rebase_rate(market_rebase_address, p[:base_address], p[:quote_address], emd[:current_ask]),
+					rebased_base_volume: rebase_rate(market_rebase_address, p[:base_address], p[:quote_address], emd[:base_volume]),
+				}
+
+        Map.put(result, exchange_id, rebased_market_data)
+			end)
 		end
 
 	end
