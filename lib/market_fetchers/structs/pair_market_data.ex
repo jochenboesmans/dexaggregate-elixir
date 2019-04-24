@@ -1,5 +1,7 @@
-defmodule PairMarketData do
-  @moduledoc false
+defmodule MarketFetchers.PairMarketData do
+  @moduledoc """
+		Data structure for newly fetched market data specific to a pair on an exchange.
+  """
 
   @enforce_keys [:exchange, :last_traded, :current_bid, :current_ask, :base_volume, :quote_volume]
 

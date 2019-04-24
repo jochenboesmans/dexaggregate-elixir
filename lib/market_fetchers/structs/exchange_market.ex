@@ -1,5 +1,7 @@
-defmodule ExchangeMarket do
-	@moduledoc false
+defmodule MarketFetchers.ExchangeMarket do
+	@moduledoc """
+		Data structure for newly fetched markets specific to an exchange.
+	"""
 
 	@enforce_keys [:exchange, :market]
 
