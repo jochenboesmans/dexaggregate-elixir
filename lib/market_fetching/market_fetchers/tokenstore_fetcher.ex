@@ -1,4 +1,4 @@
-defmodule MarketFetchers.TokenstoreFetcher do
+defmodule MarketFetching.MarketFetchers.TokenstoreFetcher do
 	@moduledoc """
 		Fetches the Tokenstore market and updates the global Market accordingly.
 	"""

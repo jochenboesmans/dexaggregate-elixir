@@ -1,4 +1,4 @@
-defmodule ParadexFetcher do
+defmodule MarketFetching.MarketFetchers.ParadexFetcher do
 	@moduledoc """
 	Fetches the Paradex market.
 	"""

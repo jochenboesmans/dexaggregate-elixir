@@ -1,4 +1,4 @@
-defmodule MarketFetchers.KyberFetcher do
+defmodule MarketFetching.MarketFetchers.KyberFetcher do
   @moduledoc """
     Fetches the Kyber market and updates the global Market accordingly.
   """

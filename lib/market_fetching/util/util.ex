@@ -1,4 +1,4 @@
-defmodule MarketFetchers.Util do
+defmodule MarketFetching.Util do
 	@moduledoc """
 		Generic functions used by Fetcher modules.
 	"""

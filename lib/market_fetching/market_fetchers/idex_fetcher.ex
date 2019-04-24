@@ -1,4 +1,4 @@
-defmodule MarketFetchers.IdexFetcher do
+defmodule MarketFetching.MarketFetchers.IdexFetcher do
   @moduledoc """
     Fetches the Idex market and updates the global Market accordingly.
   """

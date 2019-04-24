@@ -1,4 +1,4 @@
-defmodule MarketFetchers.RadarFetcher do
+defmodule MarketFetching.MarketFetchers.RadarFetcher do
 	@moduledoc """
 		Fetches the Radar Relay market and updates the global Market accordingly.
 	"""

@@ -1,4 +1,4 @@
-defmodule MarketFetchers.OasisFetcher do
+defmodule MarketFetching.MarketFetchers.OasisFetcher do
 	@moduledoc """
 		Fetches the Oasis market and updates the global Market accordingly.
 	"""
