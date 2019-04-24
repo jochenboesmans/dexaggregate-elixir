@@ -11,6 +11,6 @@ defmodule MarketFetching.PairMarketData do
     current_bid: nil,
     current_ask: nil,
     base_volume: nil,
-    quote_volume: nil,
+    quote_volume: nil
   )
 end

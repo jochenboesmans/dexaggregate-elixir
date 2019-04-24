@@ -7,6 +7,6 @@ defmodule MarketFetching.ExchangeMarket do
 
 	defstruct(
 		exchange: nil,
-		market: nil,
+		market: nil
 	)
 end

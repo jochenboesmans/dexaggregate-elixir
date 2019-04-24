@@ -2,6 +2,10 @@ defmodule MarketFetching.MarketFetchers.OasisFetcher do
 	@moduledoc """
 		Fetches the Oasis market and updates the global Market accordingly.
 	"""
+
+	# Makes sure private functions are testable.
+	@compile if Mix.env == :test, do: :export_all
+
 	use Task, restart: :permanent
 	alias MarketFetching.Pair, as: Pair
 	alias MarketFetching.ExchangeMarket, as: ExchangeMarket
@@ -11,7 +15,7 @@ defmodule MarketFetching.MarketFetchers.OasisFetcher do
 		Task.start_link(__MODULE__, :poll, [])
 	end
 
-	defp poll() do
+	def poll() do
 		Stream.interval(10_000)
 		|> Stream.map(fn _x -> exchange_market() end)
 		|> Enum.each(fn x -> Market.update(x) end)
@@ -50,11 +54,6 @@ defmodule MarketFetching.MarketFetchers.OasisFetcher do
 		}
 	end
 
-	defp market() do
-		fetch_market()
-		|> transform_market()
-	end
-
 	defp currencies() do
 		%{
 			"MKR" => "0x9f8f72aa9304c8b593d555f12ef6589cc3a579a2",
@@ -79,12 +78,16 @@ defmodule MarketFetching.MarketFetchers.OasisFetcher do
 		case Poison.decode(received_body) do
 			{:ok, %{"data" => decoded_market}} ->
 				decoded_market
-			{:error, message} ->
+			{:error, _message} ->
 				nil
 		end
 	end
 
 	defp transform_rate(rate) do
-		:math.pow(elem(Float.parse(rate), 0), -1)
+		cond do
+			is_float(rate) || is_integer(rate) -> :math.pow(rate, -1)
+			is_binary(rate) && rate != "" -> :math.pow(elem(Float.parse(rate), 0), -1)
+			true -> nil
+		end
 	end
 end

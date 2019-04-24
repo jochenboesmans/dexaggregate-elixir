@@ -11,7 +11,7 @@ defmodule MarketFetching.MarketFetchers.KyberFetcher do
     Task.start_link(__MODULE__, :poll, [])
   end
 
-  defp poll() do
+  def poll() do
     Stream.interval(10_000)
     |> Stream.map(fn _x -> exchange_market() end)
     |> Enum.each(fn x -> Market.update(x) end)

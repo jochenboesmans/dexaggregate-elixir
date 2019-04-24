@@ -10,6 +10,6 @@ defmodule MarketFetching.Pair do
     quote_symbol: nil,
     quote_address: nil,
     base_address: nil,
-    market_data: nil,
+    market_data: nil
   )
 end

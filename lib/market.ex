@@ -24,7 +24,7 @@ defmodule Market do
   end
 
   @impl true
-  def init(initial_market) do
+  def init(_initial_market) do
     {:ok, %{}}
   end
 
@@ -39,12 +39,11 @@ defmodule Market do
   end
 
   defp merge(prev_market, %ExchangeMarket{exchange: e, market: m}) do
-
     market = Enum.reduce(m, prev_market, fn (p, acc) ->
       pair_id = Base.encode64(:crypto.hash(:sha512, "#{p.base_symbol}/#{p.quote_symbol}"))
       old_entry = get_old_entry(acc, pair_id)
       new_entry = %{old_entry | market_data: Map.put(old_entry[:market_data], e, p)}
-      acc = Map.put(acc, pair_id, new_entry)
+      Map.put(acc, pair_id, new_entry)
     end)
 
     dai_address = "0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359"

@@ -17,7 +17,7 @@ defmodule MarketFetching.MarketFetchers.ParadexFetcher do
 		|> Enum.each(fn x -> Market.update(x) end)
 	end
 
-	def complete_market() do
+	defp complete_market() do
 		complete_market = Enum.map(market(), fn p ->
 			%Pair{
 				base_symbol: p.base_symbol,
@@ -39,15 +39,11 @@ defmodule MarketFetching.MarketFetchers.ParadexFetcher do
 		|> transform_market()
 	end
 
-	defp eth_address() do
-		"0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
-	end
-
-	def fetch_market() do
+	defp fetch_market() do
 		fetch_and_decode("https://api.paradex.io/consumer/v1/markets")
 	end
 
-	def fetch_currencies() do
+	defp fetch_currencies() do
 		fetch_and_decode("https://api.paradex.io/api/v1/tokens")
 	end
 
@@ -62,9 +58,7 @@ defmodule MarketFetching.MarketFetchers.ParadexFetcher do
 		end
 	end
 
-	def transform_market(market) do
-		eth_address = eth_address()
-
+	defp transform_market(market) do
 		Enum.map(market, fn p ->
 			[q, b] = String.split(p["id"], "-")
 			%Pair{
@@ -73,6 +67,7 @@ defmodule MarketFetching.MarketFetchers.ParadexFetcher do
 				base_address: p["baseTokenAddress"],
 				quote_address: p["quoteTokenAddress"],
 				market_data: %PairMarketData{
+					exchange: :paradex,
 					last_traded: elem(Float.parse(p["ticker"]["price"]), 0),
 					current_bid: elem(Float.parse(p["ticker"]["bestBid"]), 0),
 					current_ask: elem(Float.parse(p["ticker"]["bestAsk"]), 0),
@@ -83,7 +78,7 @@ defmodule MarketFetching.MarketFetchers.ParadexFetcher do
 		end)
 	end
 
-	def api_key() do
+	defp api_key() do
 		Application.get_env(:dexaggregate_elixir, :PARADEX_API_KEY)
 	end
 end

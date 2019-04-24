@@ -3,7 +3,7 @@ defmodule MarketFetching.MarketFetchers.UniswapFetcher do
 		Fetches the Uniswap market and updates the global Market accordingly.
 	"""
 	use Task, restart: :permanent
-	alias MarketFetchers.Util, as: Util
+	alias MarketFetching.Util, as: Util
 	alias MarketFetching.Pair, as: Pair
 	alias MarketFetching.ExchangeMarket, as: ExchangeMarket
 	alias MarketFetching.PairMarketData, as: PairMarketData
@@ -12,7 +12,7 @@ defmodule MarketFetching.MarketFetchers.UniswapFetcher do
 		Task.start_link(__MODULE__, :poll, [])
 	end
 
-	defp poll() do
+	def poll() do
 		Stream.interval(10_000)
 		|> Stream.map(fn _x -> exchange_market() end)
 		|> Enum.each(fn x -> Market.update(x) end)

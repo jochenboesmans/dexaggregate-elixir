@@ -7,9 +7,7 @@ defmodule MarketFetching.MarketFetchers.DdexFetcher do
 		TODO: Implement WebSocket client.
 	"""
 	use Task, restart: :permanent
-	alias MarketFetching.Pair, as: Pair
 	alias MarketFetching.ExchangeMarket, as: ExchangeMarket
-	alias MarketFetching.PairMarketData, as: PairMarketData
 
 	def start_link(_arg) do
 		Task.start_link(__MODULE__, :poll, [])
@@ -26,7 +24,7 @@ defmodule MarketFetching.MarketFetchers.DdexFetcher do
 		|> assemble_exchange_market()
 	end
 
-	defp assemble_exchange_market(market) do
+	defp assemble_exchange_market(_market) do
 		#TODO: Implement
 		complete_market = nil
 
@@ -53,7 +51,7 @@ defmodule MarketFetching.MarketFetchers.DdexFetcher do
 		case Poison.decode(received_body) do
 			{:ok, %{"data" => decoded_market}} ->
 				decoded_market
-			{:error, message} ->
+			{:error, _message} ->
 				nil
 		end
 	end
