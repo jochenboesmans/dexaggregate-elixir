@@ -7,6 +7,9 @@ defmodule MarketFetching.MarketFetchers.DdexFetcher do
 		TODO: Implement WebSocket client.
 	"""
 	use Task, restart: :permanent
+	alias MarketFetching.Pair, as: Pair
+	alias MarketFetching.ExchangeMarket, as: ExchangeMarket
+	alias MarketFetching.PairMarketData, as: PairMarketData
 
 	def start_link(_arg) do
 		Task.start_link(__MODULE__, :poll, [])

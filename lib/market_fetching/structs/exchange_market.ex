@@ -1,4 +1,4 @@
-defmodule MarketFetchers.ExchangeMarket do
+defmodule MarketFetching.ExchangeMarket do
 	@moduledoc """
 		Data structure for newly fetched markets specific to an exchange.
 	"""

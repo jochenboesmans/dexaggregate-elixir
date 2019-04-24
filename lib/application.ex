@@ -6,7 +6,7 @@ defmodule DexAggregate.Application do
 	def start(_type, _args) do
 		children = [
 			{Market, name: Market},
-			{FetcherSupervisor, name: FetcherSupervisor},
+			{MarketFetching.FetcherSupervisor, name: FetcherSupervisor},
 			{Router, name: Router},
 		]
 		options = [

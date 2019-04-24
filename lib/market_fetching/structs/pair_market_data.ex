@@ -1,4 +1,4 @@
-defmodule MarketFetchers.PairMarketData do
+defmodule MarketFetching.PairMarketData do
   @moduledoc """
 		Data structure for newly fetched market data specific to a pair on an exchange.
   """
