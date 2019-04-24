@@ -1,6 +1,6 @@
-defmodule IdexFetcher do
+defmodule MarketFetchers.IdexFetcher do
   @moduledoc """
-  Fetches the Idex market.
+    Fetches the Idex market and updates the global Market accordingly.
   """
   use Task, restart: :permanent
 
@@ -8,35 +8,63 @@ defmodule IdexFetcher do
     Task.start_link(__MODULE__, :poll, [])
   end
 
-  def poll() do
+  defp poll() do
     Stream.interval(10_000)
-    |> Stream.map(fn _x -> complete_market() end)
+    |> Stream.map(fn _x -> exchange_market() end)
     |> Enum.each(fn x -> Market.update(x) end)
   end
 
-  defp complete_market() do
-    m = market()
+  defp exchange_market() do
+    fetch_market()
+    |> assemble_exchange_market()
+  end
+
+  defp assemble_exchange_market(market) do
     c = currencies()
 
-    complete_market = Enum.map(m, fn p ->
-      %Pair{
-        base_symbol: p.base_symbol,
-        quote_symbol: p.quote_symbol,
-        base_address: c[p.base_symbol],
-        quote_address: c[p.quote_symbol],
-        market_data: p.market_data
-      }
+    complete_market =
+      filter_valid_pairs(market)
+      |> Enum.map(fn {k, p} ->
+        [base_symbol, quote_symbol] = String.split(k, "_")
+        %Pair{
+          base_symbol: base_symbol,
+          quote_symbol: quote_symbol,
+          base_address: c[p.base_symbol],
+          quote_address: c[p.quote_symbol],
+          market_data: %PairMarketData{
+            exchange: :idex,
+            last_traded: elem(Float.parse(p["last"]), 0),
+            current_bid: elem(Float.parse(p["highestBid"]), 0),
+            current_ask: elem(Float.parse(p["lowestAsk"]), 0),
+            base_volume: elem(Float.parse(p["baseVolume"]), 0),
+            quote_volume: elem(Float.parse(p["quoteVolume"]), 0)
+          }
+        }
       end)
 
     %ExchangeMarket{
       exchange: :idex,
-      market: complete_market
+      market: complete_market,
     }
   end
 
-  defp market() do
-    fetch_market()
-    |> transform_market()
+  @doc """
+    Transforms a given map of currencies to a map with token symbols as keys and token addresses as values.
+
+  ## Examples
+    iex> IdexFetcher.transform_currencies(%{
+        "ETH" => %{
+          "address" => "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+          "decimals" => 18,
+          "name" => "Ether"
+        }
+      })
+    %{"ETH" => "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"}
+  """
+  defp transform_currencies(currencies) do
+    Enum.reduce(currencies, %{}, fn {k, c}, acc ->
+      Map.put(acc, k, c["address"])
+    end)
   end
 
   defp currencies() do
@@ -81,45 +109,6 @@ defmodule IdexFetcher do
         p["quoteVolume"]
       ]
       Enum.all?(values_to_check, fn v -> valid_float?(Float.parse(v)) end)
-    end)
-  end
-
-  defp transform_market(market) do
-    filter_valid_pairs(market)
-    |> Enum.map(fn {k, p} ->
-      [base_symbol, quote_symbol] = String.split(k, "_")
-      %Pair{
-        base_symbol: base_symbol,
-        quote_symbol: quote_symbol,
-        base_address: "",
-        quote_address: "",
-        market_data: %PairMarketData{
-          last_traded: elem(Float.parse(p["last"]), 0),
-          current_bid: elem(Float.parse(p["highestBid"]), 0),
-          current_ask: elem(Float.parse(p["lowestAsk"]), 0),
-          base_volume: elem(Float.parse(p["baseVolume"]), 0),
-          quote_volume: elem(Float.parse(p["quoteVolume"]), 0)
-        }
-      }
-    end)
-  end
-
-  @doc """
-    Transforms a given map of currencies to a map with token symbols as keys and token addresses as values.
-
-  ## Examples
-    iex> IdexFetcher.transform_currencies(%{
-        "ETH" => %{
-          "address" => "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
-          "decimals" => 18,
-          "name" => "Ether"
-        }
-      })
-    %{"ETH" => "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"}
-  """
-  defp transform_currencies(currencies) do
-    Enum.reduce(currencies, %{}, fn {k, c}, acc ->
-      Map.put(acc, k, c["address"])
     end)
   end
 end

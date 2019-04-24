@@ -1,7 +1,6 @@
-defmodule OasisFetcher do
-
+defmodule MarketFetchers.OasisFetcher do
 	@moduledoc """
-	Fetches the Oasis market.
+		Fetches the Oasis market and updates the global Market accordingly.
 	"""
 	use Task, restart: :permanent
 
@@ -9,25 +8,38 @@ defmodule OasisFetcher do
 		Task.start_link(__MODULE__, :poll, [])
 	end
 
-	def poll() do
+	defp poll() do
 		Stream.interval(10_000)
-		|> Stream.map(fn _x -> complete_market() end)
+		|> Stream.map(fn _x -> exchange_market() end)
 		|> Enum.each(fn x -> Market.update(x) end)
 	end
 
-	defp complete_market() do
-		m = market()
+	defp exchange_market() do
+		fetch_market()
+		|> assemble_exchange_market()
+	end
+
+	defp assemble_exchange_market(market) do
 		c = currencies()
 
-		complete_market = Enum.map(m, fn p ->
-			%Pair{
-				base_symbol: p.base_symbol,
-				quote_symbol: p.quote_symbol,
-				base_address: c[p.base_symbol],
-				quote_address: c[p.quote_symbol],
-				market_data: p.market_data
-			}
-		end)
+		complete_market =
+			Enum.map(market, fn p ->
+				[base_symbol, quote_symbol] = String.split(p["pair"], "/")
+				%Pair{
+					base_symbol: base_symbol,
+					quote_symbol: quote_symbol,
+					base_address: c[p.base_symbol],
+					quote_address: c[p.quote_symbol],
+					market_data: %PairMarketData{
+						exchange: :oasis,
+						last_traded: transform_rate(p["last"]),
+						current_bid: transform_rate(p["bid"]),
+						current_ask: transform_rate(p["ask"]),
+						base_volume: transform_rate(p["vol"]),
+						quote_volume: nil,
+					}
+				}
+			end)
 
 		%ExchangeMarket{
 			exchange: :oasis,
@@ -48,18 +60,14 @@ defmodule OasisFetcher do
 		}
 	end
 
-	def fetch_market() do
-		currencies = currencies()
+	defp pairs() do
+		[["MKR", "ETH"], ["MKR", "DAI"], ["ETH", "DAI"]]
+	end
 
-		market = for {ci, _vi} <- currencies, {cj, _vj} <- currencies do
-			unless ci == cj do
-				pair = fetch_and_decode("http://api.oasisdex.com/v1/markets/#{ci}/#{cj}")
-				unless pair == %{} do
-					pair
-				end
-			end
+	defp fetch_market() do
+		for [base, quote] <- pairs() do
+			fetch_and_decode("http://api.oasisdex.com/v1/markets/#{base}/#{quote}")
 		end
-		Enum.filter(market, & !is_nil(&1))
 	end
 
 	defp fetch_and_decode(url) do
@@ -71,25 +79,6 @@ defmodule OasisFetcher do
 			{:error, message} ->
 				nil
 		end
-	end
-
-	defp transform_market(market) do
-		Enum.map(market, fn p ->
-			[base_symbol, quote_symbol] = String.split(p["pair"], "/")
-			%Pair{
-				base_symbol: base_symbol,
-				quote_symbol: quote_symbol,
-				base_address: "",
-				quote_address: "",
-				market_data: %PairMarketData{
-					last_traded: transform_rate(p["last"]),
-					current_bid: transform_rate(p["bid"]),
-					current_ask: transform_rate(p["ask"]),
-					base_volume: transform_rate(p["vol"]),
-					quote_volume: nil,
-				}
-			}
-		end)
 	end
 
 	defp transform_rate(rate) do

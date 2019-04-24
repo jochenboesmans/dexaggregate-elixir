@@ -1,42 +1,51 @@
-defmodule UniswapFetcher do
+defmodule MarketFetchers.UniswapFetcher do
 	@moduledoc """
-	Fetches the Uniswap market.
+		Fetches the Uniswap market and updates the global Market accordingly.
 	"""
 	use Task, restart: :permanent
+	alias MarketFetchers.Util, as: Util
 
 	def start_link(_arg) do
 		Task.start_link(__MODULE__, :poll, [])
 	end
 
-	def poll() do
+	defp poll() do
 		Stream.interval(10_000)
-		|> Stream.map(fn _x -> complete_market() end)
+		|> Stream.map(fn _x -> exchange_market() end)
 		|> Enum.each(fn x -> Market.update(x) end)
 	end
 
-	defp complete_market() do
-		m = market()
-		c = currencies()
+	defp exchange_market() do
+		fetch_market()
+		|> assemble_exchange_market()
+	end
 
-		complete_market = Enum.map(m, fn p ->
-			%Pair{
-				base_symbol: p.base_symbol,
-				quote_symbol: p.quote_symbol,
-				base_address: eth_address(),
-				quote_address: c[p.quote_symbol],
-				market_data: p.market_data
-			}
-		end)
+	defp assemble_exchange_market(market) do
+		c = currencies()
+		eth_address = Util.eth_address()
+
+		complete_market =
+			Enum.map(market, fn {t, v} ->
+				%Pair{
+					base_symbol: "ETH",
+					quote_symbol: t,
+					base_address: eth_address,
+					quote_address: c[t],
+					market_data: %PairMarketData{
+						exchange: :uniswap,
+						last_traded: 1 / v["lastTradePrice"],
+						current_bid: 1 / v["price"],
+						current_ask: 1 / v["price"],
+						base_volume: transform_volume(v["tradeVolume"]),
+						quote_volume: transform_volume(v["tradeVolume"]) * v["weightedAvgPrice"],
+					}
+				}
+			end)
 
 		%ExchangeMarket{
 			exchange: :uniswap,
 			market: complete_market
 		}
-	end
-
-	defp market() do
-		fetch_market()
-		|> transform_market()
 	end
 
 	defp currencies() do
@@ -59,10 +68,6 @@ defmodule UniswapFetcher do
 		}
 	end
 
-	defp eth_address() do
-		"0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
-	end
-
 	defp fetch_market() do
 		Enum.map(exchange_addresses(), fn {t, ea} ->
 			{t, fetch_and_decode("https://uniswap-analytics.appspot.com/api/v1/ticker?exchangeAddress=#{ea}")}
@@ -78,27 +83,6 @@ defmodule UniswapFetcher do
 			{:error, _message} ->
 				nil
 		end
-	end
-
-	defp transform_market(market) do
-		eth_address = eth_address()
-		currencies = currencies()
-
-		Enum.map(market, fn {t, v} ->
-			%Pair{
-				base_symbol: "ETH",
-				quote_symbol: t,
-				base_address: eth_address,
-				quote_address: currencies[t],
-				market_data: %PairMarketData{
-					last_traded: 1 / v["lastTradePrice"],
-					current_bid: 1 / v["price"],
-					current_ask: 1 / v["price"],
-					base_volume: transform_volume(v["tradeVolume"]),
-					quote_volume: transform_volume(v["tradeVolume"]) * v["weightedAvgPrice"],
-				}
-			}
-		end)
 	end
 
 	defp transform_volume(vol) do
