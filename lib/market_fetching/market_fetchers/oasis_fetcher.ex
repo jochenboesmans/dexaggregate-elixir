@@ -26,7 +26,7 @@ defmodule MarketFetching.MarketFetchers.OasisFetcher do
 		|> assemble_exchange_market()
 	end
 
-	defp assemble_exchange_market(market) do
+	def assemble_exchange_market(market) do
 		c = currencies()
 
 		complete_market =
@@ -35,8 +35,8 @@ defmodule MarketFetching.MarketFetchers.OasisFetcher do
 				%Pair{
 					base_symbol: base_symbol,
 					quote_symbol: quote_symbol,
-					base_address: c[p.base_symbol],
-					quote_address: c[p.quote_symbol],
+					base_address: c[base_symbol],
+					quote_address: c[quote_symbol],
 					market_data: %PairMarketData{
 						exchange: :oasis,
 						last_traded: transform_rate(p["last"]),
@@ -66,7 +66,7 @@ defmodule MarketFetching.MarketFetchers.OasisFetcher do
 		[["MKR", "ETH"], ["MKR", "DAI"], ["ETH", "DAI"]]
 	end
 
-	defp fetch_market() do
+	def fetch_market() do
 		for [base, quote] <- pairs() do
 			fetch_and_decode("http://api.oasisdex.com/v1/markets/#{base}/#{quote}")
 		end
@@ -84,9 +84,6 @@ defmodule MarketFetching.MarketFetchers.OasisFetcher do
 			%HTTPoison.Error{} ->
 				nil
 		end
-
-
-
 	end
 
 	defp transform_rate(rate) do
