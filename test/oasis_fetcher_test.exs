@@ -1,12 +1,7 @@
-defmodule OasisFetcherTests do
+defmodule OasisFetcherTest do
 	use ExUnit.Case, async: true
 	alias MarketFetching.MarketFetchers.OasisFetcher, as: OF
 	doctest OF
-
-	setup do
-		{:ok, pid} = OF.start_link(nil)
-		{:ok, pid: pid}
-	end
 
 	describe "transform_rate/1" do
 		@describetag :transform_rate
@@ -137,6 +132,4 @@ defmodule OasisFetcherTests do
 			assert expected_result == OF.assemble_exchange_market(sample_market)
 		end
 	end
-
-
 end

@@ -8,6 +8,9 @@ defmodule MarketFetching.MarketFetchers.UniswapFetcher do
 	alias MarketFetching.ExchangeMarket, as: ExchangeMarket
 	alias MarketFetching.PairMarketData, as: PairMarketData
 
+	# Makes sure private functions are testable.
+	@compile if Mix.env == :test, do: :export_all
+
 	def start_link(_arg) do
 		Task.start_link(__MODULE__, :poll, [])
 	end
@@ -23,7 +26,7 @@ defmodule MarketFetching.MarketFetchers.UniswapFetcher do
 		|> assemble_exchange_market()
 	end
 
-	defp assemble_exchange_market(market) do
+	def assemble_exchange_market(market) do
 		c = currencies()
 		eth_address = Util.eth_address()
 
@@ -71,13 +74,13 @@ defmodule MarketFetching.MarketFetchers.UniswapFetcher do
 		}
 	end
 
-	defp fetch_market() do
+	def fetch_market() do
 		Enum.map(exchange_addresses(), fn {t, ea} ->
 			{t, fetch_and_decode("https://uniswap-analytics.appspot.com/api/v1/ticker?exchangeAddress=#{ea}")}
 		end)
 	end
 
-	defp fetch_and_decode(url) do
+	def fetch_and_decode(url) do
 		%HTTPoison.Response{body: received_body} = HTTPoison.get!(url)
 
 		case Poison.decode(received_body) do
@@ -88,7 +91,7 @@ defmodule MarketFetching.MarketFetchers.UniswapFetcher do
 		end
 	end
 
-	defp transform_volume(vol) do
+	def transform_volume(vol) do
 		String.to_integer(vol) * :math.pow(10, -18)
 	end
 end

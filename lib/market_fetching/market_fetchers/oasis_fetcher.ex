@@ -26,7 +26,7 @@ defmodule MarketFetching.MarketFetchers.OasisFetcher do
 		|> assemble_exchange_market()
 	end
 
-	def assemble_exchange_market(market) do
+	defp assemble_exchange_market(market) do
 		c = currencies()
 
 		complete_market =
@@ -66,7 +66,7 @@ defmodule MarketFetching.MarketFetchers.OasisFetcher do
 		[["MKR", "ETH"], ["MKR", "DAI"], ["ETH", "DAI"]]
 	end
 
-	def fetch_market() do
+	defp fetch_market() do
 		for [base, quote] <- pairs() do
 			fetch_and_decode("http://api.oasisdex.com/v1/markets/#{base}/#{quote}")
 		end
