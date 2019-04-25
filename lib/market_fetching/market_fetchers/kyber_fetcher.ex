@@ -7,6 +7,9 @@ defmodule MarketFetching.MarketFetchers.KyberFetcher do
   alias MarketFetching.ExchangeMarket, as: ExchangeMarket
   alias MarketFetching.PairMarketData, as: PairMarketData
 
+  # Makes sure private functions are testable.
+  @compile if Mix.env == :test, do: :export_all
+
   def start_link(_arg) do
     Task.start_link(__MODULE__, :poll, [])
   end
@@ -22,7 +25,7 @@ defmodule MarketFetching.MarketFetchers.KyberFetcher do
     |> assemble_exchange_market()
   end
 
-  defp assemble_exchange_market(market) do
+  def assemble_exchange_market(market) do
     c = currencies()
 
     complete_market =
@@ -54,11 +57,11 @@ defmodule MarketFetching.MarketFetchers.KyberFetcher do
     |> transform_currencies()
   end
 
-  defp fetch_currencies() do
+  def fetch_currencies() do
     fetch_and_decode("https://api.kyber.network/currencies")
   end
 
-  defp fetch_market() do
+  def fetch_market() do
     fetch_and_decode("https://api.kyber.network/market")
   end
 
@@ -74,7 +77,7 @@ defmodule MarketFetching.MarketFetchers.KyberFetcher do
   end
 
   defp transform_currencies(currencies) do
-    Enum.reduce(currencies, %{}, fn c, acc ->
+    Enum.reduce(currencies, %{}, fn (c, acc) ->
       Map.put(acc, c["symbol"], c["address"])
     end)
   end
