@@ -40,7 +40,12 @@ defmodule OasisFetcherTests do
 				assert Map.has_key?(result, k)
 			end)
 		end
+	end
 
+	describe "fetch_market/0" do
+		test "#1: returns a list with a length corresponding to pairs/0" do
+			assert Enum.count(OF.pairs()) === Enum.count(OF.fetch_market())
+		end
 	end
 
 
