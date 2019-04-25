@@ -5,7 +5,6 @@ defmodule OasisFetcherTest do
 
 	describe "transform_rate/1" do
 		@describetag :transform_rate
-
 		test "#1: returns nil for nil" do
 			assert OF.transform_rate(nil) == nil
 		end
@@ -24,6 +23,7 @@ defmodule OasisFetcherTest do
 	end
 
 	describe "fetch_and_decode/1" do
+		@describetag :fetch_and_decode
 		test "#1: returns empty map on unexisting pair" do
 			assert OF.fetch_and_decode("http://api.oasisdex.com/v1/markets/MKR/MKR") == %{}
 		end
@@ -38,12 +38,14 @@ defmodule OasisFetcherTest do
 	end
 
 	describe "fetch_market/0" do
+		@describetag :fetch_market
 		test "#1: returns a list with a length corresponding to pairs/0" do
 			assert Enum.count(OF.pairs()) === Enum.count(OF.fetch_market())
 		end
 	end
 
 	describe "assemble_exchange_market/1" do
+		@describetag :assemle_exchange_market
 		test "#1: returns expected data structure format on realistic data" do
 			sample_market =
 				[

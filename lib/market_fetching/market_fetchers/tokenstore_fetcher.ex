@@ -8,6 +8,9 @@ defmodule MarketFetching.MarketFetchers.TokenstoreFetcher do
 	alias MarketFetching.ExchangeMarket, as: ExchangeMarket
 	alias MarketFetching.PairMarketData, as: PairMarketData
 
+	# Makes sure private functions are testable.
+	@compile if Mix.env == :test, do: :export_all
+
 	def start_link(_arg) do
 		Task.start_link(__MODULE__, :poll, [])
 	end
@@ -23,15 +26,14 @@ defmodule MarketFetching.MarketFetchers.TokenstoreFetcher do
 		|> assemble_exchange_market()
 	end
 
-	defp assemble_exchange_market(market) do
+	def assemble_exchange_market(market) do
 		eth_address = Util.eth_address()
 
 		complete_market =
-			Enum.map(market, fn {p, v} ->
-				[_, quote_symbol] = String.split(p, "_")
+			Enum.map(market, fn {_p, v} ->
 				%Pair{
 					base_symbol: "ETH",
-					quote_symbol: quote_symbol,
+					quote_symbol: v["symbol"],
 					base_address: eth_address,
 					quote_address: v["tokenAddr"],
 					market_data: %PairMarketData{
