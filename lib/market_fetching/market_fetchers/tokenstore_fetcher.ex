@@ -26,7 +26,7 @@ defmodule MarketFetching.MarketFetchers.TokenstoreFetcher do
 		|> assemble_exchange_market()
 	end
 
-	def assemble_exchange_market(market) do
+	defp assemble_exchange_market(market) do
 		eth_address = Util.eth_address()
 
 		complete_market =
@@ -53,7 +53,7 @@ defmodule MarketFetching.MarketFetchers.TokenstoreFetcher do
 		}
 	end
 
-	def fetch_market() do
+	defp fetch_market() do
 		fetch_and_decode("https://v1-1.api.token.store/ticker")
 	end
 

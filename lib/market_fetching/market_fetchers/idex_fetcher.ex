@@ -7,6 +7,9 @@ defmodule MarketFetching.MarketFetchers.IdexFetcher do
   alias MarketFetching.ExchangeMarket, as: ExchangeMarket
   alias MarketFetching.PairMarketData, as: PairMarketData
 
+  # Makes sure private functions are testable.
+  @compile if Mix.env == :test, do: :export_all
+
   def start_link(_arg) do
     Task.start_link(__MODULE__, :poll, [])
   end
@@ -32,8 +35,8 @@ defmodule MarketFetching.MarketFetchers.IdexFetcher do
         %Pair{
           base_symbol: base_symbol,
           quote_symbol: quote_symbol,
-          base_address: c[p.base_symbol],
-          quote_address: c[p.quote_symbol],
+          base_address: c[base_symbol],
+          quote_address: c[quote_symbol],
           market_data: %PairMarketData{
             exchange: :idex,
             last_traded: elem(Float.parse(p["last"]), 0),
@@ -51,19 +54,6 @@ defmodule MarketFetching.MarketFetchers.IdexFetcher do
     }
   end
 
-  @doc """
-    Transforms a given map of currencies to a map with token symbols as keys and token addresses as values.
-
-  ## Examples
-    iex> IdexFetcher.transform_currencies(%{
-        "ETH" => %{
-          "address" => "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
-          "decimals" => 18,
-          "name" => "Ether"
-        }
-      })
-    %{"ETH" => "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"}
-  """
   defp transform_currencies(currencies) do
     Enum.reduce(currencies, %{}, fn {k, c}, acc ->
       Map.put(acc, k, c["address"])

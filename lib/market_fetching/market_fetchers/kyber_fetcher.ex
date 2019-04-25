@@ -25,7 +25,7 @@ defmodule MarketFetching.MarketFetchers.KyberFetcher do
     |> assemble_exchange_market()
   end
 
-  def assemble_exchange_market(market) do
+  defp assemble_exchange_market(market) do
     c = currencies()
 
     complete_market =
@@ -57,11 +57,11 @@ defmodule MarketFetching.MarketFetchers.KyberFetcher do
     |> transform_currencies()
   end
 
-  def fetch_currencies() do
+  defp fetch_currencies() do
     fetch_and_decode("https://api.kyber.network/currencies")
   end
 
-  def fetch_market() do
+  defp fetch_market() do
     fetch_and_decode("https://api.kyber.network/market")
   end
 
