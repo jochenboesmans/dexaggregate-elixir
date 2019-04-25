@@ -1,8 +1,8 @@
-defmodule MarketFetching.MarketFetchers.DdexFetcher do
+defmodule MarketFetching.DdexFetcher do
 	@moduledoc """
 		Fetches the Ddex market and updates the global Market accordingly.
 
-		Unimplemented boilerplate code.
+		!!! Unimplemented boilerplate code.
 
 		TODO: Implement WebSocket client.
 	"""

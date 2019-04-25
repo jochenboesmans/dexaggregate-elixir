@@ -4,7 +4,6 @@ defmodule MarketFetching.ExchangeMarket do
 	"""
 
 	@enforce_keys [:exchange, :market]
-
 	defstruct(
 		exchange: nil,
 		market: nil

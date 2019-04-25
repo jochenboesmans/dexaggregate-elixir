@@ -1,6 +1,6 @@
 defmodule UniswapFetcherTest do
 	use ExUnit.Case, async: true
-	alias MarketFetching.MarketFetchers.UniswapFetcher, as: UF
+	alias MarketFetching.UniswapFetcher, as: UF
 	doctest UF
 
 	describe "transform_volume/1" do

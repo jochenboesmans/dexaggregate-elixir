@@ -1,4 +1,4 @@
-defmodule MarketFetching.MarketFetchers.UniswapFetcher do
+defmodule MarketFetching.UniswapFetcher do
 	@moduledoc """
 		Fetches the Uniswap market and updates the global Market accordingly.
 	"""

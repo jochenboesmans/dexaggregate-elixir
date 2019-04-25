@@ -1,6 +1,6 @@
 defmodule KyberFetcherTest do
 	use ExUnit.Case, async: true
-	alias MarketFetching.MarketFetchers.KyberFetcher, as: KF
+	alias MarketFetching.KyberFetcher, as: KF
 	doctest KF
 
 	describe "transform_currencies/1" do

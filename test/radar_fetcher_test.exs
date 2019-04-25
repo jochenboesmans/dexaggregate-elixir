@@ -1,6 +1,6 @@
 defmodule RadarFetcherTest do
 	use ExUnit.Case, async: true
-	alias MarketFetching.MarketFetchers.RadarFetcher, as: RF
+	alias MarketFetching.RadarFetcher, as: RF
 	doctest RF
 
 	describe "fetch_and_decode/1" do

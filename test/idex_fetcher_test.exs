@@ -1,6 +1,6 @@
 defmodule IdexFetcherTest do
 	use ExUnit.Case, async: true
-	alias MarketFetching.MarketFetchers.IdexFetcher, as: IF
+	alias MarketFetching.IdexFetcher, as: IF
 	doctest IF
 
 	describe "fetch_and_decode/1" do

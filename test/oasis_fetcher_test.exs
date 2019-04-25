@@ -1,6 +1,6 @@
 defmodule OasisFetcherTest do
 	use ExUnit.Case, async: true
-	alias MarketFetching.MarketFetchers.OasisFetcher, as: OF
+	alias MarketFetching.OasisFetcher, as: OF
 	doctest OF
 
 	describe "transform_rate/1" do

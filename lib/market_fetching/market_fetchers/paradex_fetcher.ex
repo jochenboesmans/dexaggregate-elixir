@@ -1,6 +1,6 @@
-defmodule MarketFetching.MarketFetchers.ParadexFetcher do
+defmodule MarketFetching.ParadexFetcher do
 	@moduledoc """
-	Fetches the Paradex market.
+		Fetches the Paradex market and updates the global Market accordingly.
 	"""
 	use Task, restart: :permanent
 	alias MarketFetching.Pair, as: Pair

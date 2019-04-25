@@ -1,6 +1,6 @@
 defmodule TokenstoreFetcherTest do
 	use ExUnit.Case, async: true
-	alias MarketFetching.MarketFetchers.TokenstoreFetcher, as: TF
+	alias MarketFetching.TokenstoreFetcher, as: TF
 	doctest TF
 
 	describe "fetch_and_decode/1" do
