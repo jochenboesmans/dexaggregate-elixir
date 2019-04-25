@@ -26,7 +26,7 @@ defmodule MarketFetching.MarketFetchers.UniswapFetcher do
 		|> assemble_exchange_market()
 	end
 
-	def assemble_exchange_market(market) do
+	defp assemble_exchange_market(market) do
 		c = currencies()
 		eth_address = Util.eth_address()
 
@@ -74,13 +74,13 @@ defmodule MarketFetching.MarketFetchers.UniswapFetcher do
 		}
 	end
 
-	def fetch_market() do
+	defp fetch_market() do
 		Enum.map(exchange_addresses(), fn {t, ea} ->
 			{t, fetch_and_decode("https://uniswap-analytics.appspot.com/api/v1/ticker?exchangeAddress=#{ea}")}
 		end)
 	end
 
-	def fetch_and_decode(url) do
+	defp fetch_and_decode(url) do
 		%HTTPoison.Response{body: received_body} = HTTPoison.get!(url)
 
 		case Poison.decode(received_body) do
@@ -91,7 +91,7 @@ defmodule MarketFetching.MarketFetchers.UniswapFetcher do
 		end
 	end
 
-	def transform_volume(vol) do
+	defp transform_volume(vol) do
 		String.to_integer(vol) * :math.pow(10, -18)
 	end
 end

@@ -7,6 +7,9 @@ defmodule MarketFetching.MarketFetchers.RadarFetcher do
 	alias MarketFetching.ExchangeMarket, as: ExchangeMarket
 	alias MarketFetching.PairMarketData, as: PairMarketData
 
+	# Makes sure private functions are testable.
+	@compile if Mix.env == :test, do: :export_all
+
 	def start_link(_arg) do
 		Task.start_link(__MODULE__, :poll, [])
 	end
@@ -22,7 +25,7 @@ defmodule MarketFetching.MarketFetchers.RadarFetcher do
 		|> assemble_exchange_market()
 	end
 
-	defp assemble_exchange_market(market) do
+	def assemble_exchange_market(market) do
 		complete_market =
 			Enum.map(market, fn p ->
 				[q, b] = String.split(p["id"], "-")
@@ -48,7 +51,7 @@ defmodule MarketFetching.MarketFetchers.RadarFetcher do
 		}
 	end
 
-	defp fetch_market() do
+	def fetch_market() do
 		fetch_and_decode("https://api.radarrelay.com/v2/markets?include=base,ticker,stats")
 	end
 
