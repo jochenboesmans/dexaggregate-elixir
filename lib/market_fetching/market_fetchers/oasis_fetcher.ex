@@ -73,14 +73,20 @@ defmodule MarketFetching.MarketFetchers.OasisFetcher do
 	end
 
 	defp fetch_and_decode(url) do
-		%HTTPoison.Response{body: received_body} = HTTPoison.get!(url)
-
-		case Poison.decode(received_body) do
-			{:ok, %{"data" => decoded_market}} ->
-				decoded_market
-			{:error, _message} ->
+		case HTTPoison.get!(url) do
+			%HTTPoison.Response{body: received_body} ->
+				case Poison.decode(received_body) do
+					{:ok, %{"data" => decoded_market}} ->
+						decoded_market
+					{:error, _message} ->
+						nil
+				end
+			%HTTPoison.Error{} ->
 				nil
 		end
+
+
+
 	end
 
 	defp transform_rate(rate) do
