@@ -25,7 +25,7 @@ defmodule MarketFetching.MarketFetchers.RadarFetcher do
 		|> assemble_exchange_market()
 	end
 
-	def assemble_exchange_market(market) do
+	defp assemble_exchange_market(market) do
 		complete_market =
 			Enum.map(market, fn p ->
 				[q, b] = String.split(p["id"], "-")
@@ -51,7 +51,7 @@ defmodule MarketFetching.MarketFetchers.RadarFetcher do
 		}
 	end
 
-	def fetch_market() do
+	defp fetch_market() do
 		fetch_and_decode("https://api.radarrelay.com/v2/markets?include=base,ticker,stats")
 	end
 
