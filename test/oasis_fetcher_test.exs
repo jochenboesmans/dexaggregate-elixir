@@ -95,7 +95,7 @@ defmodule OasisFetcherTest do
 								current_ask: 0.2898550724637681,
 								current_bid: 0.31446540880503143,
 								exchange: :oasis,
-								last_traded: 0.3067484662576687,
+								last_price: 0.3067484662576687,
 								quote_volume: nil
 							},
 							quote_address: "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
@@ -109,7 +109,7 @@ defmodule OasisFetcherTest do
 								current_ask: 0.0017007726675385226,
 								current_bid: 0.0017988844172738521,
 								exchange: :oasis,
-								last_traded: 0.0017007726675385226,
+								last_price: 0.0017007726675385226,
 								quote_volume: nil
 							},
 							quote_address: "0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359",
@@ -123,7 +123,7 @@ defmodule OasisFetcherTest do
 								current_ask: 0.005890426290150619,
 								current_bid: 0.005950255861002023,
 								exchange: :oasis,
-								last_traded: 0.005947424765076722,
+								last_price: 0.005947424765076722,
 								quote_volume: nil
 							},
 							quote_address: "0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359",

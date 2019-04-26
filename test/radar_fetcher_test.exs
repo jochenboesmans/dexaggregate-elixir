@@ -102,7 +102,7 @@ defmodule RadarFetcherTest do
 								current_ask: 0.0030294985822278274,
 								current_bid: 0.0028898874051844162,
 								exchange: :radar,
-								last_traded: 0.0030600755391650934,
+								last_price: 0.0030600755391650934,
 								quote_volume: nil
 							},
 							quote_address: "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
@@ -116,7 +116,7 @@ defmodule RadarFetcherTest do
 								current_ask: 3.469316486223732e-5,
 								current_bid: 3.1763887843523324e-5,
 								exchange: :radar,
-								last_traded: 3.376066373974297e-5,
+								last_price: 3.376066373974297e-5,
 								quote_volume: nil
 							},
 							quote_address: "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",

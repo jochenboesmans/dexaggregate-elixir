@@ -124,7 +124,7 @@ defmodule KyberFetcherTest do
 								current_ask: 1,
 								current_bid: 1,
 								exchange: :kyber,
-								last_traded: 1,
+								last_price: 1,
 								quote_volume: 414.92872218052963
 							},
 							quote_address: "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
@@ -138,7 +138,7 @@ defmodule KyberFetcherTest do
 								current_ask: 0.0015385576576022993,
 								current_bid: 0.001525757417920522,
 								exchange: :kyber,
-								last_traded: 0.001519580262382383,
+								last_price: 0.001519580262382383,
 								quote_volume: 72506.80040991471
 							},
 							quote_address: "0xdd974d5c2e2928dea5f71b9825b8b646686bd200",
@@ -152,7 +152,7 @@ defmodule KyberFetcherTest do
 								current_ask: 0.005877684503822772,
 								current_bid: 0.005876612292041594,
 								exchange: :kyber,
-								last_traded: 0.005895361750450811,
+								last_price: 0.005895361750450811,
 								quote_volume: 219212.1253756595
 							},
 							quote_address: "0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359",

@@ -71,7 +71,7 @@ defmodule TokenstoreFetcherTest do
 								current_ask: 0.008879112,
 								current_bid: 0.008879112,
 								exchange: :tokenstore,
-								last_traded: nil,
+								last_price: nil,
 								quote_volume: 0.2
 							},
 							quote_address: "0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359",
@@ -85,7 +85,7 @@ defmodule TokenstoreFetcherTest do
 								current_ask: 1.99999e-17,
 								current_bid: 1.99999e-17,
 								exchange: :tokenstore,
-								last_traded: nil,
+								last_price: nil,
 								quote_volume: 1000000000000
 							},
 							quote_address: "0x27611ae3af6f65753e8cac0ae5e53ef37ca5d319",
@@ -99,7 +99,7 @@ defmodule TokenstoreFetcherTest do
 								current_ask: 3.0e-19,
 								current_bid: 3.0e-19,
 								exchange: :tokenstore,
-								last_traded: nil,
+								last_price: nil,
 								quote_volume: 10000000000000
 							},
 							quote_address: "0xb5335e24d0ab29c190ab8c2b459238da1153ceba",

@@ -81,7 +81,7 @@ defmodule IdexFetcherTest do
 								current_ask: 4.77999754000064e-4,
 								current_bid: 3.794906505e-4,
 								exchange: :idex,
-								last_traded: 3.79217902e-4,
+								last_price: 3.79217902e-4,
 								quote_volume: 403.55108905
 							},
 							quote_address: "0xa645264c5603e96c3b0b078cdab68733794b0a71",
@@ -95,7 +95,7 @@ defmodule IdexFetcherTest do
 								current_ask: 1.5e-6,
 								current_bid: 8.50000000001e-7,
 								exchange: :idex,
-								last_traded: 9.5111111111e-7,
+								last_price: 9.5111111111e-7,
 								quote_volume: 696568.9423581191
 							},
 							quote_address: "0x1beef31946fbbb40b877a72e4ae04a8d1a5cee06",
