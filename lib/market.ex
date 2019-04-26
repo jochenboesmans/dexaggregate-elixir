@@ -5,6 +5,7 @@ defmodule Market do
 
   use GenServer
   alias MarketFetching.ExchangeMarket, as: ExchangeMarket
+  import Util
 
   def get() do
     GenServer.call(__MODULE__, :get)
@@ -34,20 +35,34 @@ defmodule Market do
   end
 
   @impl true
-  def handle_cast({:update, exchange_market}, %{market: prev_market, rebased_market: _}) do
-    {:noreply, merge(prev_market, exchange_market)}
+  def handle_cast({:update, exchange_market}, prev_state) do
+    {:noreply, merge(prev_state, exchange_market)}
   end
 
-  defp merge(prev_market, %ExchangeMarket{exchange: e, market: m}) do
+  def merge(%{market: prev_market}, %ExchangeMarket{exchange: e, market: m}) do
     market = Enum.reduce(m, prev_market, fn (p, acc) ->
-      pair_id = Base.encode64(:crypto.hash(:sha512, "#{p.base_symbol}/#{p.quote_symbol}"))
-      old_entry = get_old_entry(acc, pair_id)
-      new_entry = %{old_entry | market_data: Map.put(old_entry[:market_data], e, p)}
-      Map.put(acc, pair_id, new_entry)
+      id = pair_id(p)
+      updated_market_pair =
+        case Map.has_key?(acc, id) do
+          false ->
+            %{
+              base_symbol: p.base_symbol,
+              base_address: p.base_address,
+              quote_address: p.quote_address,
+              quote_symbol: p.quote_symbol,
+              market_data: %{
+                e => p.market_data
+              }
+            }
+          true ->
+            %{acc[id] | market_data: Map.put(acc[id][:market_data], e, p.market_data)}
+        end
+      Map.put(acc, id, updated_market_pair)
     end)
+    IO.inspect(market)
 
     dai_address = "0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359"
-    rebased_market = Rebasing.rebase_market(market, dai_address)
+    rebased_market = Rebasing.rebase_market(dai_address, market)
 
     %{market: market, rebased_market: rebased_market}
   end

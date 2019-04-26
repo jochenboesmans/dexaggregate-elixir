@@ -21,7 +21,7 @@ defmodule MarketFetching.OasisFetcher do
 		|> Enum.each(fn x -> Market.update(x) end)
 	end
 
-	defp exchange_market() do
+	def exchange_market() do
 		fetch_market()
 		|> assemble_exchange_market()
 	end
@@ -39,7 +39,7 @@ defmodule MarketFetching.OasisFetcher do
 					quote_address: c[quote_symbol],
 					market_data: %PairMarketData{
 						exchange: :oasis,
-						last_traded: transform_rate(p["last"]),
+						last_price: transform_rate(p["last"]),
 						current_bid: transform_rate(p["bid"]),
 						current_ask: transform_rate(p["ask"]),
 						base_volume: transform_rate(p["vol"]),

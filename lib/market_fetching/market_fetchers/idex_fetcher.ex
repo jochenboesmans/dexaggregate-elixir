@@ -39,7 +39,7 @@ defmodule MarketFetching.IdexFetcher do
           quote_address: c[quote_symbol],
           market_data: %PairMarketData{
             exchange: :idex,
-            last_traded: elem(Float.parse(p["last"]), 0),
+            last_price: elem(Float.parse(p["last"]), 0),
             current_bid: elem(Float.parse(p["highestBid"]), 0),
             current_ask: elem(Float.parse(p["lowestAsk"]), 0),
             base_volume: elem(Float.parse(p["baseVolume"]), 0),

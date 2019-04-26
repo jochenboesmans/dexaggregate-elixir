@@ -21,7 +21,7 @@ defmodule MarketFetching.UniswapFetcher do
 		|> Enum.each(fn x -> Market.update(x) end)
 	end
 
-	defp exchange_market() do
+	def exchange_market() do
 		fetch_market()
 		|> assemble_exchange_market()
 	end
@@ -39,7 +39,7 @@ defmodule MarketFetching.UniswapFetcher do
 					quote_address: c[t],
 					market_data: %PairMarketData{
 						exchange: :uniswap,
-						last_traded: 1 / v["lastTradePrice"],
+						last_price: 1 / v["lastTradePrice"],
 						current_bid: 1 / v["price"],
 						current_ask: 1 / v["price"],
 						base_volume: transform_volume(v["tradeVolume"]),

@@ -20,7 +20,7 @@ defmodule MarketFetching.KyberFetcher do
     |> Enum.each(fn x -> Market.update(x) end)
   end
 
-  defp exchange_market() do
+  def exchange_market() do
     fetch_market()
     |> assemble_exchange_market()
   end
@@ -37,7 +37,7 @@ defmodule MarketFetching.KyberFetcher do
           quote_address: c[p["quote_symbol"]],
           market_data: %PairMarketData{
             exchange: :kyber,
-            last_traded: p["last_traded"],
+            last_price: p["last_traded"],
             current_bid: p["current_bid"],
             current_ask: p["current_ask"],
             base_volume: p["eth_24h_volume"],

@@ -36,7 +36,7 @@ defmodule MarketFetching.RadarFetcher do
 					quote_address: p["quoteTokenAddress"],
 					market_data: %PairMarketData{
 						exchange: :radar,
-						last_traded: elem(Float.parse(p["ticker"]["price"]), 0),
+						last_price: elem(Float.parse(p["ticker"]["price"]), 0),
 						current_bid: elem(Float.parse(p["ticker"]["bestBid"]), 0),
 						current_ask: elem(Float.parse(p["ticker"]["bestAsk"]), 0),
 						base_volume: elem(Float.parse(p["stats"]["volume24Hour"]), 0),

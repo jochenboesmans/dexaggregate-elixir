@@ -38,7 +38,7 @@ defmodule MarketFetching.TokenstoreFetcher do
 					quote_address: v["tokenAddr"],
 					market_data: %PairMarketData{
 						exchange: :tokenstore,
-						last_traded: v["last"],
+						last_price: v["last"],
 						current_bid: v["bid"],
 						current_ask: v["ask"],
 						base_volume: v["baseVolume"],
