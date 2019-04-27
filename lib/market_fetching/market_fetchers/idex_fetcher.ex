@@ -20,7 +20,7 @@ defmodule MarketFetching.IdexFetcher do
     |> Enum.each(fn x -> Market.update(x) end)
   end
 
-  defp exchange_market() do
+  def exchange_market() do
     fetch_market()
     |> assemble_exchange_market()
   end

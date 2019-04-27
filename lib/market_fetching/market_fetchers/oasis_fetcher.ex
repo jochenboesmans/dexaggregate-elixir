@@ -26,12 +26,12 @@ defmodule MarketFetching.OasisFetcher do
 		|> assemble_exchange_market()
 	end
 
-	defp assemble_exchange_market(market) do
+	def assemble_exchange_market(market) do
 		c = currencies()
 
 		complete_market =
 			Enum.map(market, fn p ->
-				[base_symbol, quote_symbol] = String.split(p["pair"], "/")
+				[quote_symbol, base_symbol] = String.split(p["pair"], "/")
 				%Pair{
 					base_symbol: base_symbol,
 					quote_symbol: quote_symbol,
@@ -43,7 +43,7 @@ defmodule MarketFetching.OasisFetcher do
 						current_bid: transform_rate(p["bid"]),
 						current_ask: transform_rate(p["ask"]),
 						base_volume: transform_rate(p["vol"]),
-						quote_volume: nil,
+						quote_volume: 0,
 					}
 				}
 			end)
@@ -66,7 +66,7 @@ defmodule MarketFetching.OasisFetcher do
 		[["MKR", "ETH"], ["MKR", "DAI"], ["ETH", "DAI"]]
 	end
 
-	defp fetch_market() do
+	def fetch_market() do
 		for [base, quote] <- pairs() do
 			fetch_and_decode("http://api.oasisdex.com/v1/markets/#{base}/#{quote}")
 		end
@@ -88,8 +88,8 @@ defmodule MarketFetching.OasisFetcher do
 
 	defp transform_rate(rate) do
 		cond do
-			is_float(rate) || is_integer(rate) -> :math.pow(rate, -1)
-			is_binary(rate) && rate != "" -> :math.pow(elem(Float.parse(rate), 0), -1)
+			is_float(rate) || is_integer(rate) -> rate
+			is_binary(rate) && rate != "" -> elem(Float.parse(rate), 0)
 			true -> nil
 		end
 	end

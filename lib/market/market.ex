@@ -5,7 +5,8 @@ defmodule Market do
 
   use GenServer
   alias MarketFetching.ExchangeMarket, as: ExchangeMarket
-  import Util
+  alias Market.Rebasing, as: Rebasing
+  import Market.Util
 
   def get() do
     GenServer.call(__MODULE__, :get)
@@ -41,7 +42,7 @@ defmodule Market do
 
   def merge(%{market: prev_market}, %ExchangeMarket{exchange: e, market: m}) do
     market = Enum.reduce(m, prev_market, fn (p, acc) ->
-      id = pair_id(p)
+      id = pair_id(p.base_address, p.quote_address)
       updated_market_pair =
         case Map.has_key?(acc, id) do
           false ->
@@ -59,7 +60,6 @@ defmodule Market do
         end
       Map.put(acc, id, updated_market_pair)
     end)
-    IO.inspect(market)
 
     dai_address = "0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359"
     rebased_market = Rebasing.rebase_market(dai_address, market)

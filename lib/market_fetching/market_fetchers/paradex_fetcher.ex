@@ -72,7 +72,7 @@ defmodule MarketFetching.ParadexFetcher do
 					current_bid: elem(Float.parse(p["ticker"]["bestBid"]), 0),
 					current_ask: elem(Float.parse(p["ticker"]["bestAsk"]), 0),
 					base_volume: elem(Float.parse(p["stats"]["volume24Hour"]), 0),
-					quote_volume: nil,
+					quote_volume: 0,
 				}
 			}
 		end)
