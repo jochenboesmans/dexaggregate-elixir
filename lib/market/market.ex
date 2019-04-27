@@ -27,7 +27,7 @@ defmodule Market do
 
   @impl true
   def init(_initial_market) do
-    {:ok, %{}}
+    {:ok, %{market: %{}, rebased_market: %{}}}
   end
 
   @impl true
