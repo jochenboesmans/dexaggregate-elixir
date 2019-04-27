@@ -4,14 +4,14 @@ defmodule MarketFetching.FetcherSupervisor do
 	"""
 
 	use Supervisor
-	alias MarketFetching.MarketFetchers.DdexFetcher, as: DdexFetcher
-	alias MarketFetching.MarketFetchers.IdexFetcher, as: IdexFetcher
-	alias MarketFetching.MarketFetchers.KyberFetcher, as: KyberFetcher
-	alias MarketFetching.MarketFetchers.OasisFetcher, as: OasisFetcher
-	alias MarketFetching.MarketFetchers.ParadexFetcher, as: ParadexFetcher
-	alias MarketFetching.MarketFetchers.RadarFetcher, as: RadarFetcher
-	alias MarketFetching.MarketFetchers.TokenstoreFetcher, as: TokenstoreFetcher
-	alias MarketFetching.MarketFetchers.UniswapFetcher, as: UniswapFetcher
+	alias MarketFetching.DdexFetcher, as: DdexFetcher
+	alias MarketFetching.IdexFetcher, as: IdexFetcher
+	alias MarketFetching.KyberFetcher, as: KyberFetcher
+	alias MarketFetching.OasisFetcher, as: OasisFetcher
+	alias MarketFetching.ParadexFetcher, as: ParadexFetcher
+	alias MarketFetching.RadarFetcher, as: RadarFetcher
+	alias MarketFetching.TokenstoreFetcher, as: TokenstoreFetcher
+	alias MarketFetching.UniswapFetcher, as: UniswapFetcher
 
 	def start_link(init_arg) do
 		Supervisor.start_link(__MODULE__, init_arg, name: __MODULE__)
