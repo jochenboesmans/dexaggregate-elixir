@@ -16,7 +16,7 @@ defmodule Router do
 	get "/market" do
 		conn
 		|> put_resp_content_type("application/json")
-		|> send_resp(200, Poison.encode!(Market.get()))
+		|> send_resp(200, "lalallalala")
 	end
 
 	match _ do
