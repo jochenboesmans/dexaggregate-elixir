@@ -60,7 +60,7 @@ defmodule Market.Rebasing do
 			...>  }
 			...> }
 			iex> Rebasing.rebase_rate(100, dai_address, eth_address, sample_market)
-			20_000
+			20_000.0
 	"""
 	def rebase_rate(rate, rebase_address, base_address, market) do
 		cond do

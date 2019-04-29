@@ -77,7 +77,7 @@ defmodule OasisFetcherTest do
 								current_bid: 3.1,
 								exchange: :oasis,
 								last_price: 3.1,
-								quote_volume: nil
+								quote_volume: 0
 							},
 							quote_address: "0x9f8f72aa9304c8b593d555f12ef6589cc3a579a2",
 							quote_symbol: "MKR"
@@ -91,7 +91,7 @@ defmodule OasisFetcherTest do
 								current_bid: 10.0001,
 								exchange: :oasis,
 								last_price: 575.73999,
-								quote_volume: nil
+								quote_volume: 0
 							},
 							quote_address: "0x9f8f72aa9304c8b593d555f12ef6589cc3a579a2",
 							quote_symbol: "MKR"
@@ -105,7 +105,7 @@ defmodule OasisFetcherTest do
 								current_bid: 156.476165,
 								exchange: :oasis,
 								last_price: 157.0,
-								quote_volume: nil
+								quote_volume: 0
 							},
 							quote_address: "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
 							quote_symbol: "ETH"
