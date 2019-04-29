@@ -103,7 +103,7 @@ defmodule RadarFetcherTest do
 								current_bid: 0.0028898874051844162,
 								exchange: :radar,
 								last_price: 0.0030600755391650934,
-								quote_volume: nil
+								quote_volume: 0
 							},
 							quote_address: "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
 							quote_symbol: "LINK"
@@ -117,7 +117,7 @@ defmodule RadarFetcherTest do
 								current_bid: 3.1763887843523324e-5,
 								exchange: :radar,
 								last_price: 3.376066373974297e-5,
-								quote_volume: nil
+								quote_volume: 0
 							},
 							quote_address: "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
 							quote_symbol: "POE"
