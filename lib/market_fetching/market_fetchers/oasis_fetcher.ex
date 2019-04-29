@@ -89,8 +89,15 @@ defmodule MarketFetching.OasisFetcher do
 	defp transform_rate(rate) do
 		cond do
 			is_float(rate) || is_integer(rate) -> rate
-			is_binary(rate) && rate != "" -> elem(Float.parse(rate), 0)
-			true -> nil
+			is_binary(rate) -> try_parse_float(rate)
+			true -> 0
+		end
+	end
+
+	defp try_parse_float(rate) do
+		case Float.parse(rate) do
+			:error -> 0
+			{float_rate, _string} -> float_rate
 		end
 	end
 end

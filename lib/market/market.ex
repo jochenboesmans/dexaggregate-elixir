@@ -66,13 +66,4 @@ defmodule Market do
 
     %{market: market, rebased_market: rebased_market}
   end
-
-  defp get_old_entry(acc, key) do
-    case Map.has_key?(acc, key) do
-      true -> acc[key]
-      false -> %{}
-    end
-  end
-
-
 end
