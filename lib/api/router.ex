@@ -1,22 +1,21 @@
-defmodule Router do
+defmodule API.Router do
 	@moduledoc false
 
 	use Plug.Router
 
-	plug(:match)
-
-	plug(Plug.Parsers,
-		parsers: [:json],
-		pass: ["application/json"],
-		json_decoder: Poison
-	)
-
-	plug(:dispatch)
+	plug :match
+	plug :dispatch
+	plug Absinthe.Plug, schema: API.Schema
 
 	get "/market" do
+		query = """
+		query GetMarket() {}
+		"""
+		market = Absinthe.run(query, API.Schema)
+
 		conn
 		|> put_resp_content_type("application/json")
-		|> send_resp(200, "lalallalala")
+		|> send_resp(200, Poison.encode!(Market.get()))
 	end
 
 	match _ do

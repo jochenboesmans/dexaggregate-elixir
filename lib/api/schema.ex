@@ -1,10 +1,16 @@
-defmodule MarketTypes do
+defmodule API.Schema do
   @moduledoc false
 
-  object :market_queries do
+  use Absinthe.Schema
+
+  object :market do
     @desc "Get the whole market"
-    field :market, list_of(:market) do
-      resolve()
+    field :market, :market do
+      resolve(&API.Resolver.get/3)
     end
+  end
+
+  query do
+    import_fields(:market)
   end
 end

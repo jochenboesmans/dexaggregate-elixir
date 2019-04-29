@@ -4,7 +4,6 @@ defmodule Market.Rebasing do
 	"""
 
 	import Market.Util
-	alias Market.Pair, as: Pair
 	alias Market.ExchangeMarketData, as: ExchangeMarketData
 
 	# Makes sure private functions are testable.
@@ -170,7 +169,7 @@ defmodule Market.Rebasing do
 					Enum.reduce(market, acc1, fn ({_id, p1}, acc2) ->
 						case (p1.base_address == p2.quote_address && base_address == p1.quote_address) do
 							true ->
-								acc2 ++ %{:p1 => p1, :p2 => p2}
+								acc2 ++ [%{p1: p1, p2: p2}]
 							false ->
 								acc2
 						end

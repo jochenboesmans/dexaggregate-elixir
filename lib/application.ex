@@ -8,7 +8,7 @@ defmodule DexAggregate.Application do
 		children = [
 			{Market, name: Market},
 			{FetcherSupervisor, name: FetcherSupervisor},
-			{Router, name: Router},
+			{API.Router, name: API.Router},
 		]
 		options = [
 			strategy: :one_for_one,
