@@ -46,8 +46,8 @@ defmodule Market.Rebasing do
 			...>  Market.Util.pair_id(dai_address, eth_address) => %Market.Pair{
 			...>    base_symbol: "DAI",
 			...>		quote_symbol: "ETH",
-			...>		quote_address: "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
-			...>		base_address: "0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359",
+			...>		quote_address: eth_address,
+			...>		base_address: dai_address,
 			...>		market_data: %{:oasis =>
 			...>      %Market.ExchangeMarketData{
 			...>			  last_price: 200,
@@ -78,7 +78,39 @@ defmodule Market.Rebasing do
 	end
 
 	@doc """
-		Calculates the combined volume across all exchanges of a given token in the market.
+		Calculates the combined volume across all exchanges of a given token in the market,
+		denominated in the base token of the market pair.
+
+		## Examples
+			iex> dai_address = "0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359"
+			iex> eth_address = "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+			iex> sample_market = %{
+			...>  Market.Util.pair_id(dai_address, eth_address) => %Market.Pair{
+			...>    base_symbol: "DAI",
+			...>		quote_symbol: "ETH",
+			...>		quote_address: eth_address,
+			...>		base_address: dai_address,
+			...>		market_data: %{
+			...>			:oasis => %Market.ExchangeMarketData{
+			...>			  last_price: 0,
+			...>			  current_bid: 0,
+			...>			  current_ask: 0,
+			...>			  base_volume: 100,
+			...>			  quote_volume: 0
+			...>		  },
+			...>			:kyber => %Market.ExchangeMarketData{
+			...>				last_price: 0,
+			...>				current_bid: 0,
+			...>				current_ask: 0,
+			...>				base_volume: 150,
+			...>				quote_volume: 0
+			...>			}
+			...>	  }
+			...>  }
+			...> }
+			iex> Rebasing.combined_volume_across_exchanges(dai_address, eth_address, sample_market)
+			250
+
 	"""
 	def combined_volume_across_exchanges(base_address, quote_address, market) do
 		pmd = market[pair_id(base_address, quote_address)].market_data
@@ -182,7 +214,38 @@ defmodule Market.Rebasing do
 	end
 
 	@doc """
-		Calculates a volume-weighted average of the current bids and asks of a given pair across all exchanges.
+		Calculates a volume-weighted average of the current bids and asks of a given pair across all exchanges,
+		for a specific token with the given base and quote address.
+
+		## Examples
+			iex> dai_address = "0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359"
+			iex> eth_address = "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+			iex> sample_market = %{
+			...>  Market.Util.pair_id(dai_address, eth_address) => %Market.Pair{
+			...>    base_symbol: "DAI",
+			...>		quote_symbol: "ETH",
+			...>		quote_address: eth_address,
+			...>		base_address: dai_address,
+			...>		market_data: %{
+			...>			:oasis => %Market.ExchangeMarketData{
+			...>			  last_price: 0,
+			...>			  current_bid: 200,
+			...>			  current_ask: 400,
+			...>			  base_volume: 1,
+			...>			  quote_volume: 0
+			...>		  },
+			...>			:kyber => %Market.ExchangeMarketData{
+			...>				last_price: 0,
+			...>				current_bid: 150,
+			...>				current_ask: 300,
+			...>				base_volume: 4,
+			...>				quote_volume: 0
+			...>			}
+			...>	  }
+			...>  }
+			...> }
+			iex> Rebasing.volume_weighted_spread_average(dai_address, eth_address, sample_market)
+			240.0
 	"""
 	def volume_weighted_spread_average(base_address, quote_address, market) do
 		pmd = market[pair_id(base_address, quote_address)].market_data
