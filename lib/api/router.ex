@@ -5,18 +5,6 @@ defmodule API.Router do
 
 	plug :match
 	plug :dispatch
-	plug Absinthe.Plug, schema: API.Schema
-
-	get "/market" do
-		query = """
-		query GetMarket() {}
-		"""
-		market = Absinthe.run(query, API.Schema)
-
-		conn
-		|> put_resp_content_type("application/json")
-		|> send_resp(200, market)
-	end
 
 	match _ do
 		send_resp(conn, 404, "Requested page not found.")

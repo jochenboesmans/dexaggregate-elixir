@@ -24,14 +24,14 @@ defmodule Market.Rebasing do
 	@doc """
 		Rebases all market data for a given pair to a token with a given rebase_address as the token's address.
 	"""
-	def rebase_market_data(p, rebase_address, market) do
-		Enum.reduce(p.market_data, %{}, fn ({exchange_id, emd}, acc) ->
-			rebased_emd = %ExchangeMarketData{
-				last_price: deeply_rebase_rate(emd.last_price, rebase_address, p.base_address, p.quote_address, market),
-				current_bid: deeply_rebase_rate(emd.current_bid, rebase_address, p.base_address, p.quote_address, market),
-				current_ask: deeply_rebase_rate(emd.current_ask, rebase_address, p.base_address, p.quote_address, market),
-				base_volume: deeply_rebase_rate(emd.base_volume, rebase_address, p.base_address, p.quote_address, market),
-				quote_volume: deeply_rebase_rate(emd.quote_volume, rebase_address, p.base_address, p.quote_address, market),
+	def rebase_market_data(%Pair{market_data: pmd, base_address: ba}, rebase_address, market) do
+		Enum.reduce(pmd, %{}, fn ({exchange_id, emd}, acc) ->
+			rebased_emd = %{emd |
+				last_price: deeply_rebase_rate(emd.last_price, rebase_address, ba, market),
+				current_bid: deeply_rebase_rate(emd.current_bid, rebase_address, ba, market),
+				current_ask: deeply_rebase_rate(emd.current_ask, rebase_address, ba, market),
+				base_volume: deeply_rebase_rate(emd.base_volume, rebase_address, ba, market),
+				quote_volume: deeply_rebase_rate(emd.quote_volume, rebase_address, ba, market),
 			}
 			Map.put(acc, exchange_id, rebased_emd)
 		end)
@@ -113,8 +113,8 @@ defmodule Market.Rebasing do
 
 	"""
 	def combined_volume_across_exchanges(p, market) do
-		pmd = market[pair_id(p)].market_data
-		Enum.reduce(pmd, 0, fn ({_exchange_id, emd}, sum) -> sum + emd.base_volume end)
+		%Pair{market_data: pmd} = market[pair_id(p)]
+		Enum.reduce(pmd, 0, fn ({_exchange_id, %ExchangeMarketData{base_volume: bv}}, sum) -> sum + bv end)
 	end
 
 	@doc """
@@ -122,173 +122,75 @@ defmodule Market.Rebasing do
 		from the given base_address to the given rebase_address with a maximum path length of 2 rebases.
 	"""
 	def deeply_rebase_rate(rate, %Pair{base_address: ba, quote_address: qa} = original_pair, rebase_address, market) do
-		case rebase_address == ba do
-			true ->
-				rate
-			false ->
-				immediate_rebase_pair = market[pair_id(rebase_address, ba)]
-
-				start_sums = %{:volume_weighted_sum => 0, :combined_volume => 0}
-				sums =
-					update_sums_level2(start_sums, rate, original_pair, rebase_address, market)
-					|> update_sums_level1(rate, original_pair, immediate_rebase_pair, market)
-
-				case sums.combined_volume do
-					0 ->
-						0
-					_ ->
-						sums.volume_weighted_sum / sums.combined_volume
-				end
-		end
-	end
-
-	defp update_sums_level1(sums, rate, %Pair{base_address: op_ba, quote_address: op_qa} = op,
-				 %Pair{base_address: irp_ba, quote_address: irp_qa} = irp, market) do
-		case immediate_rebase_pair do
-			nil ->
-				sums
+		sums = sums_for_deep_rebasing(rate, original_pair, rebase_address, market, 4)
+		case sums.combined_volume do
+			0 ->
+				0
 			_ ->
-				rebased_rate = rebase_rate(rate, irp_ba, op_ba, market)
-
-				# Calculate each involved pair's combined volume and rebase it in the base address of the immediate rebase token.
-				phase1_volume = combined_volume_across_exchanges(op, market)
-				rebased_phase1_volume = rebase_rate(phase1_volume, irp_ba, op_ba, market)
-				phase2_volume = combined_volume_across_exchanges(irp, market)
-				rebased_phase2_volume = rebase_rate(phase2_volume, irp_ba, irp_ba, market)
-
-				rebased_path_volume = rebased_phase1_volume + rebased_phase2_volume
-
-				prev_volume_weighted_sum = sums.volume_weighted_sum
-				prev_combined_volume = sums.combined_volume
-
-				%{sums |
-					volume_weighted_sum: prev_volume_weighted_sum + (rebased_path_volume * rebased_rate),
-					combined_volume: prev_combined_volume + rebased_path_volume
-				}
+				sums.volume_weighted_sum / sums.combined_volume
 		end
 	end
 
-	defp update_sums_level2(sums, rate, %Pair{base_address: op_ba, quote_address: op_qa} = op, rebase_address, market) do
-		Enum.reduce(level2_rebases(rebase_address, op_ba, market), sums, fn
-			(%{
-				 p1: %Pair{base_address: rp1_ba, quote_address: rp1_qa} = rp1,
-				 p2: %Pair{base_address: rp2_ba, quote_address: rp2_qa} = rp2
-			 } = l2_rebase, sums) ->
-				rebased_rate =
-					rebase_rate(rate, rp1_ba, op_ba, market)
-					|> rebase_rate(rp2_ba, rp1_ba, market)
-
-				phase1_volume = combined_volume_across_exchanges(op, market)
-				rebased_phase1_volume = rebase_rate(phase1_volume, rp2_ba, op_ba, market)
-				phase2_volume = combined_volume_across_exchanges(rp1, market)
-				rebased_phase2_volume = rebase_rate(phase2_volume, rp2_ba, rp1_ba, market)
-				phase3_volume = combined_volume_across_exchanges(rp2, market)
-				rebased_phase3_volume = rebase_rate(phase3_volume, rp2_ba, rp2_ba, market)
-
-				rebased_path_volume = rebased_phase1_volume + rebased_phase2_volume + rebased_phase3_volume
-
-				%{sums |
-					volume_weighted_sum: sums.volume_weighted_sum + (rebased_path_volume * rebased_rate),
-					combined_volume: sums.combined_volume + rebased_path_volume
-				}
-		end)
+	defp sums_for_deep_rebasing(rate, original_pair, rebase_address, market, depth) do
+		Enum.reduce(
+			rebase_paths(original_pair, rebase_address, market),
+			%{combined_volume: 0, volume_weighted_sum: 0},
+			fn (rebase_path, sums) ->
+				update_sums(rebase_path, rate, sums, market, rebase_address)
+			end
+		)
 	end
 
-	@doc """
-		Finds all possible rebases from the given base_address to the given rebase_address with a maximum depth of 2 rebases.
-	"""
-	def level2_rebases(rebase_address, base_address, market) do
-		Enum.reduce(market, [], fn ({_id, %Pair{base_address: p2_ba, quote_address: p2_qa} = p2}, acc1) ->
-			case p2_ba == rebase_address do
-				true ->
-					Enum.reduce(market, acc1, fn ({_id, %Pair{base_address: p1_ba, quote_address: p1_qa} = p1}, acc2) ->
-						case (base_address == p1_qa && p1_ba == p2_qa) do
-							true ->
-								acc2 ++ [%{p1: p1, p2: p2}]
-							false ->
-								acc2
-						end
-					end)
-				false ->
-					acc1
-			end
-		end)
-	end
+	defp update_sums(rebase_path, original_rate, sums, market, rebase_address) do
+		length = Enum.count(rebase_path)
 
-	@doc """
-		Finds all possible rebases from the given base_address to the given rebase_address with a maximum depth of 3 rebases.
-	"""
-	def level3_rebases(rebase_address, base_address, market) do
-		Enum.reduce(market, [], fn ({_id, %Pair{base_address: p3_ba, quote_address: p3_qa} = p3}, acc1) ->
-			case p3_ba == rebase_address do
-				true ->
-					Enum.reduce(market, acc1, fn ({_id, %Pair{base_address: p2_ba, quote_address: p2_qa} = p2}, acc2) ->
-						case p3_qa == p2_ba do
-							true ->
-								Enum.reduce(market, acc2, fn ({_id, %Pair{base_address: p1_ba, quote_address: p1_qa} = p1}, acc3) ->
-									case (p2_qa == p1_ba && p1_qa == base_address) do
-										true ->
-											# Prepend merely for performance reasons
-											[%Rebase{p1: p1, p2: p2, p3: p3} | acc3]
-										false ->
-											acc3
-									end
-								end)
-							false ->
-								acc2
-						end
-					end)
-				false ->
-					acc1
-			end
-		end)
+		# Rebase the original_rate for every pair of the rebase_path.
+		rebased_rate =
+			List.with_index(rebase_path)
+			|> List.foldr(original_rate,
+					 fn ({%Pair{base_address: rp_ba, quote_address: rp_qa}, i}, acc) when i !== length - 1 ->
+						 rebase_rate(acc, rp_ba, rp_qa, market)
+					 end
+				 )
+
+		# Calculate each involved pair's combined volume and rebase it in the base address of the ultimate rebase pair.
+		rebased_path_volume =
+			Enum.reduce(rebase_path, 0, fn (%Pair{base_address: rp_ba} = rebase_pair, sum) ->
+				rebased_phase_volume =
+					combined_volume_across_exchanges(rebase_pair, market)
+					|> rebase_rate(rebase_address, rp_ba, market)
+				sum + rebased_phase_volume
+			end)
+
+		%{sums |
+			volume_weighted_sum: sums.volume_weighted_sum + (rebased_path_volume * rebased_rate),
+			combined_volume: sums.combined_volume + rebased_path_volume
+		}
 	end
 
 	@doc """
 		Finds all possible rebases from the given base_address to the given rebase_address with the specified depth.
 	"""
-	def specific_depth_rebases(%Pair{base_address: rebase_pair_ba} = rebase_pair, base_pair, market, depth) do
-		try_expand_path([base_pair], rebase_pair, market, 0, 2)
-	end
-
-	defp expand_path(path_to_update, base_address, market, depth) do
-		own_acc = path_to_update
-		own_acc =
-			for i <- depth - 2 do
-				Enum.reduce(
-					market,
-					path_to_update,
-					fn (
-						 {_id, %Pair{quote_address: next_pair_qa} = next_pair},
-						 [%Pair{base_address: prev_pair_ba} | _] = all_paths
-					) ->
-						case next_pair_qa == prev_pair_ba do
-							true ->
-								[next_pair | path_acc]
-							false ->
-								nil
-						end
-					end)
-			end
-		|> add_first_pair(base_address, market)
+	def rebase_paths(rebase_address, original_pair, market) do
+		try_expand_path([original_pair], rebase_address, market, 4)
 	end
 
 	@doc """
 		Expands the given path_to_expand if necessary.
 	"""
-	defp try_expand_path([last_pair | _] = path_to_expand, rebase_pair, market, current_depth, maximum_depth) do
+	defp try_expand_path([last_pair | _] = path_to_expand, rebase_address, market, max_depth) do
 		cond do
-			last_pair == rebase_pair || current_depth == maximum_depth ->
+			last_pair.base_address == rebase_address || Enum.count(path_to_expand) === max_depth ->
 				path_to_expand
-			last_pair != rebase_pair ->
-				expand_path(path_to_expand, rebase_pair, market, current_depth, maximum_depth)
+			last_pair.base_address != rebase_address && Enum.count(path_to_expand) !== max_depth ->
+				expand_path(path_to_expand, rebase_address, market, max_depth)
 		end
 	end
 
 	@doc """
-		Returns all paths that expand the given path_to_expand.
+		Returns a list of all paths that expand the given path_to_expand.
 	"""
-	defp expand_path(path_to_expand, rebase_pair, market, current_depth, maximum_depth) do
+	defp expand_path(path_to_expand, rebase_address, market, max_depth) do
 		Enum.reduce(
 			market,
 			path_to_expand,
@@ -298,68 +200,16 @@ defmodule Market.Rebasing do
 				 ) ->
 				case next_pair_qa == prev_pair_ba do
 					true ->
-						one_pair_expanded_path = [next_pair | path_to_expand]
-						try_expand_path(one_pair_expanded_path, market) ++ paths_acc
+						expanded_path = [next_pair | path_to_expand]
+						all_paths = try_expand_path(expanded_path, rebase_address, market, max_depth)
+						all_paths ++ paths_acc
 					false ->
-						nil
+						paths_acc
 				end
 			end)
 	end
 
-	defp add_first_pair(path_to_update, base_address, market) do
-		case path_to_update do
-			nil ->
-				nil
-			_ ->
-				Enum.reduce(
-					market,
-					path_to_update,
-					fn (
-						 {_id, %Pair{base_address: first_pair_ba, quote_address: first_pair_qa} = first_pair},
-						 [%Pair{base_address: prev_pair_ba} | _] = path_acc
-						 ) ->
-						case (prev_pair_ba == first_pair_ba && first_pair_qa == base_address) do
-							true ->
-								full_path = [first_pair | path_acc]
-								Enum.reduce(Enum.with_index(full_path), %Rebase{}, fn ({rebase_pair, i}, rebase) ->
-									%{rebase | String.to_atom("p#{i}") => rebase_pair}
-								end)
-							false ->
-								nil
-						end
-					end)
-		end
-	end
-
-
-
 	@doc """
-		end
-		Enum.reduce(market, [], fn ({_id, %Pair{base_address: p3_ba, quote_address: p3_qa} = p3}, acc1) ->
-			case rebase_address == p3_ba do
-				true ->
-					Enum.reduce(market, acc1, fn ({_id, %Pair{base_address: p2_ba, quote_address: p2_qa} = p2}, acc2) ->
-						case p3_qa == p2_ba do
-							true ->
-								Enum.reduce(market, acc2, fn ({_id, %Pair{base_address: p1_ba, quote_address: p1_qa} = p1}, acc3) ->
-									case (p2_qa == p1_ba && p1_qa == base_address) do
-										true ->
-											# Prepend merely for performance reasons
-											[%Rebase{p1: p1, p2: p2, p3: p3} | acc3]
-										false ->
-											acc3
-									end
-								end)
-							false ->
-								acc2
-						end
-					end)
-				false ->
-					acc1
-			end
-		end)
-	end
-
 		Calculates a volume-weighted average of the current bids and asks of a given pair across all exchanges.
 
 		## Examples
@@ -392,25 +242,33 @@ defmodule Market.Rebasing do
 			240.0
 	"""
 	def volume_weighted_spread_average(p, market) do
-		pmd = market[pair_id(p)].market_data
-		combined_volume = combined_volume_across_exchanges(p, market)
-		weighted_sums = %{
-			current_bids: Enum.reduce(pmd, 0,
-				fn ({_pair_id, %ExchangeMarketData{base_volume: bv, current_bid: cb}}, sum) -> sum + (bv * cb) end),
-			current_asks: Enum.reduce(pmd, 0,
-				fn ({_pair_id, %ExchangeMarketData{base_volume: bv, current_ask: ca}}, sum) -> sum + (bv * ca) end)
-		}
-		average(weighted_sums, combined_volume)
+		case Map.has_key?(market, pair_id(p)) do
+			true ->
+				%Pair{market_data: pmd} = market[pair_id(p)]
+				combined_volume = combined_volume_across_exchanges(p, market)
+				weighted_sums = %{
+					current_bids: Enum.reduce(pmd, 0,
+						fn ({_pair_id, %ExchangeMarketData{base_volume: bv, current_bid: cb}}, sum) -> sum + (bv * cb) end
+					),
+					current_asks: Enum.reduce(pmd, 0,
+						fn ({_pair_id, %ExchangeMarketData{base_volume: bv, current_ask: ca}}, sum) -> sum + (bv * ca) end
+					)
+				}
+				average(weighted_sums, combined_volume)
+			false ->
+				0
+		end
 	end
 
 	defp average(weighted_sums, total_sum) do
-		case total_sum >= 0 && amount_of_sums >= 0 do
+		amount_of_sums = Enum.count(weighted_sums)
+		case total_sum > 0 && amount_of_sums > 0 do
 			false ->
 				0
 			true ->
-				Enum.reduce(weighted_sums, 0, fn (ws, acc) ->
+				Enum.reduce(weighted_sums, 0, fn ({_key, ws}, acc) ->
 					acc + (ws / total_sum)
-				end) / Enum.count(weighted_sums)
+				end) / amount_of_sums
 		end
 	end
 end
