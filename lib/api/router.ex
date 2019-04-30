@@ -15,7 +15,7 @@ defmodule API.Router do
 
 		conn
 		|> put_resp_content_type("application/json")
-		|> send_resp(200, Poison.encode!(Market.get()))
+		|> send_resp(200, market)
 	end
 
 	match _ do
