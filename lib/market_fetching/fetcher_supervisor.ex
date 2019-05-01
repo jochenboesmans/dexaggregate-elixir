@@ -24,7 +24,7 @@ defmodule MarketFetching.FetcherSupervisor do
 			{IdexFetcher, []},
 			{KyberFetcher, []},
 			{OasisFetcher, []},
-			#{ParadexFetcher, []},
+			{ParadexFetcher, []},
 			{RadarFetcher, []},
 			{TokenstoreFetcher, []},
 			{UniswapFetcher, []},

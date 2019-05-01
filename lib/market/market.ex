@@ -8,8 +8,16 @@ defmodule Market do
   alias Market.Rebasing, as: Rebasing
   import Market.Util
 
-  def get() do
-    GenServer.call(__MODULE__, :get)
+  def get(atom) do
+    case atom do
+      :market ->
+        GenServer.call(__MODULE__, :get_market)
+      :rebased_market ->
+        GenServer.call(__MODULE__, :get_rebased_market)
+      _ ->
+        nil
+    end
+
   end
 
   def update(exchange_market) do
@@ -31,13 +39,22 @@ defmodule Market do
   end
 
   @impl true
-  def handle_call(:get, _from, %{market: m, rebased_market: rm} = market) do
-    rebased_market = Map.values(rm)
-    {:reply, rebased_market, market}
+  def handle_call(:get_market, _from, %{market: m} = state) do
+    {:reply, format_market(m), state}
+  end
+
+  @impl true
+  def handle_call(:get_rebased_market, _from, %{rebased_market: rm} = state) do
+    {:reply, format_market(rm), state}
+  end
+
+  defp format_market(m) do
+    Map.values(m)
+    |> Enum.sort_by(&combined_volume_across_exchanges/1, &>=/2)
   end
 
   defp combined_volume_across_exchanges(p) do
-    Enum.reduce(p.market_data, 0, fn (emd, acc) ->
+    Enum.reduce(p.market_data, 0, fn ({_exchange, emd}, acc) ->
       acc + emd.base_volume
     end)
   end
@@ -47,7 +64,7 @@ defmodule Market do
     {:noreply, merge(prev_state, exchange_market)}
   end
 
-  def merge(%{market: prev_market}, %ExchangeMarket{exchange: e, market: m}) do
+  def merge(%{market: prev_market}, %ExchangeMarket{market: m}) do
     market = Enum.reduce(m, prev_market, fn (p, acc) ->
       %MarketFetching.Pair{
         base_address: ba,

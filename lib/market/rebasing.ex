@@ -6,7 +6,6 @@ defmodule Market.Rebasing do
 	import Market.Util
 	alias Market.ExchangeMarketData, as: ExchangeMarketData
 	alias Market.Pair, as: Pair
-	alias Market.Rebase, as: Rebase
 
 	# Makes sure private functions are testable.
 	@compile if Mix.env == :test, do: :export_all
@@ -24,7 +23,7 @@ defmodule Market.Rebasing do
 	@doc """
 		Rebases all market data for a given pair to a token with a given rebase_address as the token's address.
 	"""
-	def rebase_market_data(%Pair{market_data: pmd, base_address: ba} = p, rebase_address, market, max_depth) do
+	def rebase_market_data(%Pair{market_data: pmd} = p, rebase_address, market, max_depth) do
 		Enum.reduce(pmd, %{}, fn ({exchange_id, emd}, acc) ->
 			rebased_emd = %{emd |
 				last_price: deeply_rebase_rate(emd.last_price, p, rebase_address, market, max_depth),
@@ -157,7 +156,7 @@ defmodule Market.Rebasing do
 			# Iterate through the rebase_path starting from the original_pair, going to the pair based in rebase_address,
 			#	rebasing the original_rate to the base_address of all pairs that aren't the original one.
 			|> List.foldr(original_rate,
-					 fn ({%Pair{base_address: rp_ba, quote_address: rp_qa} = p, i}, acc) ->
+					 fn ({%Pair{base_address: rp_ba, quote_address: rp_qa}, i}, acc) ->
 						 case i === max_i do
 							 true ->
 								 acc

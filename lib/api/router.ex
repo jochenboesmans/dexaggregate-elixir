@@ -9,7 +9,13 @@ defmodule API.Router do
 	get "/market" do
 		conn
 		|> put_resp_content_type("application/json")
-		|> send_resp(200, Poison.encode!(Market.get()))
+		|> send_resp(200, Poison.encode!(Market.get(:market)))
+	end
+
+	get "/rebased_market" do
+		conn
+		|> put_resp_content_type("application/json")
+		|> send_resp(200, Poison.encode!(Market.get(:rebased_market)))
 	end
 
 	match _ do
