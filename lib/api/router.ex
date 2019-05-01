@@ -6,6 +6,12 @@ defmodule API.Router do
 	plug :match
 	plug :dispatch
 
+	get "/market" do
+		conn
+		|> put_resp_content_type("application/json")
+		|> send_resp(200, Poison.encode!(Market.get()))
+	end
+
 	match _ do
 		send_resp(conn, 404, "Requested page not found.")
 	end

@@ -168,17 +168,18 @@ defmodule Market.Rebasing do
 				 )
 
 		# Calculate each involved pair's combined volume and rebase it in the base address of the ultimate rebase pair.
-		rebased_path_volume =
+		# This rebase_path's weight is the average volume of all involved pairs.
+		weight =
 			Enum.reduce(rebase_path, 0, fn (%Pair{base_address: rp_ba} = rebase_pair, sum) ->
 				rebased_phase_volume =
 					combined_volume_across_exchanges(rebase_pair, market)
 					|> rebase_rate(rebase_address, rp_ba, market)
 				sum + rebased_phase_volume
-			end)
+			end) / Enum.count(rebase_path)
 
 		%{sums |
-			volume_weighted_sum: sums.volume_weighted_sum + (rebased_path_volume * rebased_rate),
-			combined_volume: sums.combined_volume + rebased_path_volume
+			volume_weighted_sum: sums.volume_weighted_sum + (weight * rebased_rate),
+			combined_volume: sums.combined_volume + weight
 		}
 	end
 

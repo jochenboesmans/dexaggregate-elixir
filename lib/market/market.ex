@@ -31,8 +31,15 @@ defmodule Market do
   end
 
   @impl true
-  def handle_call(:get, _from, market) do
-    {:reply, market, market}
+  def handle_call(:get, _from, %{market: m, rebased_market: rm} = market) do
+    rebased_market = Map.values(rm)
+    {:reply, rebased_market, market}
+  end
+
+  defp combined_volume_across_exchanges(p) do
+    Enum.reduce(p.market_data, 0, fn (emd, acc) ->
+      acc + emd.base_volume
+    end)
   end
 
   @impl true

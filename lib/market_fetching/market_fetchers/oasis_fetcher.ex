@@ -67,22 +67,31 @@ defmodule MarketFetching.OasisFetcher do
 	end
 
 	def fetch_market() do
-		for [base, quote] <- pairs() do
-			fetch_and_decode("http://api.oasisdex.com/v1/markets/#{base}/#{quote}")
+		Enum.reduce(pairs(), [], fn ([base, quote], acc) ->
+			case fetch_and_decode("http://api.oasisdex.com/v1/markets/#{base}/#{quote}") do
+				{:error, _message} ->
+					acc
+				{:ok, decoded_pair} ->
+					[decoded_pair | acc]
+			end
+		end)
+	end
+
+	defp decode(%HTTPoison.Response{body: body}) do
+		case Poison.decode(body) do
+			{:ok, %{"data" => decoded_data}} ->
+				{:ok, decoded_data}
+			{:error, message} ->
+				{:error, message}
 		end
 	end
 
 	defp fetch_and_decode(url) do
-		case HTTPoison.get!(url) do
-			%HTTPoison.Response{body: received_body} ->
-				case Poison.decode(received_body) do
-					{:ok, %{"data" => decoded_market}} ->
-						decoded_market
-					{:error, _message} ->
-						nil
-				end
-			%HTTPoison.Error{} ->
-				nil
+		case HTTPoison.get(url) do
+			{:ok, response} ->
+				decode(response)
+			{:error, message} ->
+				{:error, message}
 		end
 	end
 

@@ -93,14 +93,18 @@ defmodule MarketFetching.TokenstoreFetcher do
 	end
 
 	defp fetch_and_decode(url) do
-		%HTTPoison.Response{body: received_body} = HTTPoison.get!(url)
-
-		case Poison.decode(received_body) do
-			{:ok, decoded_market} ->
-				decoded_market
-			{:error, _message} ->
+		case HTTPoison.get!(url) do
+			%HTTPoison.Error{} ->
 				nil
+			%HTTPoison.Response{body: received_body} ->
+				case Poison.decode(received_body) do
+					{:ok, decoded_market} ->
+						decoded_market
+					{:error, _message} ->
+						nil
+				end
 		end
+
 	end
 
 end
