@@ -14,9 +14,9 @@ defmodule Market.Rebasing do
 	@doc """
 		Rebases all pairs in a given market to a token with a given rebase_address as the token's address.
 	"""
-	def rebase_market(rebase_address, market) do
+	def rebase_market(rebase_address, market, max_depth) do
 		Enum.reduce(market, %{}, fn ({pair_id, p}, acc) ->
-			rebased_pair = %{p | market_data: rebase_market_data(p, rebase_address, market)}
+			rebased_pair = %{p | market_data: rebase_market_data(p, rebase_address, market, max_depth)}
 			Map.put(acc, pair_id, rebased_pair)
 		end)
 	end
@@ -24,14 +24,14 @@ defmodule Market.Rebasing do
 	@doc """
 		Rebases all market data for a given pair to a token with a given rebase_address as the token's address.
 	"""
-	def rebase_market_data(%Pair{market_data: pmd, base_address: ba}, rebase_address, market) do
+	def rebase_market_data(%Pair{market_data: pmd, base_address: ba} = p, rebase_address, market, max_depth) do
 		Enum.reduce(pmd, %{}, fn ({exchange_id, emd}, acc) ->
 			rebased_emd = %{emd |
-				last_price: deeply_rebase_rate(emd.last_price, rebase_address, ba, market),
-				current_bid: deeply_rebase_rate(emd.current_bid, rebase_address, ba, market),
-				current_ask: deeply_rebase_rate(emd.current_ask, rebase_address, ba, market),
-				base_volume: deeply_rebase_rate(emd.base_volume, rebase_address, ba, market),
-				quote_volume: deeply_rebase_rate(emd.quote_volume, rebase_address, ba, market),
+				last_price: deeply_rebase_rate(emd.last_price, p, rebase_address, market, max_depth),
+				current_bid: deeply_rebase_rate(emd.current_bid, p, rebase_address, market, max_depth),
+				current_ask: deeply_rebase_rate(emd.current_ask, p, rebase_address, market, max_depth),
+				base_volume: deeply_rebase_rate(emd.base_volume, p, rebase_address, market, max_depth),
+				quote_volume: deeply_rebase_rate(emd.quote_volume, p, rebase_address, market, max_depth),
 			}
 			Map.put(acc, exchange_id, rebased_emd)
 		end)
@@ -121,35 +121,49 @@ defmodule Market.Rebasing do
 		Deeply rebases a given rate of a given token in the market as the volume-weighted rate of all possible paths
 		from the given base_address to the given rebase_address with a maximum path length of 2 rebases.
 	"""
-	def deeply_rebase_rate(rate, %Pair{base_address: ba, quote_address: qa} = original_pair, rebase_address, market) do
-		sums = sums_for_deep_rebasing(rate, original_pair, rebase_address, market, 4)
-		case sums.combined_volume do
+	def deeply_rebase_rate(rate, original_pair, rebase_address, market, max_depth) do
+		%{combined_volume: cv, volume_weighted_sum: vws} =
+			sums_for_deep_rebasing(rate, original_pair, rebase_address, market, max_depth)
+		case cv do
 			0 ->
 				0
 			_ ->
-				sums.volume_weighted_sum / sums.combined_volume
+				vws / cv
 		end
 	end
 
-	defp sums_for_deep_rebasing(rate, original_pair, rebase_address, market, depth) do
+	@doc """
+		Calculates the values that determine a volume-weighted rate.
+	"""
+	defp sums_for_deep_rebasing(rate, original_pair, rebase_address, market, max_depth) do
 		Enum.reduce(
-			rebase_paths(original_pair, rebase_address, market),
+			rebase_paths(rebase_address, original_pair, market, max_depth),
 			%{combined_volume: 0, volume_weighted_sum: 0},
 			fn (rebase_path, sums) ->
-				update_sums(rebase_path, rate, sums, market, rebase_address)
+				update_sums(sums, rebase_path, rate, market, rebase_address)
 			end
 		)
 	end
 
-	defp update_sums(rebase_path, original_rate, sums, market, rebase_address) do
-		length = Enum.count(rebase_path)
+	@doc """
+		Updates the given volume-weighted-rate-determining sums based on the given rebase_path.
+	"""
+	defp update_sums(sums, rebase_path, original_rate, market, rebase_address) do
+		max_i = Enum.count(rebase_path) - 1
 
 		# Rebase the original_rate for every pair of the rebase_path.
 		rebased_rate =
-			List.with_index(rebase_path)
+			Enum.with_index(rebase_path)
+			# Iterate through the rebase_path starting from the original_pair, going to the pair based in rebase_address,
+			#	rebasing the original_rate to the base_address of all pairs that aren't the original one.
 			|> List.foldr(original_rate,
-					 fn ({%Pair{base_address: rp_ba, quote_address: rp_qa}, i}, acc) when i !== length - 1 ->
-						 rebase_rate(acc, rp_ba, rp_qa, market)
+					 fn ({%Pair{base_address: rp_ba, quote_address: rp_qa} = p, i}, acc) ->
+						 case i === max_i do
+							 true ->
+								 acc
+							 false ->
+								 rebase_rate(acc, rp_ba, rp_qa, market)
+						 end
 					 end
 				 )
 
@@ -171,8 +185,8 @@ defmodule Market.Rebasing do
 	@doc """
 		Finds all possible rebases from the given base_address to the given rebase_address with the specified depth.
 	"""
-	def rebase_paths(rebase_address, original_pair, market) do
-		try_expand_path([original_pair], rebase_address, market, 4)
+	def rebase_paths(rebase_address, original_pair, market, max_depth) do
+		try_expand_path([original_pair], rebase_address, market, max_depth)
 	end
 
 	@doc """
@@ -180,9 +194,11 @@ defmodule Market.Rebasing do
 	"""
 	defp try_expand_path([last_pair | _] = path_to_expand, rebase_address, market, max_depth) do
 		cond do
-			last_pair.base_address == rebase_address || Enum.count(path_to_expand) === max_depth ->
-				path_to_expand
-			last_pair.base_address != rebase_address && Enum.count(path_to_expand) !== max_depth ->
+			last_pair.base_address == rebase_address ->
+				[path_to_expand]
+			Enum.count(path_to_expand) >= max_depth ->
+				nil
+			true ->
 				expand_path(path_to_expand, rebase_address, market, max_depth)
 		end
 	end
@@ -190,19 +206,20 @@ defmodule Market.Rebasing do
 	@doc """
 		Returns a list of all paths that expand the given path_to_expand.
 	"""
-	defp expand_path(path_to_expand, rebase_address, market, max_depth) do
+	defp expand_path([last_pair | _] = path_to_expand, rebase_address, market, max_depth) do
 		Enum.reduce(
 			market,
-			path_to_expand,
-			fn (
-				 {_id, %Pair{quote_address: next_pair_qa} = next_pair},
-				 [%Pair{base_address: prev_pair_ba} | _] = paths_acc
-				 ) ->
-				case next_pair_qa == prev_pair_ba do
+			[],
+			fn ({_id, %Pair{quote_address: next_pair_qa} = next_pair}, paths_acc) ->
+				case next_pair_qa == last_pair.base_address do
 					true ->
 						expanded_path = [next_pair | path_to_expand]
-						all_paths = try_expand_path(expanded_path, rebase_address, market, max_depth)
-						all_paths ++ paths_acc
+						case try_expand_path(expanded_path, rebase_address, market, max_depth) do
+							nil ->
+								paths_acc
+							all_paths_expanding_this ->
+								all_paths_expanding_this ++ paths_acc
+						end
 					false ->
 						paths_acc
 				end

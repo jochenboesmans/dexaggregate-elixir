@@ -42,27 +42,50 @@ defmodule Market do
 
   def merge(%{market: prev_market}, %ExchangeMarket{exchange: e, market: m}) do
     market = Enum.reduce(m, prev_market, fn (p, acc) ->
-      id = pair_id(p.base_address, p.quote_address)
-      updated_market_pair =
+      %MarketFetching.Pair{
+        base_address: ba,
+        quote_address: qa,
+        base_symbol: bs,
+        quote_symbol: qs,
+        market_data: %MarketFetching.PairMarketData{
+          exchange: ex,
+          last_price: lp,
+          current_bid: cb,
+          current_ask: ca,
+          base_volume: bv,
+          quote_volume: qv
+        }
+      } = p
+
+      id = pair_id(ba, qa)
+      emd = %Market.ExchangeMarketData{
+        last_price: lp,
+        current_bid: cb,
+        current_ask: ca,
+        base_volume: bv,
+        quote_volume: qv
+      }
+
+      market_entry =
         case Map.has_key?(acc, id) do
           false ->
-            %{
-              base_symbol: p.base_symbol,
-              base_address: p.base_address,
-              quote_address: p.quote_address,
-              quote_symbol: p.quote_symbol,
+            %Market.Pair{
+              base_symbol: bs,
+              base_address: ba,
+              quote_address: qa,
+              quote_symbol: qs,
               market_data: %{
-                e => p.market_data
+                ex => emd
               }
             }
           true ->
-            %{acc[id] | market_data: Map.put(acc[id][:market_data], e, p.market_data)}
+            %{acc[id] | market_data: Map.put(acc[id].market_data, ex, emd)}
         end
-      Map.put(acc, id, updated_market_pair)
+      Map.put(acc, id, market_entry)
     end)
 
     dai_address = "0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359"
-    rebased_market = Rebasing.rebase_market(dai_address, market)
+    rebased_market = Rebasing.rebase_market(dai_address, market, 4)
 
     %{market: market, rebased_market: rebased_market}
   end
