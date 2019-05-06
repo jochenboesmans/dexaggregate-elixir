@@ -1,58 +1,129 @@
 defmodule MarketFetching.DdexFetcher do
+
+	use WebSockex
+
+
 	@moduledoc """
 		Fetches the Ddex market and updates the global Market accordingly.
-
-		!!! Unimplemented boilerplate code.
-
-		TODO: Implement WebSocket client.
 	"""
-	use Task, restart: :permanent
+	alias MarketFetching.Pair, as: Pair
 	alias MarketFetching.ExchangeMarket, as: ExchangeMarket
+	alias MarketFetching.PairMarketData, as: PairMarketData
 
+	@ws_endpoint "wss://ws.ddex.io/v3"
 	def start_link(_arg) do
-		Task.start_link(__MODULE__, :poll, [])
+		Market.update(initial_exchange_market())
+		{:ok, pid} = WebSockex.start_link(@ws_endpoint, __MODULE__, :no_state)
+		sub_message = %{
+			type: "subscribe",
+			channels: [%{
+				name: "ticker",
+				marketIds: currencies()
+			}]
+		}
+		{:ok, e} = Poison.encode(sub_message)
+		WebSockex.send_frame(pid, {:text, e})
 	end
 
-	def poll() do
-		Stream.interval(10_000)
-		|> Stream.map(fn _x -> exchange_market() end)
-		|> Enum.each(fn x -> Market.update(x) end)
+	def handle_frame({:text, message}, state) do
+		{:ok, p} = Poison.decode(message)
+		c = currencies()
+		[bs, qs] = String.split(p["marketId"], "-")
+		pair = %Pair{
+			base_symbol: bs,
+			quote_symbol: qs,
+			base_address: c[bs],
+			quote_address: c[qs],
+			market_data: %PairMarketData{
+				exchange: :ddex,
+				last_price: p["price"],
+				current_bid: p["bid"],
+				current_ask: p["ask"],
+				base_volume: p["volume"],
+				quote_volume: 0,
+			}
+		}
+		Market.update(pair)
+		{:ok, state}
 	end
 
-	defp exchange_market() do
+	def handle_cast({:send, frame}, state) do
+		{:reply, frame, state}
+	end
+
+	def initial_exchange_market() do
 		fetch_market()
 		|> assemble_exchange_market()
 	end
 
-	defp assemble_exchange_market(_market) do
-		#TODO: Implement
-		complete_market = nil
+	defp assemble_exchange_market(market) do
+		c = currencies()
+
+		complete_market =
+			Enum.map(market, fn p ->
+				[bs, qs] = String.split(p["marketId"], "-")
+				%Pair{
+					base_symbol: bs,
+					quote_symbol: qs,
+					base_address: c[bs],
+					quote_address: c[qs],
+					market_data: %PairMarketData{
+						exchange: :ddex,
+						last_price: p["price"],
+						current_bid: p["bid"],
+						current_ask: p["ask"],
+						base_volume: p["volume"],
+						quote_volume: 0,
+					}
+				}
+			end)
 
 		%ExchangeMarket{
 			exchange: :ddex,
-			market: complete_market
+			market: complete_market,
 		}
 	end
 
-	defp currencies() do
-		#TODO: Implement.
-		fetch_and_decode(nil)
-	end
+	@market_endpoint "https://api.ddex.io/v3/markets/tickers"
+	@currencies_endpoint "https://api.ddex.io/v3/markets"
 
 	def fetch_market() do
-		#TODO: Implement.
-		fetch_and_decode(nil)
-	end
-
-	defp fetch_and_decode(url) do
-		#TODO: Implement.
-		%HTTPoison.Response{body: received_body} = HTTPoison.get!(url)
-
-		case Poison.decode(received_body) do
-			{:ok, %{"data" => decoded_market}} ->
-				decoded_market
+		case fetch_and_decode(@market_endpoint) do
+			{:ok, %{"tickers" => data}} ->
+				data
 			{:error, _message} ->
 				nil
+		end
+	end
+
+	def currencies() do
+		case fetch_and_decode(@currencies_endpoint) do
+			{:ok, %{"markets" => currencies}} ->
+				Enum.reduce(currencies, %{}, fn (c, acc) ->
+					acc
+					|> Map.put(c["baseToken"], c["baseTokenAddress"])
+					|> Map.put(c["quoteToken"], c["quoteTokenAddress"])
+				end)
+			{:error, _message} ->
+				nil
+		end
+	end
+
+	def fetch_and_decode(url) do
+		case HTTPoison.get(url) do
+			{:ok, response} ->
+				decode(response)
+			{:error, message} ->
+				{:error, message}
+		end
+	end
+
+	defp decode(%HTTPoison.Response{body: body}) do
+		case Poison.decode(body) do
+			{:ok, %{"data" => decoded_data}} ->
+				{:ok, decoded_data}
+			{:error, message} ->
+				{:error, message}
 		end
 	end
 end

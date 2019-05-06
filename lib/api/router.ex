@@ -18,6 +18,12 @@ defmodule API.Router do
 		|> send_resp(200, Poison.encode!(Market.get(:rebased_market)))
 	end
 
+	get "/exchanges" do
+		conn
+		|> put_resp_content_type("application/json")
+		|> send_resp(200, Poison.encode!(Market.get(:exchanges)))
+	end
+
 	match _ do
 		send_resp(conn, 404, "Requested page not found.")
 	end
