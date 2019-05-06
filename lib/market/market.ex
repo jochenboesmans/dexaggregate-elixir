@@ -53,7 +53,10 @@ defmodule Market do
 
   @impl true
   def handle_call(:get_exchanges, _from, m) do
-    {:reply, exchanges_in_market(m), m}
+    e =
+      exchanges_in_market(m)
+      |> MapSet.to_list
+    {:reply, e, m}
   end
 
   defp format_market(m) do

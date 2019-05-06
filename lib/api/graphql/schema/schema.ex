@@ -17,5 +17,10 @@ defmodule Graphql.Schema do
 			arg :token_address, non_null(:string)
 			resolve &Content.get_rebased_market/3
 		end
+
+		@desc "Get all exchanges currently in the market."
+		field :exchanges, list_of(:string) do
+			resolve &Content.get_exchanges/3
+		end
 	end
 end
