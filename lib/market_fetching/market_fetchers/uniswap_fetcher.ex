@@ -39,9 +39,9 @@ defmodule MarketFetching.UniswapFetcher do
 					quote_address: c[t],
 					market_data: %PairMarketData{
 						exchange: :uniswap,
-						last_price: 1 / v["lastTradePrice"],
-						current_bid: 1 / v["price"],
-						current_ask: 1 / v["price"],
+						last_price: transform_rate(v["lastTradePrice"]),
+						current_bid: transform_rate(v["price"]),
+						current_ask: transform_rate(v["price"]),
 						base_volume: transform_volume(v["tradeVolume"]),
 						quote_volume: transform_volume(v["tradeVolume"]) * v["weightedAvgPrice"],
 					}
@@ -74,7 +74,7 @@ defmodule MarketFetching.UniswapFetcher do
 		}
 	end
 
-	defp fetch_market() do
+	def fetch_market() do
 		Enum.map(exchange_addresses(), fn {t, ea} ->
 			{t, fetch_and_decode("https://uniswap-analytics.appspot.com/api/v1/ticker?exchangeAddress=#{ea}")}
 		end)
@@ -91,7 +91,21 @@ defmodule MarketFetching.UniswapFetcher do
 		end
 	end
 
+	defp transform_rate(rate) do
+		case rate do
+			0 ->
+				0
+			not_zero ->
+				:math.pow(not_zero, -1)
+		end
+	end
+
 	defp transform_volume(vol) do
-		String.to_integer(vol) * :math.pow(10, -18)
+		case String.to_integer(vol) do
+			0 ->
+				0
+			not_zero ->
+				:math.pow(not_zero, -18)
+		end
 	end
 end

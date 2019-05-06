@@ -6,6 +6,12 @@ defmodule API.Router do
 	plug :match
 	plug :dispatch
 
+	forward "/graphql/regular", to: Absinthe.Plug,
+		schema: Graphql.Schema
+
+	forward "/graphql/graphiql", to: Absinthe.Plug.GraphiQL,
+    schema: Graphql.Schema
+
 	get "/market" do
 		conn
 		|> put_resp_content_type("application/json")

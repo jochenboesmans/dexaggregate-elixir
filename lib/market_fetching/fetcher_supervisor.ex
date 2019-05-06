@@ -20,7 +20,7 @@ defmodule MarketFetching.FetcherSupervisor do
 	@impl true
 	def init(_init_arg) do
 		children = [
-			{DdexFetcher, []},
+			#{DdexFetcher, []},
 			{IdexFetcher, []},
 			{KyberFetcher, []},
 			{OasisFetcher, []},
