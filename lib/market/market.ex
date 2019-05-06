@@ -12,8 +12,8 @@ defmodule Market do
     case atom do
       :market ->
         GenServer.call(__MODULE__, :get_market)
-      :rebased_market ->
-        GenServer.call(__MODULE__, :get_rebased_market)
+      {:rebased_market, token_address} ->
+        GenServer.call(__MODULE__, {:get_rebased_market, token_address})
       :exchanges ->
         GenServer.call(__MODULE__, :get_exchanges)
       _ ->
@@ -22,8 +22,8 @@ defmodule Market do
 
   end
 
-  def update(exchange_market) do
-    GenServer.cast(__MODULE__, {:update, exchange_market})
+  def update(something) do
+    GenServer.cast(__MODULE__, {:update, something})
   end
 
   def start_link(_options) do
@@ -37,27 +37,32 @@ defmodule Market do
 
   @impl true
   def init(_initial_market) do
-    {:ok, %{market: %{}, rebased_market: %{}}}
+    {:ok, %{}}
   end
 
   @impl true
-  def handle_call(:get_market, _from, %{market: m} = state) do
-    {:reply, format_market(m), state}
+  def handle_call(:get_market, _from, m) do
+    {:reply, format_market(m), m}
   end
 
   @impl true
-  def handle_call(:get_rebased_market, _from, %{rebased_market: rm} = state) do
-    {:reply, format_market(rm), state}
+  def handle_call({:get_rebased_market, rebase_address}, _from, m) do
+    rm = Rebasing.rebase_market(rebase_address, m, 4)
+    {:reply, format_market(rm), m}
   end
 
   @impl true
-  def handle_call(:get_exchanges, _from, %{market: m} = state) do
-    {:reply, exchanges_in_market(m), state}
+  def handle_call(:get_exchanges, _from, m) do
+    {:reply, exchanges_in_market(m), m}
   end
 
   defp format_market(m) do
     Map.values(m)
     |> Enum.sort_by(&combined_volume_across_exchanges/1, &>=/2)
+    |> Enum.map(fn p ->
+      new_md = Enum.map(p.market_data, fn {exchange, emd} ->  Map.put(emd, :exchange, exchange) end)
+      %{p | market_data: new_md}
+    end)
   end
 
   defp combined_volume_across_exchanges(p) do
@@ -128,23 +133,13 @@ defmodule Market do
     Map.put(m, id, market_entry)
   end
 
-  @dai_address "0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359
-"
-  def merge(%{market: prev_market}, %MarketFetching.Pair{} = p) do
-    market = add_pair(prev_market, p)
-
-    rebased_market = Rebasing.rebase_market(@dai_address, market, 4)
-
-    %{market: market, rebased_market: rebased_market}
+  def merge(prev_market, %MarketFetching.Pair{} = p) do
+    add_pair(prev_market, p)
   end
 
-  def merge(%{market: prev_market}, %ExchangeMarket{market: m}) do
-    market = Enum.reduce(m, prev_market, fn (p, acc) ->
+  def merge(prev_market, %ExchangeMarket{market: m}) do
+    Enum.reduce(m, prev_market, fn (p, acc) ->
       add_pair(acc, p)
     end)
-
-    rebased_market = Rebasing.rebase_market(@dai_address, market, 4)
-
-    %{market: market, rebased_market: rebased_market}
   end
 end

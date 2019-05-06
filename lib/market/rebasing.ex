@@ -126,6 +126,8 @@ defmodule Market.Rebasing do
 		case cv do
 			0 ->
 				0
+			0.0 ->
+				0.0
 			_ ->
 				vws / cv
 		end

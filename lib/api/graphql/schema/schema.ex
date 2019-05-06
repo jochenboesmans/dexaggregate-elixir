@@ -7,9 +7,15 @@ defmodule Graphql.Schema do
 	alias Graphql.Resolvers.Content
 
 	query do
-		@desc "Get the whole market"
-		field :market, :market do
+		@desc "Get the market, not rebased."
+		field :market, list_of(:pair) do
 			resolve &Content.get_market/3
+		end
+
+		@desc "Get the market rebased in the specified token."
+		field :rebased_market, list_of(:pair) do
+			arg :token_address, non_null(:string)
+			resolve &Content.get_rebased_market/3
 		end
 	end
 end
