@@ -3,10 +3,15 @@ defmodule MarketFetching.TokenstoreFetcher do
 		Fetches the Tokenstore market and updates the global Market accordingly.
 	"""
 	use Task, restart: :permanent
-	alias MarketFetching.Util, as: Util
+
+	import MarketFetching.Util
+
 	alias MarketFetching.Pair, as: Pair
 	alias MarketFetching.ExchangeMarket, as: ExchangeMarket
 	alias MarketFetching.PairMarketData, as: PairMarketData
+
+	@base_api_url "https://v1-1.api.token.store"
+	@market_endpoint "ticker"
 
 	# Makes sure private functions are testable.
 	@compile if Mix.env == :test, do: :export_all
@@ -22,27 +27,24 @@ defmodule MarketFetching.TokenstoreFetcher do
 	end
 
 	defp exchange_market() do
-		fetch_market()
-		|> filter_valid_pairs()
+		fetch_and_decode("#{@base_api_url}/#{@market_endpoint}")
 		|> assemble_exchange_market()
 	end
 
-	defp filter_valid_pairs(market) do
-		Enum.filter(market, fn {_k, p} ->
-			strings = [
-				p["symbol"],
-				p["tokenAddr"],
-			]
-			numbers = [
-				p["last"],
-				p["bid"],
-				p["ask"],
-				p["baseVolume"],
-				p["quoteVolume"]
-			]
-			Enum.all?(strings, fn s -> valid_string?(s) end)
-			Enum.all?(numbers, fn n -> valid_number?(n) end)
-		end)
+	defp holds_valid_values?(p) do
+		strings = [
+			p["symbol"],
+			p["tokenAddr"],
+		]
+		numbers = [
+			p["last"],
+			p["bid"],
+			p["ask"],
+			p["baseVolume"],
+			p["quoteVolume"]
+		]
+		Enum.all?(strings, fn s -> valid_string?(s) end)
+		&& Enum.all?(numbers, fn n -> valid_float?(n) end)
 	end
 
 	defp valid_string?(s) do
@@ -53,33 +55,30 @@ defmodule MarketFetching.TokenstoreFetcher do
 		end
 	end
 
-	defp valid_number?(n) do
-		cond do
-			!is_number(n) -> false
-			n == 0 -> false
-			true -> true
-		end
-	end
-
 	defp assemble_exchange_market(market) do
-		eth_address = Util.eth_address()
-
 		complete_market =
-			Enum.map(market, fn {_k, p} ->
-				%Pair{
-					base_symbol: "ETH",
-					quote_symbol: p["symbol"],
-					base_address: eth_address,
-					quote_address: p["tokenAddr"],
-					market_data: %PairMarketData{
-						exchange: :tokenstore,
-						last_price: p["last"],
-						current_bid: p["bid"],
-						current_ask: p["ask"],
-						base_volume: p["baseVolume"],
-						quote_volume: p["quoteVolume"],
-					}
-				}
+			Enum.reduce(market, [],  fn ({_k, p}, acc) ->
+				case holds_valid_values?(p) do
+					true ->
+						market_pair =
+							%Pair{
+								base_symbol: "ETH",
+								quote_symbol: p["symbol"],
+								base_address: eth_address(),
+								quote_address: p["tokenAddr"],
+								market_data: %PairMarketData{
+									exchange: :tokenstore,
+									last_price: p["last"],
+									current_bid: p["bid"],
+									current_ask: p["ask"],
+									base_volume: p["baseVolume"],
+									quote_volume: p["quoteVolume"],
+								}
+							}
+						[market_pair | acc]
+					false ->
+						acc
+				end
 			end)
 
 		%ExchangeMarket{
@@ -87,24 +86,4 @@ defmodule MarketFetching.TokenstoreFetcher do
 			market: complete_market,
 		}
 	end
-
-	defp fetch_market() do
-		fetch_and_decode("https://v1-1.api.token.store/ticker")
-	end
-
-	defp fetch_and_decode(url) do
-		case HTTPoison.get!(url) do
-			%HTTPoison.Error{} ->
-				nil
-			%HTTPoison.Response{body: received_body} ->
-				case Poison.decode(received_body) do
-					{:ok, decoded_market} ->
-						decoded_market
-					{:error, _message} ->
-						nil
-				end
-		end
-
-	end
-
 end
