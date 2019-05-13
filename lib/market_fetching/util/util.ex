@@ -44,8 +44,8 @@ defmodule MarketFetching.Util do
 	"""
 	def decode(%HTTPoison.Response{body: body}) do
 		case Poison.decode(body) do
-			{:ok, %{"data" => decoded_data}} ->
-				{:ok, decoded_data}
+			{:ok, decoded_body} ->
+				{:ok, decoded_body}
 			:error ->
 				{:error, "Couldn't decode body of HTTP response."}
 		end
@@ -77,7 +77,7 @@ defmodule MarketFetching.Util do
 			true ->
 				elem(Float.parse(float_string), 0)
 			false ->
-				0
+				0.0
 		end
 	end
 

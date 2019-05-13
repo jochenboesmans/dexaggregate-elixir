@@ -29,6 +29,8 @@ defmodule MarketFetching.UniswapFetcher do
 		"ZRX" => "0xaE76c84C9262Cdb9abc0C2c8888e62Db8E22A0bF",
 	}
 
+	@poll_interval 10_000
+
 	# Makes sure private functions are testable.
 	@compile if Mix.env == :test, do: :export_all
 
@@ -37,7 +39,7 @@ defmodule MarketFetching.UniswapFetcher do
 	end
 
 	def poll() do
-		Stream.interval(10_000)
+		Stream.interval(@poll_interval)
 		|> Stream.map(fn _x -> exchange_market() end)
 		|> Enum.each(fn x -> Market.update(x) end)
 	end
@@ -80,20 +82,10 @@ defmodule MarketFetching.UniswapFetcher do
 	end
 
 	defp transform_rate(rate) do
-		case valid_float?(rate) do
-      true ->
-        :math.pow(rate, -1)
-      false ->
-        0
-		end
+		:math.pow(parse_float(rate), -1)
 	end
 
 	defp transform_volume(vol) do
-		case valid_float?(vol) do
-			true ->
-				:math.pow(vol, -18)
-			false ->
-				0
-		end
+		:math.pow(parse_float(vol), -18)
 	end
 end

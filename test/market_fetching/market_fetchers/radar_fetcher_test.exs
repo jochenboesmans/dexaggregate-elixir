@@ -1,29 +1,10 @@
-defmodule RadarFetcherTest do
-	use ExUnit.Case, async: true
-	alias MarketFetching.RadarFetcher, as: RF
-	doctest RF
+defmodule Test.MarketFetching.RadarFetcher do
 
-	describe "fetch_and_decode/1" do
-		test "#1: returns map with expected format" do
-			result = RF.fetch_and_decode("https://api.radarrelay.com/v2/markets?include=base,ticker,stats")
-			expected_keys = MapSet.new(["id", "baseTokenAddress", "quoteTokenAddress", "ticker", "stats"])
-			expected_ticker_keys = MapSet.new(["price", "bestBid", "bestAsk"])
-			expected_stats_keys = MapSet.new(["volume24Hour"])
-			Enum.each(result, fn p ->
-				Enum.each(expected_keys, fn k ->
-					assert Map.has_key?(p, k)
-					Enum.each(expected_ticker_keys, fn tk ->
-						assert Map.has_key?(p["ticker"], tk)
-						assert is_binary(p["ticker"][tk])
-					end)
-					Enum.each(expected_stats_keys, fn sk ->
-						assert Map.has_key?(p["stats"], sk)
-						assert is_binary(p["stats"][sk])
-					end)
-				end)
-			end)
-		end
-	end
+	use ExUnit.Case, async: true
+
+	alias MarketFetching.RadarFetcher, as: RF
+
+	doctest RF
 
 	describe "assemble_exchange_market/1" do
 		test "#1: returns expected data structure format on realistic data" do
@@ -103,7 +84,6 @@ defmodule RadarFetcherTest do
 								current_bid: 0.0028898874051844162,
 								exchange: :radar,
 								last_price: 0.0030600755391650934,
-								quote_volume: 0
 							},
 							quote_address: "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
 							quote_symbol: "LINK"
@@ -117,7 +97,6 @@ defmodule RadarFetcherTest do
 								current_bid: 3.1763887843523324e-5,
 								exchange: :radar,
 								last_price: 3.376066373974297e-5,
-								quote_volume: 0
 							},
 							quote_address: "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
 							quote_symbol: "POE"

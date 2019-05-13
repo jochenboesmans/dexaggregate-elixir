@@ -62,18 +62,18 @@ defmodule MarketFetching.KyberFetcher do
     |> transform_currencies()
   end
 
-  defp fetch_currencies() do
+  def fetch_currencies() do
     case fetch_and_decode(@currencies_endpoint) do
-      {:ok, currencies} ->
+      {:ok, %{"data" => currencies}} ->
         currencies
       {:error, _message} ->
         nil
     end
   end
 
-  defp fetch_market() do
+  def fetch_market() do
     case fetch_and_decode(@market_endpoint) do
-      {:ok, market} ->
+      {:ok, %{"data" => market}} ->
         market
       {:error, _message} ->
         nil

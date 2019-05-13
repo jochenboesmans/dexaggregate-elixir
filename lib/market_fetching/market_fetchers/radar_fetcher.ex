@@ -27,9 +27,18 @@ defmodule MarketFetching.RadarFetcher do
 	end
 
 	def exchange_market() do
-		fetch_and_decode("#{@base_api_url}/#{@market_endpoint}?include=base,ticker,stats")
+		try_get_market()
 		|> assemble_exchange_market()
 	end
+
+	defp try_get_market() do
+		case fetch_and_decode("#{@base_api_url}/#{@market_endpoint}?include=base,ticker,stats") do
+			{:ok, market} ->
+				market
+			{:error, _message} ->
+				nil
+		end
+end
 
 	defp assemble_exchange_market(market) do
 		complete_market =
@@ -38,8 +47,8 @@ defmodule MarketFetching.RadarFetcher do
 				%Pair{
 					base_symbol: bs,
 					quote_symbol: qs,
-					base_address: p["quoteTokenAddress"],
-					quote_address: p["baseTokenAddress"],
+					base_address: p["baseTokenAddress"],
+					quote_address: p["quoteTokenAddress"],
 					market_data: %PairMarketData{
 						exchange: :radar,
 						last_price: parse_float(p["ticker"]["price"]),

@@ -14,6 +14,8 @@ defmodule MarketFetching.IdexFetcher do
   @market_endpoint "https://api.idex.market/returnTicker"
   @currencies_endpoint "https://api.idex.market/returnCurrencies"
 
+  @poll_interval 10_000
+
   # Makes sure private functions are testable.
   @compile if Mix.env == :test, do: :export_all
 
@@ -22,7 +24,7 @@ defmodule MarketFetching.IdexFetcher do
   end
 
   def poll() do
-    Stream.interval(10_000)
+    Stream.interval(@poll_interval)
     |> Stream.map(fn _x -> exchange_market() end)
     |> Enum.each(fn x -> Market.update(x) end)
   end
@@ -32,26 +34,47 @@ defmodule MarketFetching.IdexFetcher do
     |> assemble_exchange_market()
   end
 
+  def try_get_valid_pair({k, p}, c) do
+    %{
+      "last" => lp,
+      "highestBid" => cb,
+      "lowestAsk" => ca,
+      "baseVolume" => bv,
+    } = p
+    [bs, qs] = String.split(k, "_")
+    [ba, qa] = [c[bs], c[qs]]
+
+    case valid_values?([bs, qs, ba, qa], [bv, lp, cb, ca]) do
+      true ->
+        %Pair{
+          base_symbol: bs,
+          quote_symbol: qs,
+          base_address: ba,
+          quote_address: qa,
+          market_data: %PairMarketData{
+            exchange: :idex,
+            last_price: parse_float(lp),
+            current_bid: parse_float(cb),
+            current_ask: parse_float(ca),
+            base_volume: parse_float(bv),
+          }
+        }
+      false ->
+        nil
+    end
+  end
+
   defp assemble_exchange_market(market) do
     c = currencies()
 
     complete_market =
-      filter_valid_pairs(market)
-      |> Enum.map(fn {k, p} ->
-        [base_symbol, quote_symbol] = String.split(k, "_")
-        %Pair{
-          base_symbol: base_symbol,
-          quote_symbol: quote_symbol,
-          base_address: c[base_symbol],
-          quote_address: c[quote_symbol],
-          market_data: %PairMarketData{
-            exchange: :idex,
-            last_price: parse_float(p["last"]),
-            current_bid: parse_float(p["highestBid"]),
-            current_ask: parse_float(p["lowestAsk"]),
-            base_volume: parse_float(p["baseVolume"]),
-          }
-        }
+      Enum.reduce(market, [], fn (p, acc) ->
+        case try_get_valid_pair(p, c) do
+          nil ->
+            acc
+          valid_pair ->
+            [valid_pair | acc]
+        end
       end)
 
     %ExchangeMarket{
@@ -86,18 +109,6 @@ defmodule MarketFetching.IdexFetcher do
   defp format_currencies(currencies) do
     Enum.reduce(currencies, %{}, fn {k, c}, acc ->
       Map.put(acc, k, c["address"])
-    end)
-  end
-
-  defp filter_valid_pairs(market) do
-    Enum.filter(market, fn {_k, p} ->
-      values_to_check = [
-        p["last"],
-        p["highestBid"],
-        p["lowestAsk"],
-        p["baseVolume"],
-      ]
-      Enum.all?(values_to_check, fn v -> valid_float?(Float.parse(v)) end)
     end)
   end
 end

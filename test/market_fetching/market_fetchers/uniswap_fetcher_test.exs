@@ -1,33 +1,15 @@
-defmodule UniswapFetcherTest do
+defmodule Test.MarketFetching.UniswapFetcher do
+
 	use ExUnit.Case, async: true
+
 	alias MarketFetching.UniswapFetcher, as: UF
+
 	doctest UF
 
 	describe "transform_volume/1" do
 		test "#1: returns properly transformed volume for realistic value" do
 			sample_value = "45704016300115740247"
 			assert UF.transform_volume(sample_value) === 45.70401630011574
-		end
-	end
-
-	describe "fetch_and_decode/1" do
-		test "#1: returns empty map on unexisting pair" do
-			assert UF.fetch_and_decode("https://uniswap-analytics.appspot.com/api/v1/ticker?exchangeAddress=stupidunexistingaddress") == nil
-		end
-		test "#2: returns a map with expected keys and values on existing pair" do
-			dai_exchange_address = "0x09cabEC1eAd1c0Ba254B09efb3EE13841712bE14"
-			result = UF.fetch_and_decode("https://uniswap-analytics.appspot.com/api/v1/ticker?exchangeAddress=#{dai_exchange_address}")
-			expected_keys = MapSet.new(["price", "lastTradePrice", "tradeVolume", "weightedAvgPrice"])
-			Enum.each(expected_keys, fn k ->
-				assert Map.has_key?(result, k)
-				assert is_binary(result[k]) || is_float(result[k])
-			end)
-		end
-	end
-
-	describe "fetch_market/0" do
-		test "#1: returns a list with a length corresponding to exchange_addresses/0" do
-			assert Enum.count(UF.exchange_addresses()) === Enum.count(UF.fetch_market())
 		end
 	end
 
@@ -154,7 +136,6 @@ defmodule UniswapFetcherTest do
 								current_bid: 0.00261336442310605,
 								exchange: :uniswap,
 								last_price: 0.0025041019194514255,
-								quote_volume: 267699.7748072603
 							},
 							quote_address: "0x0d8775f648430679a709e98d2b0cb6250d2887ef",
 							quote_symbol: "BAT"
@@ -168,7 +149,6 @@ defmodule UniswapFetcherTest do
 								current_bid: 0.005932744677934399,
 								exchange: :uniswap,
 								last_price: 0.005877845116777038,
-								quote_volume: 339075.96565128304
 							},
 							quote_address: "0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359",
 							quote_symbol: "DAI"
@@ -182,7 +162,6 @@ defmodule UniswapFetcherTest do
 								current_bid: 3.378583877426705,
 								exchange: :uniswap,
 								last_price: 3.398626144650769,
-								quote_volume: 1127.6562557490838
 							},
 							quote_address: "0x9f8f72aa9304c8b593d555f12ef6589cc3a579a2",
 							quote_symbol: "MKR"
@@ -196,7 +175,6 @@ defmodule UniswapFetcherTest do
 								current_bid: 7.649494629280445e-5,
 								exchange: :uniswap,
 								last_price: 7.819725589103897e-5,
-								quote_volume: 571033.9568730599
 							},
 							quote_address: "0x42d6622dece394b54999fbd73d108123806f6a18",
 							quote_symbol: "SPANK"
@@ -210,7 +188,6 @@ defmodule UniswapFetcherTest do
 								current_bid: 0.0017372938602583689,
 								exchange: :uniswap,
 								last_price: 0.0017518519905852967,
-								quote_volume: 10090.852430691524
 							},
 							quote_address: "0xe41d2489571d322189246dafa5ebde1f4699f498",
 							quote_symbol: "ZRX"

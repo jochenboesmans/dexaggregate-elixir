@@ -2,7 +2,7 @@ defmodule DexAggregate.Application do
 	@moduledoc false
 
 	use Application
-	alias MarketFetching.FetcherSupervisor, as: FetcherSupervisor
+	alias MarketFetching.FetcherSupervisor
 
 	def start(_type, _args) do
 		children = [

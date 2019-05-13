@@ -1,45 +1,47 @@
-defmodule Market.RebasingTest do
+defmodule Test.Market.Rebasing do
+
 	use ExUnit.Case, async: true
-	alias Market.Rebasing, as: Rebasing
+
 	import Market.Util
+
+	alias Market.Pair
+	alias Market.ExchangeMarketData
+	alias Market.Rebasing
+
 	doctest Rebasing
 
-	alias Market.Pair, as: Pair
-	alias Market.ExchangeMarketData, as: ExchangeMarketData
+	@dai_address "0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359"
+	@eth_address "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+	@bat_address "0x0d8775f648430679a709e98d2b0cb6250d2887ef"
 
 	describe "volume_weighted_spread_average/2" do
 		@describetag :volume_weighted_spread_average
 		test "#1: pair doesn't exist in market" do
-			dai_address = "0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359"
-			eth_address = "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
-			bat_address = "0x0d8775f648430679a709e98d2b0cb6250d2887ef"
 			sample_pair = %Pair{
 				base_symbol: "DAI",
 				quote_symbol: "ETH",
-				base_address: dai_address,
-				quote_address: eth_address,
+				base_address: @dai_address,
+				quote_address: @eth_address,
 				market_data: %{
 					:oasis => %ExchangeMarketData{
 						last_price: 0,
 						current_bid: 0,
 						current_ask: 0,
 						base_volume: 0,
-						quote_volume: 0,
 					}
 				}
 			}
-			sample_market = %{Market.Util.pair_id(eth_address, bat_address) => %Pair{
+			sample_market = %{pair_id(@eth_address, @bat_address) => %Pair{
 				base_symbol: "ETH",
 				quote_symbol: "BAT",
-				base_address: eth_address,
-				quote_address: bat_address,
+				base_address: @eth_address,
+				quote_address: @bat_address,
 				market_data: %{
 					:oasis => %ExchangeMarketData{
 						last_price: 0,
 						current_bid: 0,
 						current_ask: 0,
 						base_volume: 0,
-						quote_volume: 0,
 					}
 				}
 			}}

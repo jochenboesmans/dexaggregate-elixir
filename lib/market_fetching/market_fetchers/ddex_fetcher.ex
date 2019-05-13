@@ -44,7 +44,7 @@ defmodule MarketFetching.DdexFetcher do
 		{:reply, frame, state}
 	end
 
-	def try_add_received_pair(p, c) do
+	def try_get_valid_pair(p, c) do
 		%{
 			"price" => lp,
 			"bid" => cb,
@@ -57,7 +57,7 @@ defmodule MarketFetching.DdexFetcher do
 
 		case valid_values?([bs, qs, ba, qa], [bv, lp, cb, ca]) do
 			true ->
-				valid_pair = %Pair{
+				%Pair{
 					base_symbol: bs,
 					quote_symbol: qs,
 					base_address: ba,
@@ -70,9 +70,17 @@ defmodule MarketFetching.DdexFetcher do
 						base_volume: parse_float(bv),
 					}
 				}
-				Market.update(valid_pair)
 			false ->
 				nil
+		end
+	end
+
+	def try_add_received_pair(p, c) do
+		case try_get_valid_pair(p, c) do
+			nil ->
+				nil
+			valid_pair ->
+				Market.update(valid_pair)
 		end
 	end
 
@@ -84,34 +92,11 @@ defmodule MarketFetching.DdexFetcher do
 	defp assemble_exchange_market(market, currencies) do
 		complete_market =
 			Enum.reduce(market, [], fn (p, acc) ->
-				%{
-					"price" => lp,
-					"bid" => cb,
-					"ask" => ca,
-					"volume" => bv,
-					"marketId" => id,
-				} = p
-				[bs, qs] = String.split(id, "-")
-				[ba, qa] = [currencies[bs], currencies[qs]]
-
-				case valid_values?([bs, qs, ba, qa], [bv, lp, cb, ca]) do
-					true ->
-						valid_pair = %Pair{
-							base_symbol: bs,
-							quote_symbol: qs,
-							base_address: ba,
-							quote_address: qa,
-							market_data: %PairMarketData{
-								exchange: :ddex,
-								last_price: parse_float(lp),
-								current_bid: parse_float(cb),
-								current_ask: parse_float(ca),
-								base_volume: parse_float(bv),
-							}
-						}
-						[valid_pair | acc]
-					false ->
+				case try_get_valid_pair(p, currencies) do
+					nil ->
 						acc
+					valid_pair ->
+						[valid_pair | acc]
 				end
 			end)
 

@@ -54,7 +54,6 @@ defmodule Market.Rebasing do
 			...>			  current_bid: 195,
 			...>			  current_ask: 205,
 			...>			  base_volume: 100_000,
-			...>			  quote_volume: 5_000
 			...>		  }
 			...>	  }
 			...>  }
@@ -95,14 +94,12 @@ defmodule Market.Rebasing do
 			...>			  current_bid: 0,
 			...>			  current_ask: 0,
 			...>			  base_volume: 100,
-			...>			  quote_volume: 0
 			...>		  },
 			...>			:kyber => %Market.ExchangeMarketData{
 			...>				last_price: 0,
 			...>				current_bid: 0,
 			...>				current_ask: 0,
 			...>				base_volume: 150,
-			...>				quote_volume: 0
 			...>			}
 			...>	  }
 			...>  }
@@ -245,14 +242,12 @@ defmodule Market.Rebasing do
 			...>			  current_bid: 200,
 			...>			  current_ask: 400,
 			...>			  base_volume: 1,
-			...>			  quote_volume: 0
 			...>		  },
 			...>			:kyber => %Market.ExchangeMarketData{
 			...>				last_price: 0,
 			...>				current_bid: 150,
 			...>				current_ask: 300,
 			...>				base_volume: 4,
-			...>				quote_volume: 0
 			...>			}
 			...>	  }
 			...>  }

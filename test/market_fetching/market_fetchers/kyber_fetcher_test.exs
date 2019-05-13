@@ -1,6 +1,9 @@
-defmodule KyberFetcherTest do
+defmodule Test.MarketFetching.KyberFetcher do
+
 	use ExUnit.Case, async: true
+
 	alias MarketFetching.KyberFetcher, as: KF
+
 	doctest KF
 
 	describe "transform_currencies/1" do
@@ -31,36 +34,6 @@ defmodule KyberFetcherTest do
 					"WETH" => "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
 				}
 			assert KF.transform_currencies(sample_currencies) == expected_result
-		end
-	end
-
-	describe "fetch_and_decode/1" do
-		@describetag :fetch_and_decode
-		test "#1: returns a map with expected keys and values for currencies" do
-			result = KF.fetch_and_decode("https://api.kyber.network/currencies")
-			binary_keys = MapSet.new(["symbol", "address"])
-			Enum.each(result, fn c ->
-				Enum.each(binary_keys, fn k ->
-					assert Map.has_key?(c, k)
-					assert is_binary(c[k])
-				end)
-			end)
-		end
-		test "#2: returns a map with expected keys and values for market" do
-			result = KF.fetch_and_decode("https://api.kyber.network/market")
-			binary_keys = MapSet.new(["base_symbol", "quote_symbol"])
-			number_keys = MapSet.new(["last_traded", "current_bid", "current_ask", "eth_24h_volume", "token_24h_volume"])
-			Enum.each(result, fn p ->
-				Enum.each(MapSet.union(number_keys, binary_keys), fn k ->
-					assert Map.has_key?(p, k)
-				end)
-				Enum.each(number_keys, fn nk ->
-					assert is_number(p[nk])
-				end)
-				Enum.each(binary_keys, fn bk ->
-					assert is_binary(p[bk])
-				end)
-			end)
 		end
 	end
 
@@ -125,7 +98,6 @@ defmodule KyberFetcherTest do
 								current_bid: 1,
 								exchange: :kyber,
 								last_price: 1,
-								quote_volume: 414.92872218052963
 							},
 							quote_address: "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
 							quote_symbol: "WETH"
@@ -139,7 +111,6 @@ defmodule KyberFetcherTest do
 								current_bid: 0.001525757417920522,
 								exchange: :kyber,
 								last_price: 0.001519580262382383,
-								quote_volume: 72506.80040991471
 							},
 							quote_address: "0xdd974d5c2e2928dea5f71b9825b8b646686bd200",
 							quote_symbol: "KNC"
@@ -153,7 +124,6 @@ defmodule KyberFetcherTest do
 								current_bid: 0.005876612292041594,
 								exchange: :kyber,
 								last_price: 0.005895361750450811,
-								quote_volume: 219212.1253756595
 							},
 							quote_address: "0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359",
 							quote_symbol: "DAI"
