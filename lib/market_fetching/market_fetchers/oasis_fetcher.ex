@@ -38,7 +38,7 @@ defmodule MarketFetching.OasisFetcher do
 	end
 
 	def assemble_exchange_market(market) do
-		c = currencies()
+		c = @currencies
 
 		complete_market =
 			Enum.map(market, fn p ->
@@ -67,7 +67,7 @@ defmodule MarketFetching.OasisFetcher do
 
 
 	def fetch_market() do
-		Enum.reduce(pairs(), [], fn ([bs, qs], acc) ->
+		Enum.reduce(@pairs, [], fn ([bs, qs], acc) ->
 			case fetch_and_decode("#{@market_endpoint}/#{bs}/#{qs}") do
         {:ok, pair} ->
           [pair | acc]
@@ -79,7 +79,7 @@ defmodule MarketFetching.OasisFetcher do
 
 	defp transform_rate(rate) do
 		cond do
-			is_number -> rate
+			valid_float?(rate) -> rate
 			is_binary(rate) -> try_parse_float(rate)
 			true -> 0
 		end

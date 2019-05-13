@@ -54,6 +54,14 @@ defmodule Market do
     {:reply, reply, m}
   end
 
+  @impl true
+  def handle_call(:get_exchanges, _from, m) do
+    e =
+      exchanges_in_market(m)
+      |> MapSet.to_list
+    {:reply, e, m}
+  end
+
   defp filter(market, exchanges) do
     Enum.reduce(market, %{}, fn ({k, p}, acc1) ->
       filtered_pmd = Enum.reduce(p.market_data, %{}, fn({e, emd}, acc2) ->
@@ -74,13 +82,6 @@ defmodule Market do
     end)
   end
 
-  @impl true
-  def handle_call(:get_exchanges, _from, m) do
-    e =
-      exchanges_in_market(m)
-      |> MapSet.to_list
-    {:reply, e, m}
-  end
 
   defp format_market(m) do
     Map.values(m)
@@ -127,7 +128,6 @@ defmodule Market do
         current_bid: cb,
         current_ask: ca,
         base_volume: bv,
-        quote_volume: qv
       }
     } = p
 
@@ -137,7 +137,6 @@ defmodule Market do
       current_bid: cb,
       current_ask: ca,
       base_volume: bv,
-      quote_volume: qv
     }
 
     market_entry =

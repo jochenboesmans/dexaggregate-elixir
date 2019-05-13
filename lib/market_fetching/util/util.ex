@@ -46,8 +46,8 @@ defmodule MarketFetching.Util do
 		case Poison.decode(body) do
 			{:ok, %{"data" => decoded_data}} ->
 				{:ok, decoded_data}
-			{:error, message}
-				{:error, message}
+			:error ->
+				{:error, "Couldn't decode body of HTTP response."}
 		end
 	end
 
@@ -55,12 +55,17 @@ defmodule MarketFetching.Util do
 		Tries to parse a float from a given value. Returns true only when the value can be purely parsed to a useful float.
 	"""
 	def valid_float?(float_string) do
-		case Float.parse(float_string) do
-			:error -> false
-			{0.0, ""} -> false
-		 	{0, ""} -> false
-			{_valid, ""} -> true
-			_contains_non_numbers -> false
+		case float_string do
+			nil ->
+				false
+			_ ->
+				case Float.parse(float_string) do
+					:error -> false
+					{0.0, ""} -> false
+					{0, ""} -> false
+					{_valid, ""} -> true
+					_contains_non_numbers -> false
+				end
 		end
 	end
 
@@ -70,9 +75,22 @@ defmodule MarketFetching.Util do
 	def parse_float(float_string) do
 		case valid_float?(float_string) do
 			true ->
-				elem(Float.parse(float_string, 0))
+				elem(Float.parse(float_string), 0)
 			false ->
 				0
 		end
+	end
+
+	def valid_string?(string) do
+		case string do
+			nil -> false
+			"" -> false
+			_ -> true
+		end
+	end
+
+	def valid_values?(expected_strings, expected_numbers) do
+		Enum.all?(expected_strings, fn s -> valid_string?(s) end)
+		&& Enum.all?(expected_numbers, fn n -> valid_float?(n) end)
 	end
 end

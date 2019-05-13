@@ -41,18 +41,9 @@ defmodule MarketFetching.TokenstoreFetcher do
 			p["bid"],
 			p["ask"],
 			p["baseVolume"],
-			p["quoteVolume"]
 		]
 		Enum.all?(strings, fn s -> valid_string?(s) end)
 		&& Enum.all?(numbers, fn n -> valid_float?(n) end)
-	end
-
-	defp valid_string?(s) do
-		cond do
-			!is_binary(s) -> false
-			s == "" -> false
-			true -> true
-		end
 	end
 
 	defp assemble_exchange_market(market) do

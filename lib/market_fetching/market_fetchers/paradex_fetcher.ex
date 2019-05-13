@@ -59,7 +59,7 @@ defmodule MarketFetching.ParadexFetcher do
 				exp_numbers = [bv, lp, cb, ca] = [parse_float(bv), parse_float(lp), parse_float(cb), parse_float(ca)]
 
 				case Enum.all?(exp_strings, fn s -> valid_string?(s) end)
-					&& Enum.all?(exp_numbers, fn n -> valid_number?(n) end) do
+					&& Enum.all?(exp_numbers, fn n -> valid_float?(n) end) do
 					false ->
 						acc
 					true ->
@@ -86,35 +86,6 @@ defmodule MarketFetching.ParadexFetcher do
 		}
 	end
 
-	defp parse_float(s) do
-		case s do
-			nil ->
-				nil
-			_ ->
-				case Float.parse(s) do
-					:error -> 0
-					{float, _string_part} -> float
-				end
-		end
-
-	end
-
-	defp valid_string?(s) do
-		cond do
-			!is_binary(s) -> false
-			s == "" -> false
-			true -> true
-		end
-	end
-
-	defp valid_number?(n) do
-		cond do
-			!is_number(n) -> false
-			n == 0 -> false
-			true -> true
-		end
-	end
-
 	defp currencies() do
 		fetch_currencies()
 		|> Enum.reduce(%{}, fn (c, acc) -> Map.put(acc, c["symbol"], c["address"]) end)
@@ -126,7 +97,7 @@ defmodule MarketFetching.ParadexFetcher do
 	defp fetch_ticker(symbol) do fetch_and_decode_with_api_key("#{@base_api_url}/#{@ticker_endpoint}?market=#{symbol}") end
 
 	defp fetch_and_decode_with_api_key(url) do
-		fetch_and_decode(url, [{"API-KEY", api_key()}]) do
+		fetch_and_decode(url, [{"API-KEY", api_key()}])
 	end
 
 	defp api_key() do

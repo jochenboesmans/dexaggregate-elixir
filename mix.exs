@@ -16,7 +16,7 @@ defmodule DexAggregate.MixProject do
   def application do
     [
       extra_applications: [:logger, :crypto],
-      mod: {DexAggregate.Application, []},
+      #mod: {DexAggregate.Application, []},
     ]
   end
 

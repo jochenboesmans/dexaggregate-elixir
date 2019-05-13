@@ -4,6 +4,7 @@ defmodule MarketFetching.FetcherSupervisor do
 	"""
 
 	use Supervisor
+
 	alias MarketFetching.DdexFetcher, as: DdexFetcher
 	alias MarketFetching.IdexFetcher, as: IdexFetcher
 	alias MarketFetching.KyberFetcher, as: KyberFetcher
@@ -20,7 +21,7 @@ defmodule MarketFetching.FetcherSupervisor do
 	@impl true
 	def init(_init_arg) do
 		children = [
-			#{DdexFetcher, []},
+			{DdexFetcher, []},
 			{IdexFetcher, []},
 			{KyberFetcher, []},
 			{OasisFetcher, []},

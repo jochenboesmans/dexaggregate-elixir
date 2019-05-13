@@ -36,22 +36,7 @@ defmodule MarketFetching.DdexFetcher do
 
 	def handle_frame({:text, message},  %{currencies: c} = state) do
 		{:ok, p} = Poison.decode(message)
-		[bs, qs] = String.split(p["marketId"], "-")
-		pair = %Pair{
-			base_symbol: bs,
-			quote_symbol: qs,
-			base_address: c[bs],
-			quote_address: c[qs],
-			market_data: %PairMarketData{
-				exchange: :ddex,
-				last_price: p["price"],
-				current_bid: p["bid"],
-				current_ask: p["ask"],
-				base_volume: p["volume"],
-				quote_volume: 0,
-			}
-		}
-		Market.update(pair)
+		try_add_received_pair(p, c)
 		{:ok, state}
 	end
 
@@ -59,28 +44,75 @@ defmodule MarketFetching.DdexFetcher do
 		{:reply, frame, state}
 	end
 
+	def try_add_received_pair(p, c) do
+		%{
+			"price" => lp,
+			"bid" => cb,
+			"ask" => ca,
+			"volume" => bv,
+			"marketId" => id,
+		} = p
+		[bs, qs] = String.split(id, "-")
+		[ba, qa] = [c[bs], c[qs]]
+
+		case valid_values?([bs, qs, ba, qa], [bv, lp, cb, ca]) do
+			true ->
+				valid_pair = %Pair{
+					base_symbol: bs,
+					quote_symbol: qs,
+					base_address: ba,
+					quote_address: qa,
+					market_data: %PairMarketData{
+						exchange: :ddex,
+						last_price: parse_float(lp),
+						current_bid: parse_float(cb),
+						current_ask: parse_float(ca),
+						base_volume: parse_float(bv),
+					}
+				}
+				Market.update(valid_pair)
+			false ->
+				nil
+		end
+	end
+
 	def initial_exchange_market(c) do
 		fetch_market()
 		|> assemble_exchange_market(c)
 	end
 
-	defp assemble_exchange_market(market, c) do
+	defp assemble_exchange_market(market, currencies) do
 		complete_market =
-			Enum.map(market, fn p ->
-				[bs, qs] = String.split(p["marketId"], "-")
-				%Pair{
-					base_symbol: bs,
-					quote_symbol: qs,
-					base_address: c[bs],
-					quote_address: c[qs],
-					market_data: %PairMarketData{
-						exchange: :ddex,
-						last_price: p["price"],
-						current_bid: p["bid"],
-						current_ask: p["ask"],
-						base_volume: p["volume"],
-					}
-				}
+			Enum.reduce(market, [], fn (p, acc) ->
+				%{
+					"price" => lp,
+					"bid" => cb,
+					"ask" => ca,
+					"volume" => bv,
+					"marketId" => id,
+				} = p
+				[bs, qs] = String.split(id, "-")
+				[ba, qa] = [currencies[bs], currencies[qs]]
+
+				case valid_values?([bs, qs, ba, qa], [bv, lp, cb, ca]) do
+					true ->
+						valid_pair = %Pair{
+							base_symbol: bs,
+							quote_symbol: qs,
+							base_address: ba,
+							quote_address: qa,
+							market_data: %PairMarketData{
+								exchange: :ddex,
+								last_price: parse_float(lp),
+								current_bid: parse_float(cb),
+								current_ask: parse_float(ca),
+								base_volume: parse_float(bv),
+							}
+						}
+						[valid_pair | acc]
+					false ->
+						acc
+				end
 			end)
 
 		%ExchangeMarket{
@@ -92,7 +124,7 @@ defmodule MarketFetching.DdexFetcher do
 
 
 	def fetch_market() do
-		case fetch_and_decode(@market_endpoint) do
+		case fetch_and_decode("#{@api_base_url}/#{@market_endpoint}") do
 			{:ok, %{"tickers" => data}} ->
 				data
 			{:error, _message} ->
@@ -101,15 +133,15 @@ defmodule MarketFetching.DdexFetcher do
 	end
 
 	def fetch_currencies() do
-		case fetch_and_decode(@currencies_endpoint) do
+		case fetch_and_decode("#{@api_base_url}/#{@currencies_endpoint}") do
 			{:ok, %{"markets" => currencies}} ->
 				Enum.reduce(currencies, %{}, fn (c, acc) ->
 					acc
 					|> Map.put(c["baseToken"], c["baseTokenAddress"])
 					|> Map.put(c["quoteToken"], c["quoteTokenAddress"])
 				end)
-			{:error, _message} ->
-				nil
+			{:error, message} ->
+				{:error, message}
 		end
 	end
 end
