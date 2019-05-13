@@ -68,6 +68,11 @@ defmodule MarketFetching.Util do
 		Parses a float from a given value.
 	"""
 	def parse_float(float_string) do
-		elem(Float.parse(float_string, 0))
+		case valid_float?(float_string) do
+			true ->
+				{:ok, elem(Float.parse(float_string, 0))}
+			false ->
+				{:error, "Couldn't parse a valid float from #{float_string}"}
+		end
 	end
 end

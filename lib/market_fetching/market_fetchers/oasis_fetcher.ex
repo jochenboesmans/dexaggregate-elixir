@@ -3,13 +3,24 @@ defmodule MarketFetching.OasisFetcher do
 		Fetches the Oasis market and updates the global Market accordingly.
 	"""
 
-	# Makes sure private functions are testable.
-	@compile if Mix.env == :test, do: :export_all
-
 	use Task, restart: :permanent
+
+  import MarketFetching.Util
+
 	alias MarketFetching.Pair, as: Pair
 	alias MarketFetching.ExchangeMarket, as: ExchangeMarket
 	alias MarketFetching.PairMarketData, as: PairMarketData
+
+  @market_endpoint "http://api.oasisdex.com/v1/markets"
+  @currencies %{
+    "MKR" => "0x9f8f72aa9304c8b593d555f12ef6589cc3a579a2",
+    "ETH" => "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+    "DAI" => "0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359",
+  }
+  @pairs [["MKR", "ETH"], ["MKR", "DAI"], ["ETH", "DAI"]]
+
+  # Makes sure private functions are testable.
+  @compile if Mix.env == :test, do: :export_all
 
 	def start_link(_arg) do
 		Task.start_link(__MODULE__, :poll, [])
@@ -54,59 +65,33 @@ defmodule MarketFetching.OasisFetcher do
 		}
 	end
 
-	defp currencies() do
-		%{
-			"MKR" => "0x9f8f72aa9304c8b593d555f12ef6589cc3a579a2",
-			"ETH" => "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
-			"DAI" => "0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359",
-		}
-	end
 
-	defp pairs() do
-		[["MKR", "ETH"], ["MKR", "DAI"], ["ETH", "DAI"]]
-	end
 
 	def fetch_market() do
-		Enum.reduce(pairs(), [], fn ([base, quote], acc) ->
-			case fetch_and_decode("http://api.oasisdex.com/v1/markets/#{base}/#{quote}") do
-				{:error, _message} ->
-					acc
-				{:ok, decoded_pair} ->
-					[decoded_pair | acc]
+		Enum.reduce(pairs(), [], fn ([bs, qs], acc) ->
+			case fetch_and_decode("#{@market_endpoint}/#{bs}/#{qs}") do
+        {:ok, pair} ->
+          [pair | acc]
+        {:error, _message} ->
+          acc
 			end
 		end)
 	end
 
-	defp decode(%HTTPoison.Response{body: body}) do
-		case Poison.decode(body) do
-			{:ok, %{"data" => decoded_data}} ->
-				{:ok, decoded_data}
-			{:error, message} ->
-				{:error, message}
-		end
-	end
-
-	defp fetch_and_decode(url) do
-		case HTTPoison.get(url) do
-			{:ok, response} ->
-				decode(response)
-			{:error, message} ->
-				{:error, message}
-		end
-	end
-
 	defp transform_rate(rate) do
 		cond do
-			is_float(rate) || is_integer(rate) -> rate
+			is_number -> rate
 			is_binary(rate) -> try_parse_float(rate)
 			true -> 0
 		end
 	end
 
-	defp try_parse_float(rate) do
-		case Float.parse(rate) do
-			:error -> 0
-			{float_rate, _string} -> float_rate
-		end
-	end
+  defp try_parse_float(rate) do
+    case parse_float(rate) do
+      {:ok, valid_float} ->
+        valid_float
+      {:error, _message} ->
+        nil
+    end
+  end
 end
