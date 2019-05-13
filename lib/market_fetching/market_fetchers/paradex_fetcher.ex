@@ -74,7 +74,6 @@ defmodule MarketFetching.ParadexFetcher do
 								current_bid: cb,
 								current_ask: ca,
 								base_volume: bv,
-								quote_volume: 0,
 							}
 						}
 						[market_pair | acc]

@@ -50,7 +50,6 @@ defmodule MarketFetching.IdexFetcher do
             current_bid: parse_float(p["highestBid"]),
             current_ask: parse_float(p["lowestAsk"]),
             base_volume: parse_float(p["baseVolume"]),
-            quote_volume: parse_float(p["quoteVolume"])
           }
         }
       end)
@@ -97,7 +96,6 @@ defmodule MarketFetching.IdexFetcher do
         p["highestBid"],
         p["lowestAsk"],
         p["baseVolume"],
-        p["quoteVolume"]
       ]
       Enum.all?(values_to_check, fn v -> valid_float?(Float.parse(v)) end)
     end)

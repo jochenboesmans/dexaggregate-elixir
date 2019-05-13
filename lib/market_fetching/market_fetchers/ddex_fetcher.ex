@@ -11,30 +11,31 @@ defmodule MarketFetching.DdexFetcher do
 	alias MarketFetching.ExchangeMarket, as: ExchangeMarket
 	alias MarketFetching.PairMarketData, as: PairMarketData
 
-	@market_endpoint "https://api.ddex.io/v3/markets/tickers"
-	@currencies_endpoint "https://api.ddex.io/v3/markets"
-	@ws_endpoint "wss://ws.ddex.io/v3"
+	@api_base_url "https://api.ddex.io/v3"
+	@market_endpoint "markets/tickers"
+	@currencies_endpoint "markets"
+	@ws_url "wss://ws.ddex.io/v3"
 
 	# Makes sure private functions are testable.
 	@compile if Mix.env == :test, do: :export_all
 
 	def start_link(_arg) do
-		Market.update(initial_exchange_market())
-		{:ok, pid} = WebSockex.start_link(@ws_endpoint, __MODULE__, :no_state)
+		c = fetch_currencies()
+		Market.update(initial_exchange_market(c))
+		{:ok, pid} = WebSockex.start_link(@ws_url, __MODULE__, %{currencies: c})
 		sub_message = %{
 			type: "subscribe",
 			channels: [%{
 				name: "ticker",
-				marketIds: currencies()
+				marketIds: c
 			}]
 		}
 		{:ok, e} = Poison.encode(sub_message)
 		WebSockex.send_frame(pid, {:text, e})
 	end
 
-	def handle_frame({:text, message}, state) do
+	def handle_frame({:text, message},  %{currencies: c} = state) do
 		{:ok, p} = Poison.decode(message)
-		c = fetch_currencies()
 		[bs, qs] = String.split(p["marketId"], "-")
 		pair = %Pair{
 			base_symbol: bs,
@@ -58,14 +59,12 @@ defmodule MarketFetching.DdexFetcher do
 		{:reply, frame, state}
 	end
 
-	def initial_exchange_market() do
+	def initial_exchange_market(c) do
 		fetch_market()
-		|> assemble_exchange_market()
+		|> assemble_exchange_market(c)
 	end
 
-	defp assemble_exchange_market(market) do
-		c = fetch_currencies()
-
+	defp assemble_exchange_market(market, c) do
 		complete_market =
 			Enum.map(market, fn p ->
 				[bs, qs] = String.split(p["marketId"], "-")
@@ -80,7 +79,6 @@ defmodule MarketFetching.DdexFetcher do
 						current_bid: p["bid"],
 						current_ask: p["ask"],
 						base_volume: p["volume"],
-						quote_volume: 0,
 					}
 				}
 			end)

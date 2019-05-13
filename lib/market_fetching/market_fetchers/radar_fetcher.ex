@@ -46,7 +46,6 @@ defmodule MarketFetching.RadarFetcher do
 						current_bid: parse_float(p["ticker"]["bestBid"]),
 						current_ask: parse_float(p["ticker"]["bestAsk"]),
 						base_volume: parse_float(p["stats"]["volume24Hour"]),
-						quote_volume: 0,
 					}
 				}
 			end)

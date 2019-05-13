@@ -72,7 +72,6 @@ defmodule MarketFetching.TokenstoreFetcher do
 									current_bid: p["bid"],
 									current_ask: p["ask"],
 									base_volume: p["baseVolume"],
-									quote_volume: p["quoteVolume"],
 								}
 							}
 						[market_pair | acc]

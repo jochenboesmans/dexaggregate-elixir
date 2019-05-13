@@ -48,20 +48,21 @@ defmodule MarketFetching.UniswapFetcher do
 	end
 
 	defp assemble_exchange_market(market) do
+    c = @currencies
+
 		complete_market =
 			Enum.map(market, fn {t, v} ->
 				%Pair{
 					base_symbol: "ETH",
 					quote_symbol: t,
 					base_address: eth_address(),
-					quote_address: @currencies[t],
+					quote_address: c[t],
 					market_data: %PairMarketData{
 						exchange: :uniswap,
 						last_price: transform_rate(v["lastTradePrice"]),
 						current_bid: transform_rate(v["price"]),
 						current_ask: transform_rate(v["price"]),
-						base_volume: transform_volume(v["tradeVolume"]),
-						quote_volume: transform_volume(v["tradeVolume"]) * v["weightedAvgPrice"],
+						base_volume: transform_volume(v["tradeVolume"])
 					}
 				}
 			end)

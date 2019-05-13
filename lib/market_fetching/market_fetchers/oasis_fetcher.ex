@@ -54,7 +54,6 @@ defmodule MarketFetching.OasisFetcher do
 						current_bid: transform_rate(p["bid"]),
 						current_ask: transform_rate(p["ask"]),
 						base_volume: transform_rate(p["vol"]),
-						quote_volume: 0,
 					}
 				}
 			end)

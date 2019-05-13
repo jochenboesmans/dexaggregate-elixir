@@ -47,7 +47,6 @@ defmodule MarketFetching.KyberFetcher do
             current_bid: p["current_bid"],
             current_ask: p["current_ask"],
             base_volume: p["eth_24h_volume"],
-            quote_volume: p["token_24h_volume"],
           }
         }
       end)
