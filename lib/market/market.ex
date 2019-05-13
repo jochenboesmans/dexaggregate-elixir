@@ -12,14 +12,13 @@ defmodule Market do
     case atom do
       :market ->
         GenServer.call(__MODULE__, :get_market)
-      {:rebased_market, token_address} ->
-        GenServer.call(__MODULE__, {:get_rebased_market, token_address})
+      {:rebased_market, args} ->
+        GenServer.call(__MODULE__, {:get_rebased_market, args})
       :exchanges ->
         GenServer.call(__MODULE__, :get_exchanges)
       _ ->
         nil
     end
-
   end
 
   def update(something) do
@@ -46,9 +45,33 @@ defmodule Market do
   end
 
   @impl true
-  def handle_call({:get_rebased_market, rebase_address}, _from, m) do
-    rm = Rebasing.rebase_market(rebase_address, m, 4)
-    {:reply, format_market(rm), m}
+  def handle_call({:get_rebased_market, %{rebase_address: ra, exchanges: e} = _args}, _from, m) do
+    reply =
+      Rebasing.rebase_market(ra, m, 4)
+      |> filter(e)
+      |> format_market
+
+    {:reply, reply, m}
+  end
+
+  defp filter(market, exchanges) do
+    Enum.reduce(market, %{}, fn ({k, p}, acc1) ->
+      filtered_pmd = Enum.reduce(p.market_data, %{}, fn({e, emd}, acc2) ->
+        case Enum.member?(exchanges, e) do
+          true ->
+            Map.put(acc2, e, emd)
+          false ->
+            acc2
+        end
+      end)
+
+      case filtered_pmd do
+        %{} ->
+          acc1
+        valid_pmd ->
+          Map.put(acc1, k, %{p | market_data: valid_pmd})
+      end
+    end)
   end
 
   @impl true

@@ -12,9 +12,10 @@ defmodule Graphql.Schema do
 			resolve &Content.get_market/3
 		end
 
-		@desc "Get the market rebased in the specified token."
+		@desc "Get the market rebased in the specified token, filtered by the specified exchanges."
 		field :rebased_market, list_of(:pair) do
 			arg :token_address, non_null(:string)
+			arg :exchanges, list_of(:string)
 			resolve &Content.get_rebased_market/3
 		end
 
