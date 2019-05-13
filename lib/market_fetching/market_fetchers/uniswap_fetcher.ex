@@ -3,10 +3,31 @@ defmodule MarketFetching.UniswapFetcher do
 		Fetches the Uniswap market and updates the global Market accordingly.
 	"""
 	use Task, restart: :permanent
-	alias MarketFetching.Util, as: Util
+
+	import MarketFetching.Util
+
 	alias MarketFetching.Pair, as: Pair
 	alias MarketFetching.ExchangeMarket, as: ExchangeMarket
 	alias MarketFetching.PairMarketData, as: PairMarketData
+
+	@base_api_url "https://uniswap-analytics.appspot.com/api/v1"
+	@market_endpoint "ticker"
+
+	@currencies %{
+		"BAT" => "0x0d8775f648430679a709e98d2b0cb6250d2887ef",
+		"DAI" => "0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359",
+		"MKR" => "0x9f8f72aa9304c8b593d555f12ef6589cc3a579a2",
+		"SPANK" => "0x42d6622dece394b54999fbd73d108123806f6a18",
+		"ZRX" => "0xe41d2489571d322189246dafa5ebde1f4699f498",
+	}
+
+	@exchange_addresses %{
+		"BAT" => "0x2E642b8D59B45a1D8c5aEf716A84FF44ea665914",
+		"DAI" => "0x09cabEC1eAd1c0Ba254B09efb3EE13841712bE14",
+		"MKR" => "0x2C4Bd064b998838076fa341A83d007FC2FA50957",
+		"SPANK" => "0x4e395304655F0796bc3bc63709DB72173b9DdF98",
+		"ZRX" => "0xaE76c84C9262Cdb9abc0C2c8888e62Db8E22A0bF",
+	}
 
 	# Makes sure private functions are testable.
 	@compile if Mix.env == :test, do: :export_all
@@ -26,33 +47,14 @@ defmodule MarketFetching.UniswapFetcher do
 		|> assemble_exchange_market()
 	end
 
-	@currencies %{
-		"BAT" => "0x0d8775f648430679a709e98d2b0cb6250d2887ef",
-		"DAI" => "0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359",
-		"MKR" => "0x9f8f72aa9304c8b593d555f12ef6589cc3a579a2",
-		"SPANK" => "0x42d6622dece394b54999fbd73d108123806f6a18",
-		"ZRX" => "0xe41d2489571d322189246dafa5ebde1f4699f498",
-	}
-
-	@exchange_addresses %{
-		"BAT" => "0x2E642b8D59B45a1D8c5aEf716A84FF44ea665914",
-		"DAI" => "0x09cabEC1eAd1c0Ba254B09efb3EE13841712bE14",
-		"MKR" => "0x2C4Bd064b998838076fa341A83d007FC2FA50957",
-		"SPANK" => "0x4e395304655F0796bc3bc63709DB72173b9DdF98",
-		"ZRX" => "0xaE76c84C9262Cdb9abc0C2c8888e62Db8E22A0bF",
-	}
-
 	defp assemble_exchange_market(market) do
-		c = @currencies
-		eth_address = Util.eth_address()
-
 		complete_market =
 			Enum.map(market, fn {t, v} ->
 				%Pair{
 					base_symbol: "ETH",
 					quote_symbol: t,
-					base_address: eth_address,
-					quote_address: c[t],
+					base_address: eth_address(),
+					quote_address: @currencies[t],
 					market_data: %PairMarketData{
 						exchange: :uniswap,
 						last_price: transform_rate(v["lastTradePrice"]),
@@ -72,44 +74,25 @@ defmodule MarketFetching.UniswapFetcher do
 
 	def fetch_market() do
 		Enum.map(@exchange_addresses, fn {t, ea} ->
-			{t, fetch_and_decode("https://uniswap-analytics.appspot.com/api/v1/ticker?exchangeAddress=#{ea}")}
+			{t, fetch_and_decode("#{@base_api_url}/#{@market_endpoint}?exchangeAddress=#{ea}")}
 		end)
 	end
 
-	defp fetch_and_decode(url) do
-		%HTTPoison.Response{body: received_body} = HTTPoison.get!(url)
-
-		case Poison.decode(received_body) do
-			{:ok, decoded_body} ->
-				decoded_body
-			{:error, _message} ->
-				nil
-		end
-	end
-
 	defp transform_rate(rate) do
-		case Float.parse(rate) do
-      {useful_rate, ""} ->
-        :math.pow(useful_rate, -1)
-      {0.0, ""} ->
-        0
-      {0, ""} ->
-        0
-      _something_else ->
+		case valid_float?(rate) do
+      true ->
+        :math.pow(rate, -1)
+      false ->
         0
 		end
 	end
 
 	defp transform_volume(vol) do
-		case Float.parse(vol) do
-      {useful_volume, ""} ->
-        :math.pow(useful_volume, -18)
-			{0.0, ""} ->
+		case valid_float?(vol) do
+			true ->
+				:math.pow(vol, -18)
+			false ->
 				0
-			{0, ""} ->
-        0
-      _something_else ->
-        0
 		end
 	end
 end
