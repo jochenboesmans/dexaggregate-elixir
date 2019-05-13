@@ -18,8 +18,8 @@ defmodule MarketFetching.Util do
 	@doc """
 		Issues a get request to the specified url and returns the JSON-decoded response.
 	"""
-	def fetch_and_decode(url) do
-		case HTTPoison.get(url) do
+	def fetch_and_decode(url, args \\ []) do
+		case HTTPoison.get(url, args) do
 			{:ok, response} ->
 				decode(response)
 			{:error, message} ->

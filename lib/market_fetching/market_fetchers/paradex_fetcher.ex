@@ -3,9 +3,18 @@ defmodule MarketFetching.ParadexFetcher do
 		Fetches the Paradex market and updates the global Market accordingly.
 	"""
 	use Task, restart: :permanent
+
+  import MarketFetching.Util
+
 	alias MarketFetching.Pair, as: Pair
 	alias MarketFetching.ExchangeMarket, as: ExchangeMarket
 	alias MarketFetching.PairMarketData, as: PairMarketData
+
+  @base_api_url "https://api.paradex.io/api/v1"
+  @currencies_endpoint "/tokens"
+  @market_endpoint "/markets"
+  @ohlcv_endpoint "/ohlcv"
+  @ticker_endpoint "/ticker"
 
 	# Makes sure private functions are testable.
 	@compile if Mix.env == :test, do: :export_all
@@ -112,28 +121,13 @@ defmodule MarketFetching.ParadexFetcher do
 		|> Enum.reduce(%{}, fn (c, acc) -> Map.put(acc, c["symbol"], c["address"]) end)
 	end
 
-	defp fetch_currencies() do fetch_and_decode("https://api.paradex.io/api/v1/tokens") end
-	defp fetch_market() do fetch_and_decode("https://api.paradex.io/api/v1/markets") end
+	defp fetch_currencies() do fetch_and_decode_with_api_key("#{@base_api_url}/#{@currencies_endpoint}") end
+	defp fetch_market() do fetch_and_decode_with_api_key("#{@base_api_url}/#{@market_endpoint}") end
+	defp fetch_ohlcv(symbol) do fetch_and_decode_with_api_key("#{@base_api_url}/#{@ohlcv_endpoint}?market=#{symbol}&period=1d&amount=1") end
+	defp fetch_ticker(symbol) do fetch_and_decode_with_api_key("#{@base_api_url}/#{@ticker_endpoint}?market=#{symbol}") end
 
-	defp fetch_ohlcv(symbol) do fetch_and_decode("https://api.paradex.io/api/v1/ohlcv?market=#{symbol}&period=1d&amount=1") end
-	defp fetch_ticker(symbol) do fetch_and_decode("https://api.paradex.io/api/v1/ticker?market=#{symbol}") end
-
-	defp fetch_and_decode(url) do
-		case HTTPoison.get(url, [{"API-KEY", api_key()}]) do
-			{:ok, response} ->
-				decode(response)
-			{:error, message} ->
-				message
-		end
-	end
-
-	defp decode(%HTTPoison.Response{body: body}) do
-		case Poison.decode(body) do
-			{:ok, decoded_data} ->
-				decoded_data
-			{:error, _message} ->
-				nil
-		end
+	defp fetch_and_decode_with_api_key(url) do
+		fetch_and_decode(url, [{"API-KEY", api_key()}]) do
 	end
 
 	defp api_key() do
