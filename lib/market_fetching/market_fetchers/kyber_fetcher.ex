@@ -3,9 +3,15 @@ defmodule MarketFetching.KyberFetcher do
     Fetches the Kyber market and updates the global Market accordingly.
   """
   use Task, restart: :permanent
+
+  import MarketFetching.Util
+
   alias MarketFetching.Pair, as: Pair
   alias MarketFetching.ExchangeMarket, as: ExchangeMarket
   alias MarketFetching.PairMarketData, as: PairMarketData
+
+  @market_endpoint "https://api.kyber.network/market"
+  @currencies_endpoint "https://api.kyber.network/currencies"
 
   # Makes sure private functions are testable.
   @compile if Mix.env == :test, do: :export_all
@@ -58,19 +64,18 @@ defmodule MarketFetching.KyberFetcher do
   end
 
   defp fetch_currencies() do
-    fetch_and_decode("https://api.kyber.network/currencies")
+    case fetch_and_decode(@currencies_endpoint) do
+      {:ok, currencies} ->
+        currencies
+      {:error, _message} ->
+        nil
+    end
   end
 
   defp fetch_market() do
-    fetch_and_decode("https://api.kyber.network/market")
-  end
-
-  defp fetch_and_decode(url) do
-    %HTTPoison.Response{body: received_body} = HTTPoison.get!(url)
-
-    case Poison.decode(received_body) do
-      {:ok, %{"data" => decoded_market}} ->
-        decoded_market
+    case fetch_and_decode(@market_endpoint) do
+      {:ok, market} ->
+        market
       {:error, _message} ->
         nil
     end
