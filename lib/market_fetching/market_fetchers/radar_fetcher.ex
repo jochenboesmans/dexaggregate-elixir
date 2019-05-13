@@ -3,9 +3,15 @@ defmodule MarketFetching.RadarFetcher do
 		Fetches the Radar Relay market and updates the global Market accordingly.
 	"""
 	use Task, restart: :permanent
+
+	import MarketFetching.Util
+
 	alias MarketFetching.Pair, as: Pair
 	alias MarketFetching.ExchangeMarket, as: ExchangeMarket
 	alias MarketFetching.PairMarketData, as: PairMarketData
+
+	@base_api_url "https://api.radarrelay.com/v2"
+	@market_endpoint "markets"
 
 	# Makes sure private functions are testable.
 	@compile if Mix.env == :test, do: :export_all
@@ -21,25 +27,25 @@ defmodule MarketFetching.RadarFetcher do
 	end
 
 	def exchange_market() do
-		fetch_market()
+		fetch_and_decode("#{@base_api_url}/#{@market_endpoint}?include=base,ticker,stats")
 		|> assemble_exchange_market()
 	end
 
 	defp assemble_exchange_market(market) do
 		complete_market =
 			Enum.map(market, fn p ->
-				[q, b] = String.split(p["id"], "-")
+				[qs, bs] = String.split(p["id"], "-")
 				%Pair{
-					base_symbol: b,
-					quote_symbol: q,
+					base_symbol: bs,
+					quote_symbol: qs,
 					base_address: p["quoteTokenAddress"],
 					quote_address: p["baseTokenAddress"],
 					market_data: %PairMarketData{
 						exchange: :radar,
-						last_price: elem(Float.parse(p["ticker"]["price"]), 0),
-						current_bid: elem(Float.parse(p["ticker"]["bestBid"]), 0),
-						current_ask: elem(Float.parse(p["ticker"]["bestAsk"]), 0),
-						base_volume: elem(Float.parse(p["stats"]["volume24Hour"]), 0),
+						last_price: parse_float(p["ticker"]["price"]),
+						current_bid: parse_float(p["ticker"]["bestBid"]),
+						current_ask: parse_float(p["ticker"]["bestAsk"]),
+						base_volume: parse_float(p["stats"]["volume24Hour"]),
 						quote_volume: 0,
 					}
 				}
@@ -49,20 +55,5 @@ defmodule MarketFetching.RadarFetcher do
 			exchange: :radar,
 			market: complete_market
 		}
-	end
-
-	defp fetch_market() do
-		fetch_and_decode("https://api.radarrelay.com/v2/markets?include=base,ticker,stats")
-	end
-
-	defp fetch_and_decode(url) do
-		%HTTPoison.Response{body: received_body} = HTTPoison.get!(url)
-
-		case Poison.decode(received_body) do
-			{:ok, decoded_market} ->
-				decoded_market
-			{:error, _message} ->
-				nil
-		end
 	end
 end
