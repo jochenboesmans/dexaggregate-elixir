@@ -27,6 +27,17 @@ defmodule MarketFetching.Util do
 		end
 	end
 
+	@doc """
+		Issues an empty post request to the specified url and returns the JSON-decoded response.
+	"""
+	def post_and_decode(url) do
+		case HTTPoison.post(url, Poison.encode!(%{})) do
+			{:ok, response} ->
+				decode(response)
+			{:error, message} ->
+				{:error, message}
+		end
+	end
 
 	@doc """
 		Returns the JSON-decoded version of the body of a given HTTPoison response.
@@ -38,5 +49,25 @@ defmodule MarketFetching.Util do
 			{:error, message}
 				{:error, message}
 		end
+	end
+
+	@doc """
+		Tries to parse a float from a given value. Returns true only when the value can be purely parsed to a useful float.
+	"""
+	def valid_float?(float_string) do
+		case Float.parse(float_string) do
+			:error -> false
+			{0.0, ""} -> false
+		 	{0, ""} -> false
+			{_valid, ""} -> true
+			_contains_non_numbers -> false
+		end
+	end
+
+	@doc """
+		Parses a float from a given value.
+	"""
+	def parse_float(float_string) do
+		elem(Float.parse(float_string, 0))
 	end
 end

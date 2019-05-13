@@ -5,9 +5,14 @@ defmodule MarketFetching.IdexFetcher do
 
   use Task, restart: :permanent
 
+  import MarketFetching.Util
+
   alias MarketFetching.Pair, as: Pair
   alias MarketFetching.ExchangeMarket, as: ExchangeMarket
   alias MarketFetching.PairMarketData, as: PairMarketData
+
+  @market_endpoint "https://api.idex.market/returnTicker"
+  @currencies_endpoint "https://api.idex.market/returnCurrencies"
 
   # Makes sure private functions are testable.
   @compile if Mix.env == :test, do: :export_all
@@ -41,11 +46,11 @@ defmodule MarketFetching.IdexFetcher do
           quote_address: c[quote_symbol],
           market_data: %PairMarketData{
             exchange: :idex,
-            last_price: elem(Float.parse(p["last"]), 0),
-            current_bid: elem(Float.parse(p["highestBid"]), 0),
-            current_ask: elem(Float.parse(p["lowestAsk"]), 0),
-            base_volume: elem(Float.parse(p["baseVolume"]), 0),
-            quote_volume: elem(Float.parse(p["quoteVolume"]), 0)
+            last_price: parse_float(p["last"]),
+            current_bid: parse_float(p["highestBid"]),
+            current_ask: parse_float(p["lowestAsk"]),
+            base_volume: parse_float(p["baseVolume"]),
+            quote_volume: parse_float(p["quoteVolume"])
           }
         }
       end)
@@ -56,42 +61,33 @@ defmodule MarketFetching.IdexFetcher do
     }
   end
 
-  defp transform_currencies(currencies) do
-    Enum.reduce(currencies, %{}, fn {k, c}, acc ->
-      Map.put(acc, k, c["address"])
-    end)
-  end
-
   defp currencies() do
     fetch_currencies()
-    |> transform_currencies()
+    |> format_currencies()
   end
 
-  defp fetch_currencies() do
-    fetch_and_decode("https://api.idex.market/returnCurrencies")
-  end
-
-  defp fetch_market() do
-    fetch_and_decode("https://api.idex.market/returnTicker")
-  end
-
-  defp fetch_and_decode(url) do
-    %HTTPoison.Response{body: received_body} = HTTPoison.post!(url, Poison.encode!(%{}))
-
-    case Poison.decode(received_body) do
-      {:ok, data} ->
-        data
+  def fetch_market() do
+    case post_and_decode(@market_endpoint) do
+      {:ok, market} ->
+        market
       {:error, _message} ->
         nil
     end
   end
 
-  defp valid_float?(float) do
-    case float do
-      :error -> false
-      {0.0, ""} -> false
-      {_valid_value, ""} -> true
+  def fetch_currencies() do
+    case post_and_decode(@currencies_endpoint) do
+      {:ok, currencies} ->
+        currencies
+      {:error, _message} ->
+        nil
     end
+  end
+
+  defp format_currencies(currencies) do
+    Enum.reduce(currencies, %{}, fn {k, c}, acc ->
+      Map.put(acc, k, c["address"])
+    end)
   end
 
   defp filter_valid_pairs(market) do

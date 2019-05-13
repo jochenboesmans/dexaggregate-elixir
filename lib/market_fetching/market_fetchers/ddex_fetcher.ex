@@ -5,10 +5,11 @@ defmodule MarketFetching.DdexFetcher do
 
 	use WebSockex
 
+	import MarketFetching.Util
+
 	alias MarketFetching.Pair, as: Pair
 	alias MarketFetching.ExchangeMarket, as: ExchangeMarket
 	alias MarketFetching.PairMarketData, as: PairMarketData
-	import MarketFetching.Util
 
 	@market_endpoint "https://api.ddex.io/v3/markets/tickers"
 	@currencies_endpoint "https://api.ddex.io/v3/markets"
@@ -33,7 +34,7 @@ defmodule MarketFetching.DdexFetcher do
 
 	def handle_frame({:text, message}, state) do
 		{:ok, p} = Poison.decode(message)
-		c = currencies()
+		c = fetch_currencies()
 		[bs, qs] = String.split(p["marketId"], "-")
 		pair = %Pair{
 			base_symbol: bs,
@@ -63,7 +64,7 @@ defmodule MarketFetching.DdexFetcher do
 	end
 
 	defp assemble_exchange_market(market) do
-		c = currencies()
+		c = fetch_currencies()
 
 		complete_market =
 			Enum.map(market, fn p ->
@@ -101,7 +102,7 @@ defmodule MarketFetching.DdexFetcher do
 		end
 	end
 
-	def currencies() do
+	def fetch_currencies() do
 		case fetch_and_decode(@currencies_endpoint) do
 			{:ok, %{"markets" => currencies}} ->
 				Enum.reduce(currencies, %{}, fn (c, acc) ->
