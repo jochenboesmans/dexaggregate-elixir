@@ -14,6 +14,9 @@ defmodule MarketFetching.DdexFetcher do
 	@currencies_endpoint "https://api.ddex.io/v3/markets"
 	@ws_endpoint "wss://ws.ddex.io/v3"
 
+	# Makes sure private functions are testable.
+	@compile if Mix.env == :test, do: :export_all
+
 	def start_link(_arg) do
 		Market.update(initial_exchange_market())
 		{:ok, pid} = WebSockex.start_link(@ws_endpoint, __MODULE__, :no_state)

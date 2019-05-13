@@ -2,7 +2,9 @@ defmodule MarketFetching.IdexFetcher do
   @moduledoc """
     Fetches the Idex market and updates the global Market accordingly.
   """
+
   use Task, restart: :permanent
+
   alias MarketFetching.Pair, as: Pair
   alias MarketFetching.ExchangeMarket, as: ExchangeMarket
   alias MarketFetching.PairMarketData, as: PairMarketData
