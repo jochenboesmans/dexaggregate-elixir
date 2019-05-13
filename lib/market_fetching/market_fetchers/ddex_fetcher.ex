@@ -1,16 +1,19 @@
 defmodule MarketFetching.DdexFetcher do
-
-	use WebSockex
-
-
 	@moduledoc """
 		Fetches the Ddex market and updates the global Market accordingly.
 	"""
+
+	use WebSockex
+
 	alias MarketFetching.Pair, as: Pair
 	alias MarketFetching.ExchangeMarket, as: ExchangeMarket
 	alias MarketFetching.PairMarketData, as: PairMarketData
+	import MarketFetching.Util
 
+	@market_endpoint "https://api.ddex.io/v3/markets/tickers"
+	@currencies_endpoint "https://api.ddex.io/v3/markets"
 	@ws_endpoint "wss://ws.ddex.io/v3"
+
 	def start_link(_arg) do
 		Market.update(initial_exchange_market())
 		{:ok, pid} = WebSockex.start_link(@ws_endpoint, __MODULE__, :no_state)
@@ -84,8 +87,7 @@ defmodule MarketFetching.DdexFetcher do
 		}
 	end
 
-	@market_endpoint "https://api.ddex.io/v3/markets/tickers"
-	@currencies_endpoint "https://api.ddex.io/v3/markets"
+
 
 	def fetch_market() do
 		case fetch_and_decode(@market_endpoint) do
@@ -106,24 +108,6 @@ defmodule MarketFetching.DdexFetcher do
 				end)
 			{:error, _message} ->
 				nil
-		end
-	end
-
-	def fetch_and_decode(url) do
-		case HTTPoison.get(url) do
-			{:ok, response} ->
-				decode(response)
-			{:error, message} ->
-				{:error, message}
-		end
-	end
-
-	defp decode(%HTTPoison.Response{body: body}) do
-		case Poison.decode(body) do
-			{:ok, %{"data" => decoded_data}} ->
-				{:ok, decoded_data}
-			{:error, message} ->
-				{:error, message}
 		end
 	end
 end
