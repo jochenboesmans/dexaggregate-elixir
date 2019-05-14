@@ -6,9 +6,9 @@ defmodule MarketFetching.KyberFetcher do
 
   import MarketFetching.Util
 
-  alias MarketFetching.Pair, as: Pair
-  alias MarketFetching.ExchangeMarket, as: ExchangeMarket
-  alias MarketFetching.PairMarketData, as: PairMarketData
+  alias MarketFetching.Pair
+  alias MarketFetching.ExchangeMarket
+  alias MarketFetching.PairMarketData
 
   @market_endpoint "https://api.kyber.network/market"
   @currencies_endpoint "https://api.kyber.network/currencies"

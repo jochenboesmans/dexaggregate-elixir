@@ -7,9 +7,9 @@ defmodule MarketFetching.DdexFetcher do
 
 	import MarketFetching.Util
 
-	alias MarketFetching.Pair, as: Pair
-	alias MarketFetching.ExchangeMarket, as: ExchangeMarket
-	alias MarketFetching.PairMarketData, as: PairMarketData
+	alias MarketFetching.Pair
+	alias MarketFetching.ExchangeMarket
+	alias MarketFetching.PairMarketData
 
 	@api_base_url "https://api.ddex.io/v3"
 	@market_endpoint "markets/tickers"

@@ -1,7 +1,11 @@
 defmodule API.Router do
-	@moduledoc false
+	@moduledoc """
+		A simple router for the application's API.
+	"""
 
 	use Plug.Router
+
+	@port 5000
 
 	plug Plug.Parsers,
 		parsers: [:urlencoded, :multipart, :json, Absinthe.Plug.Parser],
@@ -36,7 +40,7 @@ defmodule API.Router do
 	end
 
 	match _ do
-		send_resp(conn, 404, "Requested page not found.")
+		send_resp(conn, 404, "Requested page was not found.")
 	end
 
 	def child_spec(opts) do
@@ -47,6 +51,6 @@ defmodule API.Router do
 	end
 
 	def start_link(_arg) do
-		Plug.Cowboy.http(__MODULE__, [], port: 5000)
+		Plug.Cowboy.http(__MODULE__, [], port: @port)
 	end
 end

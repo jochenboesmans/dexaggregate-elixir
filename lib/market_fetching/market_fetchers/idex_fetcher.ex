@@ -7,9 +7,9 @@ defmodule MarketFetching.IdexFetcher do
 
   import MarketFetching.Util
 
-  alias MarketFetching.Pair, as: Pair
-  alias MarketFetching.ExchangeMarket, as: ExchangeMarket
-  alias MarketFetching.PairMarketData, as: PairMarketData
+  alias MarketFetching.Pair
+  alias MarketFetching.ExchangeMarket
+  alias MarketFetching.PairMarketData
 
   @market_endpoint "https://api.idex.market/returnTicker"
   @currencies_endpoint "https://api.idex.market/returnCurrencies"

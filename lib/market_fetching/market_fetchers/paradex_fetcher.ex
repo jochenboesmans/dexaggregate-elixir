@@ -6,9 +6,9 @@ defmodule MarketFetching.ParadexFetcher do
 
   import MarketFetching.Util
 
-	alias MarketFetching.Pair, as: Pair
-	alias MarketFetching.ExchangeMarket, as: ExchangeMarket
-	alias MarketFetching.PairMarketData, as: PairMarketData
+	alias MarketFetching.Pair
+	alias MarketFetching.ExchangeMarket
+	alias MarketFetching.PairMarketData
 
   @base_api_url "https://api.paradex.io/api/v1"
   @currencies_endpoint "/tokens"

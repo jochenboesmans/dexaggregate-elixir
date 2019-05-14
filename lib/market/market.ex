@@ -1,12 +1,14 @@
 defmodule Market do
   @moduledoc """
-    GenServer maintaining the global market.
+    Module maintaining the global market model.
   """
 
   use GenServer
-  alias MarketFetching.ExchangeMarket, as: ExchangeMarket
-  alias Market.Rebasing, as: Rebasing
+
   import Market.Util
+
+  alias MarketFetching.ExchangeMarket
+  alias Market.Rebasing
 
   def get(atom) do
     case atom do

@@ -6,9 +6,9 @@ defmodule MarketFetching.UniswapFetcher do
 
 	import MarketFetching.Util
 
-	alias MarketFetching.Pair, as: Pair
-	alias MarketFetching.ExchangeMarket, as: ExchangeMarket
-	alias MarketFetching.PairMarketData, as: PairMarketData
+	alias MarketFetching.Pair
+	alias MarketFetching.ExchangeMarket
+	alias MarketFetching.PairMarketData
 
 	@base_api_url "https://uniswap-analytics.appspot.com/api/v1"
 	@market_endpoint "ticker"
