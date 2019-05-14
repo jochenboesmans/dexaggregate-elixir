@@ -3,6 +3,8 @@ defmodule MarketFetching.Util do
 		Generic functions used for market fetching.
 	"""
 
+	alias MarketFetching.PairMarketData
+
 	@doc """
 		Returns an Ethereum address referring to Ether as if it were an Ethereum token.
 
@@ -121,5 +123,31 @@ defmodule MarketFetching.Util do
 	def valid_values?(expected_strings, expected_numbers) do
 		Enum.all?(expected_strings, fn s -> valid_string?(s) end)
 		&& Enum.all?(expected_numbers, fn n -> valid_float?(n) end)
+	end
+
+	@doc """
+		Formats given pair data to a well-formed PairMarketData structure.
+	"""
+	def get_valid_pair(expected_strings, expected_numbers, exchange) do
+		case valid_values?(expected_strings, expected_numbers) do
+			true ->
+				[bs, qs, ba, qa] = expected_strings
+				[lp, cb, ca, bv] = expected_numbers
+				%Pair{
+					base_symbol: bs,
+					quote_symbol: qs,
+					base_address: ba,
+					quote_address: qa,
+					market_data: %PairMarketData{
+						exchange: exchange,
+						last_price: parse_float(lp),
+						current_bid: parse_float(cb),
+						current_ask: parse_float(ca),
+						base_volume: parse_float(bv),
+					}
+				}
+			false ->
+				nil
+		end
 	end
 end

@@ -13,6 +13,8 @@ defmodule MarketFetching.UniswapFetcher do
 	@base_api_url "https://uniswap-analytics.appspot.com/api/v1"
 	@market_endpoint "ticker"
 
+	@poll_interval 10_000
+
 	@currencies %{
 		"BAT" => "0x0d8775f648430679a709e98d2b0cb6250d2887ef",
 		"DAI" => "0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359",
@@ -29,8 +31,6 @@ defmodule MarketFetching.UniswapFetcher do
 		"ZRX" => "0xaE76c84C9262Cdb9abc0C2c8888e62Db8E22A0bF",
 	}
 
-	@poll_interval 10_000
-
 	# Makes sure private functions are testable.
 	@compile if Mix.env == :test, do: :export_all
 
@@ -44,29 +44,26 @@ defmodule MarketFetching.UniswapFetcher do
 		|> Enum.each(fn x -> Market.update(x) end)
 	end
 
-	def exchange_market() do
-		fetch_market()
-		|> assemble_exchange_market()
-	end
-
-	defp assemble_exchange_market(market) do
+	defp exchange_market() do
     c = @currencies
 
 		complete_market =
-			Enum.map(market, fn {t, v} ->
-				%Pair{
-					base_symbol: "ETH",
-					quote_symbol: t,
-					base_address: eth_address(),
-					quote_address: c[t],
-					market_data: %PairMarketData{
-						exchange: :uniswap,
-						last_price: transform_rate(v["lastTradePrice"]),
-						current_bid: transform_rate(v["price"]),
-						current_ask: transform_rate(v["price"]),
-						base_volume: transform_volume(v["tradeVolume"])
-					}
-				}
+			Enum.reduce(@exchange_addresses, [], fn ({t, ea}, acc) ->
+				%{
+					"lastTradePrice" => lp,
+					"price" => cb = ca,
+					"tradeVolume" => bv
+				} = fetch_and_decode("#{@base_api_url}/#{@market_endpoint}?exchangeAddress=#{ea}")
+
+				[bs, qs] = ["ETH", t]
+				[ba, qa] = [eth_address(), c[t]]
+
+				case valid_values?([bs, qs, ba, qa], [lp, cb, ca, bv]) do
+					true ->
+						[market_pair([bs, qs, ba, qa], [lp, cb, ca, bv]) | acc]
+					false ->
+						acc
+				end
 			end)
 
 		%ExchangeMarket{
@@ -75,17 +72,19 @@ defmodule MarketFetching.UniswapFetcher do
 		}
 	end
 
-	def fetch_market() do
-		Enum.map(@exchange_addresses, fn {t, ea} ->
-			{t, fetch_and_decode("#{@base_api_url}/#{@market_endpoint}?exchangeAddress=#{ea}")}
-		end)
-	end
-
-	defp transform_rate(rate) do
-		:math.pow(parse_float(rate), -1)
-	end
-
-	defp transform_volume(vol) do
-		:math.pow(parse_float(vol), -18)
+	defp market_pair([bs, qs, ba, qa], [lp, cb, ca, bv]) do
+		%Pair{
+			base_symbol: bs,
+			quote_symbol: qs,
+			base_address: ba,
+			quote_address: qa,
+			market_data: %PairMarketData{
+				exchange: :uniswap,
+				last_price: :math.pow(parse_float(lp), -1),
+				current_bid: :math.pow(parse_float(cb), -1),
+				current_ask: :math.pow(parse_float(ca), -1),
+				base_volume: :math.pow(parse_float(bv), -18)
+			}
+		}
 	end
 end
