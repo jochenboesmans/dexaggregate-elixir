@@ -25,7 +25,7 @@ defmodule MarketFetching.RadarFetcher do
 	def poll() do
 		Stream.interval(@poll_interval)
 		|> Stream.map(fn _x -> exchange_market() end)
-		|> Enum.each(fn x -> Market.update(x) end)
+		|> Enum.each(fn x -> maybe_update(x) end)
 	end
 
 	def exchange_market() do

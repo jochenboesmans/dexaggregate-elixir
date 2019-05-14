@@ -16,6 +16,8 @@ defmodule MarketFetching.ParadexFetcher do
   @ohlcv_endpoint "/ohlcv"
   @ticker_endpoint "/ticker"
 
+	@poll_interval 10_000
+
 	# Makes sure private functions are testable.
 	@compile if Mix.env == :test, do: :export_all
 
@@ -24,61 +26,36 @@ defmodule MarketFetching.ParadexFetcher do
 	end
 
 	def poll() do
-		Stream.interval(10_000)
+		Stream.interval(@poll_interval)
 		|> Stream.map(fn _x -> exchange_market() end)
-		|> Enum.each(fn x -> Market.update(x) end)
+		|> Enum.each(fn x -> maybe_update(x) end)
 	end
 
-	defp exchange_market() do
-		fetch_market()
-		|> assemble_exchange_market()
-	end
-
-	defp assemble_exchange_market(market) do
+	def exchange_market() do
 		c = currencies()
 
 		complete_market =
-			Enum.reduce(market, [], fn (p, acc) ->
-				%{"baseToken" => bs,
-					"quoteToken" => qs,
-					"symbol" => market_symbol
-				} = p
-				bv =
-					case fetch_ohlcv(market_symbol) do
-						%{"error" => _} -> nil
-						[%{"volume" => vol}] -> vol
-					end
-				[lp, cb, ca] =
-					case fetch_ticker(market_symbol) do
-						%{"error" => _} -> [nil, nil, nil]
-						[%{"lastPrice" => last, "bestBid" => bid, "bestAsk" => ask}] -> [last, bid, ask]
-					end
-				%{^bs => ba, ^qs => qa} = c
+			case fetch_and_decode_with_api_key("#{@base_api_url}/#{@market_endpoint}") do
+				{:ok, market} ->
+					Enum.reduce(market, [], fn (p, acc) ->
+						%{"baseToken" => bs,
+							"quoteToken" => qs,
+							"symbol" => id
+						} = p
+						bv = ohlcv(id)
+						[lp, cb, ca] = ticker(id)
+						%{^bs => ba, ^qs => qa} = c
 
-				exp_strings = [bs, qs, ba, qa]
-				exp_numbers = [bv, lp, cb, ca] = [parse_float(bv), parse_float(lp), parse_float(cb), parse_float(ca)]
-
-				case Enum.all?(exp_strings, fn s -> valid_string?(s) end)
-					&& Enum.all?(exp_numbers, fn n -> valid_float?(n) end) do
-					false ->
-						acc
-					true ->
-						market_pair = %Pair{
-							base_symbol: bs,
-							quote_symbol: qs,
-							base_address: ba,
-							quote_address: qa,
-							market_data: %PairMarketData{
-								exchange: :paradex,
-								last_price: lp,
-								current_bid: cb,
-								current_ask: ca,
-								base_volume: bv,
-							}
-						}
-						[market_pair | acc]
-				end
-			end)
+						case valid_values?(strings: [bs, qs, ba, qa], numbers: [lp, cb, ca, bv]) do
+							true ->
+								[generic_market_pair([bs, qs, ba, qa, lp, cb, ca, bv], :paradex) | acc]
+							false ->
+								acc
+						end
+					end)
+				{:error, _message} ->
+					nil
+			end
 
 		%ExchangeMarket{
 			exchange: :paradex,
@@ -87,25 +64,31 @@ defmodule MarketFetching.ParadexFetcher do
 	end
 
 	defp currencies() do
-		fetch_currencies()
+		case fetch_and_decode_with_api_key("#{@base_api_url}/#{@currencies_endpoint}") do
+			{:ok, currencies} -> currencies
+			{:error, _message} -> nil
+		end
 		|> Enum.reduce(%{}, fn (c, acc) -> Map.put(acc, c["symbol"], c["address"]) end)
 	end
 
-	defp fetch_currencies() do fetch_and_decode_with_api_key("#{@base_api_url}/#{@currencies_endpoint}") end
-	defp fetch_market() do fetch_and_decode_with_api_key("#{@base_api_url}/#{@market_endpoint}") end
-	defp fetch_ohlcv(symbol) do fetch_and_decode_with_api_key("#{@base_api_url}/#{@ohlcv_endpoint}?market=#{symbol}&period=1d&amount=1") end
-	defp fetch_ticker(symbol) do fetch_and_decode_with_api_key("#{@base_api_url}/#{@ticker_endpoint}?market=#{symbol}") end
-
-	defp fetch_and_decode_with_api_key(url) do
-		fetch_and_decode(url, [{"API-KEY", api_key()}])
+	defp ohlcv(id) do
+		case fetch_and_decode_with_api_key("#{@base_api_url}/#{@ohlcv_endpoint}?market=#{id}&period=1d&amount=1") do
+			{:ok, %{"error" => _}} -> nil
+			{:ok, [%{"volume" => vol}]} -> vol
+			{:error, _message} -> nil
+		end
 	end
 
-	defp api_key() do
-		case Application.get_env(:dexaggregate_elixir, __MODULE__, :api_key) do
-			[api_key: key] ->
-				key
-			_ ->
-				nil
+	defp ticker(id) do
+		case fetch_and_decode_with_api_key("#{@base_api_url}/#{@ticker_endpoint}?market=#{id}") do
+			{:ok, %{"error" => _}} -> [nil, nil, nil]
+			{:ok, [%{"lastPrice" => last, "bestBid" => bid, "bestAsk" => ask}]} -> [last, bid, ask]
+			{:error, _message} -> [nil, nil, nil]
 		end
+	end
+
+	defp fetch_and_decode_with_api_key(url) do
+		[api_key: key] = Application.get_env(:dexaggregate_elixir, __MODULE__, :api_key)
+		fetch_and_decode(url, [{"API-KEY", key}])
 	end
 end

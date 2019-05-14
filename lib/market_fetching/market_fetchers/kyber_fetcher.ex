@@ -23,7 +23,7 @@ defmodule MarketFetching.KyberFetcher do
   def poll() do
     Stream.interval(10_000)
     |> Stream.map(fn _x -> exchange_market() end)
-    |> Enum.each(fn x -> Market.update(x) end)
+    |> Enum.each(fn x -> maybe_update(x) end)
   end
 
   def exchange_market() do
