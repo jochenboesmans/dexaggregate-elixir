@@ -5,6 +5,7 @@ defmodule MarketFetching.Util do
 
 	alias MarketFetching.PairMarketData
 	alias MarketFetching.Pair
+	alias MarketFetching.ExchangeMarket
 
 	@doc """
 		Returns an Ethereum address referring to Ether as if it were an Ethereum token.
@@ -20,11 +21,6 @@ defmodule MarketFetching.Util do
 
 	@doc """
 		Issues a get request to the specified url and returns the JSON-decoded response.
-
-	## Examples
-		iex> test_url = "https://my-json-server.typicode.com/typicode/demo/posts"
-		iex> MarketFetching.Util.fetch_and_decode(test_url)
-		{:ok, decoded_json} || {:error, message}
 	"""
 	def fetch_and_decode(url, args \\ []) do
 		case HTTPoison.get(url, args) do
@@ -37,11 +33,6 @@ defmodule MarketFetching.Util do
 
 	@doc """
 		Issues an empty post request to the specified url and returns the JSON-decoded response.
-
-	## Examples
-		iex> test_url = "https://my-json-server.typicode.com/typicode/demo/posts"
-		iex> MarketFetching.Util.post_and_decode(test_url)
-		{:ok, decoded_json} || {:error, message}
 	"""
 	def post_and_decode(url) do
 		case HTTPoison.post(url, Poison.encode!(%{})) do
@@ -68,7 +59,7 @@ defmodule MarketFetching.Util do
 		Tries to parse a float from a given value. Returns true only when the value can be purely parsed to a useful float.
 
 	## Examples
-		iex> valid_float?("1.1")
+		iex> MarketFetching.Util.valid_float?("1.1")
 		true
 	"""
 	def valid_float?(float_string) do
@@ -92,7 +83,7 @@ defmodule MarketFetching.Util do
 		Parses a pure float from a given value.
 
 	## Examples
-		iex> parse_float?("1.1")
+		iex> MarketFetching.Util.parse_float("1.1")
 		1.1
 	"""
 	def parse_float(float_string) do
@@ -114,7 +105,7 @@ defmodule MarketFetching.Util do
 		Determines whether a given string has a valid value to be included in the market.
 
 	## Examples
-		iex> valid_string?("ETH")
+		iex> MarketFetching.Util.valid_string?("ETH")
 		true
 	"""
 	def valid_string?(string) do
@@ -150,5 +141,14 @@ defmodule MarketFetching.Util do
 				base_volume: parse_float(bv),
 			}
 		}
+	end
+
+	def maybe_update(%ExchangeMarket{market: complete_market} = x) do
+		case complete_market do
+			nil ->
+				IO.puts("Empty market.")
+			_ ->
+				Market.update(x)
+		end
 	end
 end

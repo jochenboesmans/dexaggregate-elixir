@@ -41,28 +41,34 @@ defmodule MarketFetching.UniswapFetcher do
 	def poll() do
 		Stream.interval(@poll_interval)
 		|> Stream.map(fn _x -> exchange_market() end)
-		|> Enum.each(fn x -> Market.update(x) end)
+		|> Enum.each(fn x -> maybe_update(x) end)
 	end
 
-	defp exchange_market() do
+	def exchange_market() do
     c = @currencies
 
 		complete_market =
 			Enum.reduce(@exchange_addresses, [], fn ({t, ea}, acc) ->
-				%{
-					"lastTradePrice" => lp,
-					"price" => cb = ca,
-					"tradeVolume" => bv
-				} = fetch_and_decode("#{@base_api_url}/#{@market_endpoint}?exchangeAddress=#{ea}")
+				IO.inspect("#{@base_api_url}/#{@market_endpoint}?exchangeAddress=#{ea}")
+				case fetch_and_decode("#{@base_api_url}/#{@market_endpoint}?exchangeAddress=#{ea}") do
+					{:ok, p} ->
+						%{
+							"lastTradePrice" => lp,
+							"price" => cb = ca,
+							"tradeVolume" => bv
+						} = p
 
-				[bs, qs] = ["ETH", t]
-				[ba, qa] = [eth_address(), c[t]]
+						[bs, qs] = ["ETH", t]
+						[ba, qa] = [eth_address(), c[t]]
 
-				case valid_values?(strings: [bs, qs, ba, qa], numbers: [lp, cb, ca, bv]) do
-					true ->
-						[market_pair([bs, qs, ba, qa, lp, cb, ca, bv]) | acc]
-					false ->
-						acc
+						case valid_values?(strings: [bs, qs, ba, qa], numbers: [lp, cb, ca, bv]) do
+							true ->
+								[market_pair([bs, qs, ba, qa, lp, cb, ca, bv]) | acc]
+							false ->
+								acc
+						end
+					{:error, _message} ->
+						nil
 				end
 			end)
 

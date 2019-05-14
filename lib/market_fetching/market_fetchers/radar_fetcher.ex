@@ -29,37 +29,35 @@ defmodule MarketFetching.RadarFetcher do
 	end
 
 	def exchange_market() do
-		try_get_market()
-		|> assemble_exchange_market()
-	end
-
-	defp try_get_market() do
-		case fetch_and_decode("#{@base_api_url}/#{@market_endpoint}?include=base,ticker,stats") do
-			{:ok, market} ->
-				market
-			{:error, _message} ->
-				nil
-		end
-end
-
-	defp assemble_exchange_market(market) do
 		complete_market =
-			Enum.map(market, fn p ->
-				[qs, bs] = String.split(p["id"], "-")
-				%Pair{
-					base_symbol: bs,
-					quote_symbol: qs,
-					base_address: p["baseTokenAddress"],
-					quote_address: p["quoteTokenAddress"],
-					market_data: %PairMarketData{
-						exchange: :radar,
-						last_price: parse_float(p["ticker"]["price"]),
-						current_bid: parse_float(p["ticker"]["bestBid"]),
-						current_ask: parse_float(p["ticker"]["bestAsk"]),
-						base_volume: parse_float(p["stats"]["volume24Hour"]),
-					}
-				}
-			end)
+			case fetch_and_decode("#{@base_api_url}/#{@market_endpoint}?include=base,ticker,stats") do
+				{:ok, market} ->
+					Enum.reduce(market, [], fn (p, acc) ->
+						%{
+							"id" => id,
+							"baseTokenAddress" => ba,
+							"quoteTokenAddress" => qa,
+							"ticker" => %{
+								"price" => lp,
+								"bestBid" => cb,
+								"bestAsk" => ca
+							},
+							"stats" => %{
+								"volume24Hour" => bv
+							}
+						} = p
+						[qs, bs] = String.split(id, "-")
+
+						case valid_values?(strings: [bs, qs, ba, qa], numbers: [lp, cb, ca, bv]) do
+							true ->
+								[generic_market_pair([bs, qs, ba, qa, lp, cb, ca, bv], :radar) | acc]
+							false ->
+								acc
+						end
+					end)
+				{:error, _message} ->
+					nil
+			end
 
 		%ExchangeMarket{
 			exchange: :radar,
