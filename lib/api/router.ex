@@ -51,6 +51,7 @@ defmodule API.Router do
 	end
 
 	def start_link(_arg) do
-		Plug.Cowboy.http(__MODULE__, [], port: @port)
+		[port: port] = Application.get_env(:dexaggregate_elixir, __MODULE__, :port)
+		Plug.Cowboy.http(__MODULE__, [], port: port)
 	end
 end

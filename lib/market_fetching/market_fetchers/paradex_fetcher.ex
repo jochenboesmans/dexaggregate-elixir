@@ -11,10 +11,10 @@ defmodule MarketFetching.ParadexFetcher do
 	alias MarketFetching.PairMarketData
 
   @base_api_url "https://api.paradex.io/api/v1"
-  @currencies_endpoint "/tokens"
-  @market_endpoint "/markets"
-  @ohlcv_endpoint "/ohlcv"
-  @ticker_endpoint "/ticker"
+  @currencies_endpoint "tokens"
+  @market_endpoint "markets"
+  @ohlcv_endpoint "ohlcv"
+  @ticker_endpoint "ticker"
 
 	@poll_interval 10_000
 
