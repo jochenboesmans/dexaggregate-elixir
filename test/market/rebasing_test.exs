@@ -1,12 +1,8 @@
 defmodule Test.Market.Rebasing do
-
 	use ExUnit.Case, async: true
 
 	import Market.Util
-
-	alias Market.Pair
-	alias Market.ExchangeMarketData
-	alias Market.Rebasing
+	alias Market.{Pair, ExchangeMarketData, Rebasing}
 
 	doctest Rebasing
 

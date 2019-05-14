@@ -1,10 +1,8 @@
 defmodule Graphql.Schema do
 	@moduledoc false
-
 	use Absinthe.Schema
 
 	import_types Graphql.Schema.ContentTypes
-
 	alias Graphql.Resolvers.Content
 
 	query do

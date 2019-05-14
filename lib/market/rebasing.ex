@@ -4,9 +4,7 @@ defmodule Market.Rebasing do
 	"""
 
 	import Market.Util
-
-	alias Market.ExchangeMarketData
-	alias Market.Pair
+	alias Market.{ExchangeMarketData, Pair}
 
 	# Makes sure private functions are testable.
 	@compile if Mix.env == :test, do: :export_all

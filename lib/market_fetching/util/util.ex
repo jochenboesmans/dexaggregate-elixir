@@ -2,10 +2,7 @@ defmodule MarketFetching.Util do
 	@moduledoc """
 		Generic functions used for market fetching.
 	"""
-
-	alias MarketFetching.PairMarketData
-	alias MarketFetching.Pair
-	alias MarketFetching.ExchangeMarket
+	alias MarketFetching.{Pair, ExchangeMarket, PairMarketData}
 
 	@doc """
 		Returns an Ethereum address referring to Ether as if it were an Ethereum token.
@@ -17,7 +14,6 @@ defmodule MarketFetching.Util do
 	def eth_address() do
 		"0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
 	end
-
 
 	@doc """
 		Issues a get request to the specified url and returns the JSON-decoded response.
@@ -143,9 +139,14 @@ defmodule MarketFetching.Util do
 		}
 	end
 
+	@doc """
+		Updates the global market with the given exchange market if it holds valid pairs.
+	"""
 	def maybe_update(%ExchangeMarket{market: complete_market} = x) do
 		case complete_market do
 			nil ->
+				IO.puts("Empty market.")
+			[] ->
 				IO.puts("Empty market.")
 			_ ->
 				Market.update(x)

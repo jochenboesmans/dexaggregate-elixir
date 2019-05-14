@@ -1,9 +1,7 @@
 defmodule Test.MarketFetching.OasisFetcher do
-
 	use ExUnit.Case, async: true
 
 	alias MarketFetching.OasisFetcher, as: OF
-
 	doctest OF
 
 	describe "assemble_exchange_market/1" do

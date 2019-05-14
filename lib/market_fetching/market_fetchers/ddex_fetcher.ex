@@ -2,14 +2,10 @@ defmodule MarketFetching.DdexFetcher do
 	@moduledoc """
 		Fetches the Ddex market and updates the global Market accordingly.
 	"""
-
 	use WebSockex
 
 	import MarketFetching.Util
-
-	alias MarketFetching.Pair
-	alias MarketFetching.ExchangeMarket
-	alias MarketFetching.PairMarketData
+	alias MarketFetching.{Pair, ExchangeMarket, PairMarketData}
 
 	@api_base_url "https://api.ddex.io/v3"
 	@market_endpoint "markets/tickers"

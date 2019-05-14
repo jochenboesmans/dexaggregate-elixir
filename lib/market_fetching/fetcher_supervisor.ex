@@ -2,17 +2,10 @@ defmodule MarketFetching.FetcherSupervisor do
 	@moduledoc """
 		Supervisor for all MarketFetcher modules.
 	"""
-
 	use Supervisor
 
-	alias MarketFetching.DdexFetcher
-	alias MarketFetching.IdexFetcher
-	alias MarketFetching.KyberFetcher
-	alias MarketFetching.OasisFetcher
-	alias MarketFetching.ParadexFetcher
-	alias MarketFetching.RadarFetcher
-	alias MarketFetching.TokenstoreFetcher
-	alias MarketFetching.UniswapFetcher
+	alias MarketFetching.{DdexFetcher, IdexFetcher, KyberFetcher, OasisFetcher,
+		ParadexFetcher, RadarFetcher, TokenstoreFetcher, UniswapFetcher}
 
 	def start_link(init_arg) do
 		Supervisor.start_link(__MODULE__, init_arg, name: __MODULE__)

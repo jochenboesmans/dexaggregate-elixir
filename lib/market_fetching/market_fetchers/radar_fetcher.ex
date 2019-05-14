@@ -5,10 +5,7 @@ defmodule MarketFetching.RadarFetcher do
 	use Task, restart: :permanent
 
 	import MarketFetching.Util
-
-	alias MarketFetching.Pair
-	alias MarketFetching.ExchangeMarket
-	alias MarketFetching.PairMarketData
+	alias MarketFetching.{Pair, ExchangeMarket, PairMarketData}
 
 	@base_api_url "https://api.radarrelay.com/v2"
 	@market_endpoint "markets"

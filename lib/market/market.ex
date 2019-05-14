@@ -2,11 +2,9 @@ defmodule Market do
   @moduledoc """
     Module maintaining the global market model.
   """
-
   use GenServer
 
   import Market.Util
-
   alias MarketFetching.ExchangeMarket
   alias Market.Rebasing
 

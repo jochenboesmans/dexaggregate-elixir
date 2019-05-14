@@ -2,14 +2,10 @@ defmodule MarketFetching.OasisFetcher do
 	@moduledoc """
 		Fetches the Oasis market and updates the global Market accordingly.
 	"""
-
 	use Task, restart: :permanent
 
   import MarketFetching.Util
-
-	alias MarketFetching.Pair
-	alias MarketFetching.ExchangeMarket
-	alias MarketFetching.PairMarketData
+	alias MarketFetching.{Pair, ExchangeMarket, PairMarketData}
 
   @market_endpoint "http://api.oasisdex.com/v1/markets"
   @currencies %{
@@ -18,6 +14,7 @@ defmodule MarketFetching.OasisFetcher do
     "DAI" => "0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359",
   }
   @pairs [["MKR", "ETH"], ["MKR", "DAI"], ["ETH", "DAI"]]
+
 	@poll_interval 10_000
 
   # Makes sure private functions are testable.
@@ -34,6 +31,7 @@ defmodule MarketFetching.OasisFetcher do
 	end
 
 	def exchange_market() do
+
 		fetch_market()
 		|> assemble_exchange_market()
 	end

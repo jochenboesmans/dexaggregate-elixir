@@ -2,7 +2,6 @@ defmodule API.Router do
 	@moduledoc """
 		A simple router for the application's API.
 	"""
-
 	use Plug.Router
 
 	@port 5000

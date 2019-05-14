@@ -1,6 +1,5 @@
 defmodule Graphql.Schema.ContentTypes do
 	@moduledoc false
-
 	use Absinthe.Schema.Notation
 
 	object :pair do

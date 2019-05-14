@@ -2,14 +2,10 @@ defmodule MarketFetching.IdexFetcher do
   @moduledoc """
     Fetches the Idex market and updates the global Market accordingly.
   """
-
   use Task, restart: :permanent
 
   import MarketFetching.Util
-
-  alias MarketFetching.Pair
-  alias MarketFetching.ExchangeMarket
-  alias MarketFetching.PairMarketData
+  alias MarketFetching.{Pair, ExchangeMarket, PairMarketData}
 
   @market_endpoint "https://api.idex.market/returnTicker"
   @currencies_endpoint "https://api.idex.market/returnCurrencies"
