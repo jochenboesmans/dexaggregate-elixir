@@ -4,6 +4,7 @@ defmodule MarketFetching.Util do
 	"""
 
 	alias MarketFetching.PairMarketData
+	alias MarketFetching.Pair
 
 	@doc """
 		Returns an Ethereum address referring to Ether as if it were an Ethereum token.
@@ -71,10 +72,12 @@ defmodule MarketFetching.Util do
 		true
 	"""
 	def valid_float?(float_string) do
-		case float_string do
-			nil ->
+		cond do
+			float_string == nil ->
 				false
-			_ ->
+			is_float(float_string) ->
+				true
+			true ->
 				case Float.parse(float_string) do
 					:error -> false
 					{0.0, ""} -> false
@@ -86,18 +89,23 @@ defmodule MarketFetching.Util do
 	end
 
 	@doc """
-		Parses a float from a given value.
+		Parses a pure float from a given value.
 
 	## Examples
 		iex> parse_float?("1.1")
 		1.1
 	"""
 	def parse_float(float_string) do
-		case valid_float?(float_string) do
+		case is_float(float_string) do
 			true ->
-				elem(Float.parse(float_string), 0)
+				float_string
 			false ->
-				0.0
+				case valid_float?(float_string) do
+					true ->
+						elem(Float.parse(float_string), 0)
+					false ->
+						0.0
+				end
 		end
 	end
 

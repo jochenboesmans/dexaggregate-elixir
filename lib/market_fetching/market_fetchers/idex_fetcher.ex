@@ -44,24 +44,19 @@ defmodule MarketFetching.IdexFetcher do
     [bs, qs] = String.split(k, "_")
     [ba, qa] = [c[bs], c[qs]]
 
-    case valid_values?([bs, qs, ba, qa], [bv, lp, cb, ca]) do
-      true ->
-        %Pair{
-          base_symbol: bs,
-          quote_symbol: qs,
-          base_address: ba,
-          quote_address: qa,
-          market_data: %PairMarketData{
-            exchange: :idex,
-            last_price: parse_float(lp),
-            current_bid: parse_float(cb),
-            current_ask: parse_float(ca),
-            base_volume: parse_float(bv),
-          }
-        }
-      false ->
-        nil
-    end
+    %Pair{
+      base_symbol: bs,
+      quote_symbol: qs,
+      base_address: ba,
+      quote_address: qa,
+      market_data: %PairMarketData{
+        exchange: :idex,
+        last_price: parse_float(lp),
+        current_bid: parse_float(cb),
+        current_ask: parse_float(ca),
+        base_volume: parse_float(bv),
+      }
+    }
   end
 
   defp assemble_exchange_market(market) do

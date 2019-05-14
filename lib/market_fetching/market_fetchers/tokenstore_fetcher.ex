@@ -28,9 +28,9 @@ defmodule MarketFetching.TokenstoreFetcher do
 		|> Enum.each(fn x -> Market.update(x) end)
 	end
 
-	defp exchange_market() do
+	def exchange_market() do
 		complete_market =
-			fetch_and_decode("#{@base_api_url}/#{@market_endpoint}")
+			fetch_market()
 			|> Enum.reduce([],  fn ({_k, p}, acc) ->
 				%{
 					"last" => lp,
@@ -54,5 +54,14 @@ defmodule MarketFetching.TokenstoreFetcher do
 			exchange: :tokenstore,
 			market: complete_market
 		}
+	end
+
+	defp fetch_market() do
+		case fetch_and_decode("#{@base_api_url}/#{@market_endpoint}") do
+			{:ok, market} ->
+				market
+			{:error, _message} ->
+				nil
+		end
 	end
 end

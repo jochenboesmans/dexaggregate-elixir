@@ -49,24 +49,19 @@ defmodule MarketFetching.OasisFetcher do
 		[qs, bs] = String.split(id, "/")
 		[ba, qa] = [c[bs], c[qs]]
 
-		case valid_values?([bs, qs, ba, qa], [bv, lp, cb, ca]) do
-			true ->
-				%Pair{
-					base_symbol: bs,
-					quote_symbol: qs,
-					base_address: c[bs],
-					quote_address: c[qs],
-					market_data: %PairMarketData{
-						exchange: :oasis,
-						last_price: parse_float(lp),
-						current_bid: parse_float(cb),
-						current_ask: parse_float(ca),
-						base_volume: parse_float(bv),
-					}
-				}
-			false ->
-				nil
-		end
+		%Pair{
+			base_symbol: bs,
+			quote_symbol: qs,
+			base_address: c[bs],
+			quote_address: c[qs],
+			market_data: %PairMarketData{
+				exchange: :oasis,
+				last_price: parse_float(lp),
+				current_bid: parse_float(cb),
+				current_ask: parse_float(ca),
+				base_volume: parse_float(bv),
+			}
+		}
 	end
 
 	def assemble_exchange_market(market) do

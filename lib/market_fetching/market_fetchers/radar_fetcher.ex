@@ -13,6 +13,8 @@ defmodule MarketFetching.RadarFetcher do
 	@base_api_url "https://api.radarrelay.com/v2"
 	@market_endpoint "markets"
 
+	@poll_interval 10_000
+
 	# Makes sure private functions are testable.
 	@compile if Mix.env == :test, do: :export_all
 
@@ -21,7 +23,7 @@ defmodule MarketFetching.RadarFetcher do
 	end
 
 	def poll() do
-		Stream.interval(10_000)
+		Stream.interval(@poll_interval)
 		|> Stream.map(fn _x -> exchange_market() end)
 		|> Enum.each(fn x -> Market.update(x) end)
 	end
