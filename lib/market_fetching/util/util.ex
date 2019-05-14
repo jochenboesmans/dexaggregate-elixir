@@ -17,6 +17,11 @@ defmodule MarketFetching.Util do
 
 	@doc """
 		Issues a get request to the specified url and returns the JSON-decoded response.
+
+	## Examples
+		iex> test_url = "https://my-json-server.typicode.com/typicode/demo/posts"
+		iex> MarketFetching.Util.fetch_and_decode(test_url)
+		{:ok, decoded_json} || {:error, message}
 	"""
 	def fetch_and_decode(url, args \\ []) do
 		case HTTPoison.get(url, args) do
@@ -29,6 +34,11 @@ defmodule MarketFetching.Util do
 
 	@doc """
 		Issues an empty post request to the specified url and returns the JSON-decoded response.
+
+	## Examples
+		iex> test_url = "https://my-json-server.typicode.com/typicode/demo/posts"
+		iex> MarketFetching.Util.post_and_decode(test_url)
+		{:ok, decoded_json} || {:error, message}
 	"""
 	def post_and_decode(url) do
 		case HTTPoison.post(url, Poison.encode!(%{})) do
@@ -53,6 +63,10 @@ defmodule MarketFetching.Util do
 
 	@doc """
 		Tries to parse a float from a given value. Returns true only when the value can be purely parsed to a useful float.
+
+	## Examples
+		iex> valid_float?("1.1")
+		true
 	"""
 	def valid_float?(float_string) do
 		case float_string do
@@ -71,6 +85,10 @@ defmodule MarketFetching.Util do
 
 	@doc """
 		Parses a float from a given value.
+
+	## Examples
+		iex> parse_float?("1.1")
+		1.1
 	"""
 	def parse_float(float_string) do
 		case valid_float?(float_string) do
@@ -81,6 +99,14 @@ defmodule MarketFetching.Util do
 		end
 	end
 
+
+	@doc """
+		Determines whether a given string has a valid value to be included in the market.
+
+	## Examples
+		iex> valid_string?("ETH")
+		true
+	"""
 	def valid_string?(string) do
 		case string do
 			nil -> false
@@ -89,6 +115,9 @@ defmodule MarketFetching.Util do
 		end
 	end
 
+	@doc """
+		Determines whether all given values have a valid value to be included in the market.
+	"""
 	def valid_values?(expected_strings, expected_numbers) do
 		Enum.all?(expected_strings, fn s -> valid_string?(s) end)
 		&& Enum.all?(expected_numbers, fn n -> valid_float?(n) end)
