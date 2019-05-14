@@ -13,6 +13,8 @@ defmodule MarketFetching.TokenstoreFetcher do
 	@base_api_url "https://v1-1.api.token.store"
 	@market_endpoint "ticker"
 
+	@poll_interval 10_000
+
 	# Makes sure private functions are testable.
 	@compile if Mix.env == :test, do: :export_all
 
@@ -21,51 +23,28 @@ defmodule MarketFetching.TokenstoreFetcher do
 	end
 
 	def poll() do
-		Stream.interval(10_000)
+		Stream.interval(@poll_interval)
 		|> Stream.map(fn _x -> exchange_market() end)
 		|> Enum.each(fn x -> Market.update(x) end)
 	end
 
 	defp exchange_market() do
-		fetch_and_decode("#{@base_api_url}/#{@market_endpoint}")
-		|> assemble_exchange_market()
-	end
-
-	defp holds_valid_values?(p) do
-		strings = [
-			p["symbol"],
-			p["tokenAddr"],
-		]
-		numbers = [
-			p["last"],
-			p["bid"],
-			p["ask"],
-			p["baseVolume"],
-		]
-		Enum.all?(strings, fn s -> valid_string?(s) end)
-		&& Enum.all?(numbers, fn n -> valid_float?(n) end)
-	end
-
-	defp assemble_exchange_market(market) do
 		complete_market =
-			Enum.reduce(market, [],  fn ({_k, p}, acc) ->
-				case holds_valid_values?(p) do
+			fetch_and_decode("#{@base_api_url}/#{@market_endpoint}")
+			|> Enum.reduce([],  fn ({_k, p}, acc) ->
+				%{
+					"last" => lp,
+					"bid" => cb,
+					"ask" => ca,
+					"baseVolume" => bv,
+					"symbol" => qs,
+					"tokenAddr" => qa
+				} = p
+				[bs, ba] = ["ETH", eth_address()]
+
+				case valid_values?(strings: [bs, qs, ba, qa], numbers: [lp, cb, ca, bv]) do
 					true ->
-						market_pair =
-							%Pair{
-								base_symbol: "ETH",
-								quote_symbol: p["symbol"],
-								base_address: eth_address(),
-								quote_address: p["tokenAddr"],
-								market_data: %PairMarketData{
-									exchange: :tokenstore,
-									last_price: p["last"],
-									current_bid: p["bid"],
-									current_ask: p["ask"],
-									base_volume: p["baseVolume"],
-								}
-							}
-						[market_pair | acc]
+						[generic_market_pair([bs, qs, ba, qa, lp, cb, ca, bv], :tokenstore) | acc]
 					false ->
 						acc
 				end
@@ -73,7 +52,7 @@ defmodule MarketFetching.TokenstoreFetcher do
 
 		%ExchangeMarket{
 			exchange: :tokenstore,
-			market: complete_market,
+			market: complete_market
 		}
 	end
 end

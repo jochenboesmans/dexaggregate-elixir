@@ -58,9 +58,9 @@ defmodule MarketFetching.UniswapFetcher do
 				[bs, qs] = ["ETH", t]
 				[ba, qa] = [eth_address(), c[t]]
 
-				case valid_values?([bs, qs, ba, qa], [lp, cb, ca, bv]) do
+				case valid_values?(strings: [bs, qs, ba, qa], numbers: [lp, cb, ca, bv]) do
 					true ->
-						[market_pair([bs, qs, ba, qa], [lp, cb, ca, bv]) | acc]
+						[market_pair([bs, qs, ba, qa, lp, cb, ca, bv]) | acc]
 					false ->
 						acc
 				end
@@ -72,7 +72,7 @@ defmodule MarketFetching.UniswapFetcher do
 		}
 	end
 
-	defp market_pair([bs, qs, ba, qa], [lp, cb, ca, bv]) do
+	defp market_pair([bs, qs, ba, qa, lp, cb, ca, bv]) do
 		%Pair{
 			base_symbol: bs,
 			quote_symbol: qs,
