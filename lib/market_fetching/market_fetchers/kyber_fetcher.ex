@@ -7,8 +7,11 @@ defmodule MarketFetching.KyberFetcher do
   import MarketFetching.Util
   alias MarketFetching.{Pair, ExchangeMarket, PairMarketData}
 
-  @market_endpoint "https://api.kyber.network/market"
-  @currencies_endpoint "https://api.kyber.network/currencies"
+  @base_api_url "https://api.kyber.network"
+  @market_endpoint "market"
+  @currencies_endpoint "currencies"
+
+  @poll_interval 10_000
 
   # Makes sure private functions are testable.
   @compile if Mix.env == :test, do: :export_all
@@ -18,35 +21,42 @@ defmodule MarketFetching.KyberFetcher do
   end
 
   def poll() do
-    Stream.interval(10_000)
+    Stream.interval(@poll_interval)
     |> Stream.map(fn _x -> exchange_market() end)
     |> Enum.each(fn x -> maybe_update(x) end)
   end
 
   def exchange_market() do
-    fetch_market()
-    |> assemble_exchange_market()
-  end
-
-  defp assemble_exchange_market(market) do
-    c = currencies()
-
     complete_market =
-      Enum.map(market, fn p ->
-        %Pair{
-          base_symbol: p["base_symbol"],
-          quote_symbol: p["quote_symbol"],
-          base_address: c[p["base_symbol"]],
-          quote_address: c[p["quote_symbol"]],
-          market_data: %PairMarketData{
-            exchange: :kyber,
-            last_price: p["last_traded"],
-            current_bid: p["current_bid"],
-            current_ask: p["current_ask"],
-            base_volume: p["eth_24h_volume"],
-          }
-        }
-      end)
+      case get_from_api("#{@base_api_url}/#{@currencies_endpoint}") do
+        {:ok, currencies} ->
+          c = transform_currencies(currencies)
+          case get_from_api("#{@base_api_url}/#{@market_endpoint}") do
+            {:ok, market} ->
+              Enum.reduce(market, [], fn (p, acc) ->
+                %{
+                  "base_symbol" => bs,
+                  "quote_symbol" => qs,
+                  "last_traded" => lp,
+                  "current_bid" => cb,
+                  "current_ask" => ca,
+                  "eth_24h_volume" => bv
+                } = p
+                [ba, qa] = [c[bs], c[qs]]
+
+                case valid_values?(strings: [bs, qs, ba, qa], numbers: [lp, cb, ca, bv]) do
+                  true ->
+                    [generic_market_pair([bs, qs, ba, qa, lp, cb, ca, bv], :kyber) | acc]
+                  false ->
+                    acc
+                end
+              end)
+            {:error, _message} ->
+              nil
+          end
+        {:error, _message} ->
+          nil
+      end
 
     %ExchangeMarket{
       exchange: :kyber,
@@ -54,26 +64,12 @@ defmodule MarketFetching.KyberFetcher do
     }
   end
 
-  defp currencies() do
-    fetch_currencies()
-    |> transform_currencies()
-  end
-
-  def fetch_currencies() do
-    case fetch_and_decode(@currencies_endpoint) do
-      {:ok, %{"data" => currencies}} ->
-        currencies
-      {:error, _message} ->
-        nil
-    end
-  end
-
-  def fetch_market() do
-    case fetch_and_decode(@market_endpoint) do
-      {:ok, %{"data" => market}} ->
-        market
-      {:error, _message} ->
-        nil
+  defp get_from_api(url) do
+    case fetch_and_decode(url) do
+      {:ok, %{"data" => data}} ->
+        {:ok, data}
+      {:error, message} ->
+        {:error, message}
     end
   end
 

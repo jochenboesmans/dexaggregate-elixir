@@ -62,7 +62,7 @@ defmodule MarketFetching.Util do
 		cond do
 			float_string == nil ->
 				false
-			is_float(float_string) ->
+			is_float(float_string) || is_integer(float_string) ->
 				true
 			true ->
 				case Float.parse(float_string) do
@@ -83,7 +83,7 @@ defmodule MarketFetching.Util do
 		1.1
 	"""
 	def parse_float(float_string) do
-		case is_float(float_string) do
+		case is_float(float_string) || is_integer(float_string) do
 			true ->
 				float_string
 			false ->

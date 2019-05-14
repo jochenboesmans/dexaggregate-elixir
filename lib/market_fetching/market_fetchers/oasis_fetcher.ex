@@ -31,47 +31,30 @@ defmodule MarketFetching.OasisFetcher do
 	end
 
 	def exchange_market() do
-
-		fetch_market()
-		|> assemble_exchange_market()
-	end
-
-	def try_get_valid_pair(p, c) do
-		%{
-			"pair" => id,
-			"last" => lp,
-			"bid" => cb,
-			"ask" => ca,
-			"vol" => bv,
-		} = p
-		[qs, bs] = String.split(id, "/")
-		[ba, qa] = [c[bs], c[qs]]
-
-		%Pair{
-			base_symbol: bs,
-			quote_symbol: qs,
-			base_address: c[bs],
-			quote_address: c[qs],
-			market_data: %PairMarketData{
-				exchange: :oasis,
-				last_price: parse_float(lp),
-				current_bid: parse_float(cb),
-				current_ask: parse_float(ca),
-				base_volume: parse_float(bv),
-			}
-		}
-	end
-
-	def assemble_exchange_market(market) do
 		c = @currencies
 
 		complete_market =
-			Enum.reduce(market, [], fn (p, acc) ->
-				case try_get_valid_pair(p, c) do
-					nil ->
+			Enum.reduce(@pairs, [], fn (p, acc) ->
+				case fetch_pair(p) do
+					{:ok, pair} ->
+						%{
+							"pair" => id,
+							"last" => lp,
+							"bid" => cb,
+							"ask" => ca,
+							"vol" => bv,
+						} = pair
+						[qs, bs] = String.split(id, "/")
+						[ba, qa] = [c[bs], c[qs]]
+
+						case valid_values?(strings: [bs, qs, ba, qa], numbers: [lp, cb, ca, bv]) do
+							true ->
+								[generic_market_pair([bs, qs, ba, qa, lp, cb, ca, bv], :oasis) | acc]
+							false ->
+								acc
+						end
+					{:error, _message} ->
 						acc
-					valid_pair ->
-						[valid_pair | acc]
 				end
 			end)
 
@@ -81,14 +64,12 @@ defmodule MarketFetching.OasisFetcher do
 		}
 	end
 
-	def fetch_market() do
-		Enum.reduce(@pairs, [], fn ([bs, qs], acc) ->
-			case fetch_and_decode("#{@market_endpoint}/#{bs}/#{qs}") do
-        {:ok, pair} ->
-          [pair | acc]
-        {:error, _message} ->
-          acc
-			end
-		end)
+	defp fetch_pair([bs, qs]) do
+		case fetch_and_decode("#{@market_endpoint}/#{bs}/#{qs}") do
+			{:ok, %{"data" => pair}} ->
+				{:ok, pair}
+			{:error, _message} ->
+				{:error, _message}
+		end
 	end
 end
