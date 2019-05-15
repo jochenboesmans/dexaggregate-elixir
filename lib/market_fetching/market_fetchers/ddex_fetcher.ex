@@ -3,6 +3,7 @@ defmodule MarketFetching.DdexFetcher do
 		Fetches the Ddex market and updates the global Market accordingly.
 	"""
 	use WebSockex
+	use Task
 
 	import MarketFetching.Util
 	alias MarketFetching.{Pair, ExchangeMarket, PairMarketData}
@@ -16,29 +17,66 @@ defmodule MarketFetching.DdexFetcher do
 	@compile if Mix.env == :test, do: :export_all
 
 	def start_link(_arg) do
-		c = fetch_currencies()
-		Market.update(initial_exchange_market(c))
-		{:ok, pid} = WebSockex.start_link(@ws_url, __MODULE__, %{currencies: c})
-		sub_message = %{
-			type: "subscribe",
-			channels: [%{
-				name: "ticker",
-				marketIds: c
-			}]
-		}
-		{:ok, e} = Poison.encode(sub_message)
-		WebSockex.send_frame(pid, {:text, e})
+		Task.start_link(__MODULE__, :start, [])
 	end
+
+	def start() do
+		c = fetch_currencies()
+		m = initial_exchange_market(c)
+		maybe_update(m)
+		subscribe_to_market(c)
+	end
+
+  def subscribe_to_market(c) do
+    {:ok, pid} = WebSockex.start_link(@ws_url, __MODULE__, %{currencies: c})
+    sub_message = %{
+      type: "subscribe",
+      channels: [%{
+        name: "ticker",
+        marketIds: c
+      }]
+    }
+    {:ok, e} = Poison.encode(sub_message)
+    WebSockex.send_frame(pid, {:text, e})
+  end
 
 	def handle_frame({:text, message},  %{currencies: c} = state) do
 		{:ok, p} = Poison.decode(message)
-		try_add_received_pair(p, c)
+
+    case try_get_valid_pair(p, c) do
+      nil ->
+        nil
+      valid_pair ->
+				IO.inspect(valid_pair)
+        Market.update(valid_pair)
+    end
+
 		{:ok, state}
 	end
 
 	def handle_cast({:send, frame}, state) do
 		{:reply, frame, state}
 	end
+
+  def initial_exchange_market(c) do
+    complete_market =
+      case fetch_market() do
+        {:ok, market} ->
+          Enum.reduce(market, [], fn (p, acc) ->
+            case try_get_valid_pair(p, c) do
+              nil -> acc
+              valid_pair -> [valid_pair | acc]
+            end
+          end)
+        {:error, _message} ->
+          nil
+      end
+
+    %ExchangeMarket{
+      exchange: :ddex,
+      market: complete_market,
+    }
+  end
 
 	def try_get_valid_pair(p, c) do
 		%{
@@ -51,66 +89,26 @@ defmodule MarketFetching.DdexFetcher do
 		[bs, qs] = String.split(id, "-")
 		[ba, qa] = [c[bs], c[qs]]
 
-		%Pair{
-			base_symbol: bs,
-			quote_symbol: qs,
-			base_address: ba,
-			quote_address: qa,
-			market_data: %PairMarketData{
-				exchange: :ddex,
-				last_price: parse_float(lp),
-				current_bid: parse_float(cb),
-				current_ask: parse_float(ca),
-				base_volume: parse_float(bv),
-			}
-		}
-	end
-
-	def try_add_received_pair(p, c) do
-		case try_get_valid_pair(p, c) do
-			nil ->
-				nil
-			valid_pair ->
-				Market.update(valid_pair)
-		end
-	end
-
-	def initial_exchange_market(c) do
-		fetch_market()
-		|> assemble_exchange_market(c)
-	end
-
-	defp assemble_exchange_market(market, currencies) do
-		complete_market =
-			Enum.reduce(market, [], fn (p, acc) ->
-				case try_get_valid_pair(p, currencies) do
-					nil ->
-						acc
-					valid_pair ->
-						[valid_pair | acc]
-				end
-			end)
-
-		%ExchangeMarket{
-			exchange: :ddex,
-			market: complete_market,
-		}
-	end
-
-
+    case valid_values?(strings: [bs, qs, ba, qa], numbers: [lp, cb, ca, bv]) do
+      true ->
+        generic_market_pair([bs, qs, ba, qa, lp, cb, ca, bv], :ddex)
+      false ->
+        nil
+    end
+  end
 
 	def fetch_market() do
 		case fetch_and_decode("#{@api_base_url}/#{@market_endpoint}") do
-			{:ok, %{"tickers" => data}} ->
-				data
-			{:error, _message} ->
-				nil
+			{:ok, %{"data" => %{"tickers" => market}}} ->
+				{:ok, market}
+			{:error, message} ->
+				{:error, message}
 		end
 	end
 
 	def fetch_currencies() do
 		case fetch_and_decode("#{@api_base_url}/#{@currencies_endpoint}") do
-			{:ok, %{"markets" => currencies}} ->
+			{:ok, %{"data" => %{"markets" => currencies}}} ->
 				Enum.reduce(currencies, %{}, fn (c, acc) ->
 					acc
 					|> Map.put(c["baseToken"], c["baseTokenAddress"])
