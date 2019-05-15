@@ -5,10 +5,11 @@ defmodule MarketFetching.IdexFetcher do
   use Task, restart: :permanent
 
   import MarketFetching.Util
-  alias MarketFetching.{Pair, ExchangeMarket, PairMarketData}
+  alias MarketFetching.{ExchangeMarket}
 
-  @market_endpoint "https://api.idex.market/returnTicker"
-  @currencies_endpoint "https://api.idex.market/returnCurrencies"
+  @base_api_url "https://api.idex.market"
+  @market_endpoint "returnTicker"
+  @currencies_endpoint "returnCurrencies"
 
   @poll_interval 10_000
 
@@ -26,80 +27,46 @@ defmodule MarketFetching.IdexFetcher do
   end
 
   def exchange_market() do
-    fetch_market()
-    |> assemble_exchange_market()
-  end
-
-  def try_get_valid_pair({k, p}, c) do
-    %{
-      "last" => lp,
-      "highestBid" => cb,
-      "lowestAsk" => ca,
-      "baseVolume" => bv,
-    } = p
-    [bs, qs] = String.split(k, "_")
-    [ba, qa] = [c[bs], c[qs]]
-
-    %Pair{
-      base_symbol: bs,
-      quote_symbol: qs,
-      base_address: ba,
-      quote_address: qa,
-      market_data: %PairMarketData{
-        exchange: :idex,
-        last_price: parse_float(lp),
-        current_bid: parse_float(cb),
-        current_ask: parse_float(ca),
-        base_volume: parse_float(bv),
-      }
-    }
-  end
-
-  defp assemble_exchange_market(market) do
-    c = currencies()
-
     complete_market =
-      Enum.reduce(market, [], fn (p, acc) ->
-        case try_get_valid_pair(p, c) do
-          nil ->
-            acc
-          valid_pair ->
-            [valid_pair | acc]
-        end
-      end)
+      case post_and_decode("#{@base_api_url}/#{@currencies_endpoint}") do
+        {:ok, c} ->
+          case post_and_decode("#{@base_api_url}/#{@market_endpoint}") do
+            {:ok, market} ->
+              Enum.reduce(market, [], fn ({k, p}, acc) ->
+                %{
+                  "last" => lp,
+                  "highestBid" => cb,
+                  "lowestAsk" => ca,
+                  "baseVolume" => bv,
+                } = p
+                [bs, qs] = String.split(k, "_")
+
+                ba =
+                  case c[bs]["address"] do
+                    "0x0000000000000000000000000000000000000000" ->
+                      "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+                    something_else ->
+                      something_else
+                  end
+                qa = c[qs]["address"]
+
+                case valid_values?(strings: [bs, qs, ba, qa], numbers: [lp, cb, ca, bv]) do
+                  true ->
+                    [generic_market_pair([bs, qs, ba, qa, lp, cb, ca, bv], :idex) | acc]
+                  false ->
+                    acc
+                end
+              end)
+            {:error, _message} ->
+              nil
+          end
+        {:error, _message} ->
+          nil
+    end
 
     %ExchangeMarket{
       exchange: :idex,
       market: complete_market,
     }
-  end
-
-  defp currencies() do
-    fetch_currencies()
-    |> format_currencies()
-  end
-
-  def fetch_market() do
-    case post_and_decode(@market_endpoint) do
-      {:ok, market} ->
-        market
-      {:error, _message} ->
-        nil
-    end
-  end
-
-  def fetch_currencies() do
-    case post_and_decode(@currencies_endpoint) do
-      {:ok, currencies} ->
-        currencies
-      {:error, _message} ->
-        nil
-    end
-  end
-
-  defp format_currencies(currencies) do
-    Enum.reduce(currencies, %{}, fn {k, c}, acc ->
-      Map.put(acc, k, c["address"])
-    end)
   end
 end
