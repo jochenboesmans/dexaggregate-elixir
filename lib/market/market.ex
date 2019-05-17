@@ -5,24 +5,30 @@ defmodule Market do
   use GenServer
 
   import Market.Util
-  alias MarketFetching.ExchangeMarket
-  alias Market.Rebasing
 
-  def get(atom) do
-    case atom do
+  @doc """
+    Gets various data from this module's state.
+  """
+  def get(what_to_get) do
+    case what_to_get do
       :market ->
         GenServer.call(__MODULE__, :get_market)
       {:rebased_market, args} ->
         GenServer.call(__MODULE__, {:get_rebased_market, args})
       :exchanges ->
         GenServer.call(__MODULE__, :get_exchanges)
+      :last_update ->
+        GenServer.call(__MODULE__, :get_last_update)
       _ ->
         nil
     end
   end
 
-  def update(something) do
-    GenServer.cast(__MODULE__, {:update, something})
+  @doc """
+    Updates the market with the given pair or exchange market.
+  """
+  def update(pair_or_exchange_market) do
+    GenServer.cast(__MODULE__, {:update, pair_or_exchange_market})
   end
 
   def start_link(_options) do
@@ -36,65 +42,102 @@ defmodule Market do
 
   @impl true
   def init(_initial_market) do
-    {:ok, %{}}
+    {:ok, %{market: %{}, last_update: nil}}
   end
 
+  @doc """
+    Returns the raw market as maintained by this module.
+  """
   @impl true
-  def handle_call(:get_market, _from, m) do
-    {:reply, format_market(m), m}
+  def handle_call(:get_market, _from,  %{market: m} = state) do
+    {:reply, m, state}
   end
 
+  @doc """
+    Returns the market rebased in a token with a specified rebase_address and
+    filtered by the specified exchanges.
+  """
   @impl true
-  def handle_call({:get_rebased_market, %{rebase_address: ra, exchanges: e} = _args}, _from, m) do
-    reply =
-      Rebasing.rebase_market(ra, m, 4)
-      |> filter(e)
-      |> format_market
+  def handle_call({:get_rebased_market, %{rebase_address: ra, exchanges: e} = _args}, _from, %{market: m} = state) do
+    fm =
+      Market.Rebasing.rebase_market(ra, m, 4)
+      |> filter_by_exchanges(e, ra)
+      |> format_market(ra)
 
-    {:reply, reply, m}
+    {:reply, fm, state}
   end
 
+  @doc """
+    Returns a list of all the exchanges of which pairs are included in the market.
+  """
   @impl true
-  def handle_call(:get_exchanges, _from, m) do
+  def handle_call(:get_exchanges, _from, %{market: m} = state) do
     e =
       exchanges_in_market(m)
       |> MapSet.to_list
-    {:reply, e, m}
+    {:reply, e, state}
   end
 
-  defp filter(market, exchanges) do
-    Enum.reduce(market, %{}, fn ({k, p}, acc1) ->
-      filtered_pmd = Enum.reduce(p.market_data, %{}, fn({e, emd}, acc2) ->
-        case Enum.member?(exchanges, e) do
-          true ->
-            Map.put(acc2, e, emd)
-          false ->
-            acc2
-        end
+
+  @doc """
+    Returns a data structure containing data about the last market update.
+  """
+  @impl true
+  def handle_call(:get_last_update, _from, %{last_update: lu} = state) do
+    {:reply, lu, state}
+  end
+
+  @doc """
+    Returns a partial market containing all pairs trading on the given exchanges.
+  """
+  defp filter_by_exchanges(market, exchanges, ra) do
+    case exchanges do
+      :all ->
+        market
+      _ ->
+        Enum.reduce(market, %{}, fn ({k, p}, acc1) ->
+          filtered_pmd = Enum.reduce(p.market_data, %{}, fn({e, emd}, acc2) ->
+            case Enum.member?(exchanges, e) do
+              true ->
+                Map.put(acc2, e, emd)
+              false ->
+                acc2
+            end
+          end)
+
+          case filtered_pmd do
+            %{} ->
+              acc1
+            valid_pmd ->
+              Map.put(acc1, k, %{p | market_data: valid_pmd})
+          end
+        end)
+    end
+  end
+
+
+  defp format_market(m, ra) do
+    pairs =
+      Map.values(m)
+      |> IO.inspect()
+      |> Enum.sort_by(&combined_volume_across_exchanges/1, &>=/2)
+      |> Enum.map(fn p ->
+        new_md = Enum.map(p.market_data, fn {exchange, emd} ->  Map.put(emd, :exchange, exchange) end)
+        %{p | market_data: new_md}
       end)
 
-      case filtered_pmd do
-        %{} ->
-          acc1
-        valid_pmd ->
-          Map.put(acc1, k, %{p | market_data: valid_pmd})
-      end
-    end)
+    %Market.Market{
+      pairs: pairs,
+      base_address: ra,
+    }
   end
 
-
-  defp format_market(m) do
-    Map.values(m)
-    |> Enum.sort_by(&combined_volume_across_exchanges/1, &>=/2)
-    |> Enum.map(fn p ->
-      new_md = Enum.map(p.market_data, fn {exchange, emd} ->  Map.put(emd, :exchange, exchange) end)
-      %{p | market_data: new_md}
-    end)
-  end
-
-  defp combined_volume_across_exchanges(p) do
-    Enum.reduce(p.market_data, 0, fn ({_exchange, emd}, acc) ->
-      acc + emd.base_volume
+  @doc """
+    Returns the combined volume of a market pair across all exchanges.
+  """
+  defp combined_volume_across_exchanges(%Market.Pair{market_data: md} = p) do
+    Enum.reduce(md, 0, fn ({_exchange, %Market.ExchangeMarketData{base_volume: bv}}, acc) ->
+      acc + bv
     end)
   end
 
@@ -107,16 +150,32 @@ defmodule Market do
   end
 
   @impl true
-  def handle_cast({:update, %ExchangeMarket{} = em}, prev_state) do
-    {:noreply, merge(prev_state, em)}
+  def handle_cast({:update, %MarketFetching.ExchangeMarket{} = em}, %{market: m} = state) do
+    %MarketFetching.ExchangeMarket{exchange: exchange} = em
+    updated_market = add_exchange_market(m, em)
+    update_reply(updated_market, exchange, state)
   end
 
   @impl true
-  def handle_cast({:update, %MarketFetching.Pair{} = p}, prev_state) do
-    {:noreply, merge(prev_state, p)}
+  def handle_cast({:update, %MarketFetching.Pair{} = p}, %{market: m} = state) do
+    %MarketFetching.Pair{market_data: %MarketFetching.PairMarketData{exchange: exchange}} = p
+    updated_market = add_pair(m, p)
+    update_reply(updated_market, exchange, state)
   end
 
-  def add_pair(m, %MarketFetching.Pair{} = p) do
+  defp update_reply(updated_market, exchange, state) do
+    updated_last_update = %Market.LastUpdate{
+      timestamp: :os.system_time(),
+      exchange: exchange
+    }
+    {:noreply, %{state | market: updated_market, last_update: updated_last_update}}
+  end
+
+
+  @doc """
+    Adds a single pair to the market.
+  """
+  defp add_pair(pairs, %MarketFetching.Pair{} = p) do
     %MarketFetching.Pair{
       base_address: ba,
       quote_address: qa,
@@ -140,29 +199,28 @@ defmodule Market do
     }
 
     market_entry =
-      case Map.has_key?(m, id) do
+      case Map.has_key?(pairs, id) do
         false ->
           %Market.Pair{
-            base_symbol: bs,
             base_address: ba,
             quote_address: qa,
+            base_symbol: bs,
             quote_symbol: qs,
             market_data: %{
               ex => emd
             }
           }
         true ->
-          %{m[id] | market_data: Map.put(m[id].market_data, ex, emd)}
+          %{pairs[id] | market_data: Map.put(pairs[id].market_data, ex, emd)}
       end
 
-    Map.put(m, id, market_entry)
+    Map.put(pairs, id, market_entry)
   end
 
-  def merge(prev_market, %MarketFetching.Pair{} = p) do
-    add_pair(prev_market, p)
-  end
-
-  def merge(prev_market, %ExchangeMarket{market: m}) do
+  @doc """
+    Adds all pairs of a given ExchangeMarket to the market.
+  """
+  defp add_exchange_market(prev_market, %MarketFetching.ExchangeMarket{market: m}) do
     Enum.reduce(m, prev_market, fn (p, acc) ->
       add_pair(acc, p)
     end)

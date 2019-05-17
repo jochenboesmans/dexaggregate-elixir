@@ -26,10 +26,15 @@ defmodule API.Router do
 		|> send_resp(200, Poison.encode!(Market.get(:market)))
 	end
 
-	get "/rebased_market" do
+	@dai_address "0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359"
+	get "/dai_rebased_market" do
+		args = %{
+			rebase_address: @dai_address,
+			exchanges: :all
+		}
 		conn
 		|> put_resp_content_type("application/json")
-		|> send_resp(200, Poison.encode!(Market.get(:rebased_market)))
+		|> send_resp(200, Poison.encode!(Market.get({:rebased_market, args})))
 	end
 
 	get "/exchanges" do

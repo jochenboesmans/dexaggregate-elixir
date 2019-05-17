@@ -13,7 +13,7 @@ defmodule Market.Util do
 	end
 
 	@doc """
-		Determines the internal id of a Market.Pair.
+		Determines the internal id of a Market.Pair based on its base and quote address.
 	"""
 	def pair_id(ba, qa) do
 		Base.encode64(:crypto.hash(:sha512, "#{ba}/#{qa}"))

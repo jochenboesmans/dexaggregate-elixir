@@ -29,7 +29,6 @@ defmodule Market.Rebasing do
 				current_bid: deeply_rebase_rate(emd.current_bid, p, rebase_address, market, max_depth),
 				current_ask: deeply_rebase_rate(emd.current_ask, p, rebase_address, market, max_depth),
 				base_volume: deeply_rebase_rate(emd.base_volume, p, rebase_address, market, max_depth),
-				quote_volume: deeply_rebase_rate(emd.quote_volume, p, rebase_address, market, max_depth),
 			}
 			Map.put(acc, exchange_id, rebased_emd)
 		end)

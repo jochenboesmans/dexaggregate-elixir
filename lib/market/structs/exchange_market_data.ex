@@ -2,7 +2,6 @@ defmodule Market.ExchangeMarketData do
 	@moduledoc """
 		Data structure containing exchange-specific market data for a pair.
 	"""
-
 	@enforce_keys [:last_price, :current_bid, :current_ask, :base_volume]
 	defstruct(
 		last_price: nil,
