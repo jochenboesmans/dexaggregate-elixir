@@ -94,10 +94,10 @@ defmodule Market do
     case exchanges do
       :all ->
         market
-      _ ->
+      exchs ->
         Enum.reduce(market, %{}, fn ({k, p}, acc1) ->
           filtered_pmd = Enum.reduce(p.market_data, %{}, fn({e, emd}, acc2) ->
-            case Enum.member?(exchanges, e) do
+            case Enum.member?(exchs, e) do
               true ->
                 Map.put(acc2, e, emd)
               false ->
@@ -105,11 +105,11 @@ defmodule Market do
             end
           end)
 
-          case filtered_pmd do
-            %{} ->
+          case map_size(filtered_pmd) do
+            0 ->
               acc1
-            valid_pmd ->
-              Map.put(acc1, k, %{p | market_data: valid_pmd})
+            _ ->
+              Map.put(acc1, k, %{p | market_data: filtered_pmd})
           end
         end)
     end
