@@ -2,7 +2,7 @@ defmodule MarketFetching.DdexFetcher do
 	@moduledoc """
 		Fetches the Ddex market and updates the global Market accordingly.
 	"""
-	use WebSockex
+  use WebSockex
 	use Task
 
 	import MarketFetching.Util
@@ -11,7 +11,7 @@ defmodule MarketFetching.DdexFetcher do
 	@api_base_url "https://api.ddex.io/v3"
 	@market_endpoint "markets/tickers"
 	@currencies_endpoint "markets"
-	@ws_url "wss://ws.ddex.io/v3"
+  @ws_url "wss://ws.ddex.io/v3"
 
 	# Makes sure private functions are testable.
 	@compile if Mix.env == :test, do: :export_all
@@ -24,39 +24,53 @@ defmodule MarketFetching.DdexFetcher do
 		c = fetch_currencies()
 		m = initial_exchange_market(c)
 		maybe_update(m)
-		subscribe_to_market(c)
+    subscribe_to_market(c)
 	end
 
   def subscribe_to_market(c) do
-    {:ok, pid} = WebSockex.start_link(@ws_url, __MODULE__, %{currencies: c})
+    m = MarketFetching.DdexFetcher.fetch_pairs()
+    {:ok, pid} = WebSockex.start_link(@ws_url, __MODULE__, %{currencies: c, pairs: m})
     sub_message = %{
       type: "subscribe",
       channels: [%{
         name: "ticker",
-        marketIds: c
+        marketIds: m
       }]
     }
     {:ok, e} = Poison.encode(sub_message)
     WebSockex.send_frame(pid, {:text, e})
   end
 
-	def handle_frame({:text, message},  %{currencies: c} = state) do
-		{:ok, p} = Poison.decode(message)
+  def handle_frame({:text, message}, %{currencies: c} = state) do
+    {:ok, p} = Poison.decode(message)
 
-    case try_get_valid_pair(p, c) do
+    IO.inspect(p)
+
+    case p do
       nil ->
         nil
-      valid_pair ->
-				IO.inspect(valid_pair)
-        Market.update(valid_pair)
+      %{
+        "type" => "subscriptions"
+      } ->
+        nil
+      %{
+        "type" => "ticker"
+      } ->
+        case try_get_valid_pair(p, c) do
+          nil -> nil
+          valid_pair -> Market.update(valid_pair)
+        end
+      _ ->
+        nil
     end
 
-		{:ok, state}
-	end
+    {:ok, state}
+  end
 
-	def handle_cast({:send, frame}, state) do
-		{:reply, frame, state}
-	end
+  def handle_cast({:send, frame}, state) do
+    {:reply, frame, state}
+  end
+
 
   def initial_exchange_market(c) do
     complete_market =
@@ -105,6 +119,16 @@ defmodule MarketFetching.DdexFetcher do
 				{:error, message}
 		end
 	end
+
+  def fetch_pairs() do
+    case fetch_and_decode("#{@api_base_url}/#{@currencies_endpoint}") do
+      {:ok, %{"data" => %{"markets" => markets}}} ->
+        Enum.map(markets, fn p -> p["id"] end)
+      {:error, message} ->
+        {:error, message}
+
+    end
+  end
 
 	def fetch_currencies() do
 		case fetch_and_decode("#{@api_base_url}/#{@currencies_endpoint}") do

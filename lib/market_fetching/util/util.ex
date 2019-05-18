@@ -145,9 +145,9 @@ defmodule MarketFetching.Util do
 	def maybe_update(%ExchangeMarket{market: complete_market} = x) do
 		case complete_market do
 			nil ->
-				IO.puts("Empty market.")
+				nil
 			[] ->
-				IO.puts("Empty market.")
+				nil
 			_ ->
 				Market.update(x)
 		end
