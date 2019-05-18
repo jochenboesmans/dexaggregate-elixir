@@ -4,8 +4,6 @@ defmodule API.Router do
 	"""
 	use Plug.Router
 
-	@port 5000
-
 	plug Plug.Parsers,
 		parsers: [:urlencoded, :multipart, :json, Absinthe.Plug.Parser],
 		pass: ["*/*"],

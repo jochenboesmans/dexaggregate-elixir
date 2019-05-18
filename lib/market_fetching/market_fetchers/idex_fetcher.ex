@@ -5,7 +5,7 @@ defmodule MarketFetching.IdexFetcher do
   use Task, restart: :permanent
 
   import MarketFetching.Util
-  alias MarketFetching.{ExchangeMarket}
+  alias MarketFetching.ExchangeMarket
 
   @base_api_url "https://api.idex.market"
   @market_endpoint "returnTicker"

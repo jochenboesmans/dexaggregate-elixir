@@ -5,7 +5,7 @@ defmodule MarketFetching.KyberFetcher do
   use Task, restart: :permanent
 
   import MarketFetching.Util
-  alias MarketFetching.{Pair, ExchangeMarket, PairMarketData}
+  alias MarketFetching.ExchangeMarket
 
   @base_api_url "https://api.kyber.network"
   @market_endpoint "market"

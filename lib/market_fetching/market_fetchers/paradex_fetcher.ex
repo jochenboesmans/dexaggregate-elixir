@@ -5,7 +5,7 @@ defmodule MarketFetching.ParadexFetcher do
 	use Task, restart: :permanent
 
   import MarketFetching.Util
-	alias MarketFetching.{Pair, ExchangeMarket, PairMarketData}
+	alias MarketFetching.ExchangeMarket
 
   @base_api_url "https://api.paradex.io/api/v1"
   @currencies_endpoint "tokens"

@@ -61,7 +61,7 @@ defmodule Market do
   def handle_call({:get_rebased_market, %{rebase_address: ra, exchanges: e} = _args}, _from, %{market: m} = state) do
     fm =
       Market.Rebasing.rebase_market(ra, m, 4)
-      |> filter_by_exchanges(e, ra)
+      |> filter_by_exchanges(e)
       |> format_market(ra)
 
     {:reply, fm, state}
@@ -90,7 +90,7 @@ defmodule Market do
   @doc """
     Returns a partial market containing all pairs trading on the given exchanges.
   """
-  defp filter_by_exchanges(market, exchanges, ra) do
+  defp filter_by_exchanges(market, exchanges) do
     case exchanges do
       :all ->
         market
@@ -135,7 +135,7 @@ defmodule Market do
   @doc """
     Returns the combined volume of a market pair across all exchanges.
   """
-  defp combined_volume_across_exchanges(%Market.Pair{market_data: md} = p) do
+  defp combined_volume_across_exchanges(%Market.Pair{market_data: md}) do
     Enum.reduce(md, 0, fn ({_exchange, %Market.ExchangeMarketData{base_volume: bv}}, acc) ->
       acc + bv
     end)

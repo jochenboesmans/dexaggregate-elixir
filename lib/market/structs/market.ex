@@ -5,6 +5,6 @@ defmodule Market.Market do
   @enforce_keys [:pairs, :base_address]
   defstruct(
     pairs: nil,
-    base_address: nil,
+    base_address: nil
   )
 end

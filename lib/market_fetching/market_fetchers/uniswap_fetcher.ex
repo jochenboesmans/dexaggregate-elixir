@@ -46,7 +46,7 @@ defmodule MarketFetching.UniswapFetcher do
 
 		complete_market =
 			Enum.reduce(@exchange_addresses, [], fn ({t, ea}, acc) ->
-				IO.inspect("#{@base_api_url}/#{@market_endpoint}?exchangeAddress=#{ea}")
+				#IO.inspect("#{@base_api_url}/#{@market_endpoint}?exchangeAddress=#{ea}")
 				case fetch_and_decode("#{@base_api_url}/#{@market_endpoint}?exchangeAddress=#{ea}") do
 					{:ok, p} ->
 						%{

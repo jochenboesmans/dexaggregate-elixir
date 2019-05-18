@@ -5,6 +5,6 @@ defmodule Market.LastUpdate do
   @enforce_keys [:timestamp, :exchange]
   defstruct(
     timestamp: nil,
-    exchange: nil,
+    exchange: nil
   )
 end

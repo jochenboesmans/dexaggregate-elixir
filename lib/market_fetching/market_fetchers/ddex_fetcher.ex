@@ -6,7 +6,7 @@ defmodule MarketFetching.DdexFetcher do
 	use Task
 
 	import MarketFetching.Util
-	alias MarketFetching.{Pair, ExchangeMarket, PairMarketData}
+	alias MarketFetching.ExchangeMarket
 
 	@api_base_url "https://api.ddex.io/v3"
 	@market_endpoint "markets/tickers"

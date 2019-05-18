@@ -5,7 +5,7 @@ defmodule MarketFetching.OasisFetcher do
 	use Task, restart: :permanent
 
   import MarketFetching.Util
-	alias MarketFetching.{Pair, ExchangeMarket, PairMarketData}
+	alias MarketFetching.ExchangeMarket
 
   @market_endpoint "http://api.oasisdex.com/v1/markets"
   @currencies %{
@@ -68,8 +68,8 @@ defmodule MarketFetching.OasisFetcher do
 		case fetch_and_decode("#{@market_endpoint}/#{bs}/#{qs}") do
 			{:ok, %{"data" => pair}} ->
 				{:ok, pair}
-			{:error, _message} ->
-				{:error, _message}
+			{:error, message} ->
+				{:error, message}
 		end
 	end
 end
