@@ -28,7 +28,7 @@ defmodule API.Router do
 	get "/dai_rebased_market" do
 		args = %{
 			rebase_address: @dai_address,
-			exchanges: [:radar]
+			exchanges: :all
 		}
 		conn
 		|> put_resp_content_type("application/json")

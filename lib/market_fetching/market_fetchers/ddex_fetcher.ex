@@ -6,7 +6,7 @@ defmodule MarketFetching.DdexFetcher do
 	use Task
 
 	import MarketFetching.Util
-	alias MarketFetching.ExchangeMarket
+  alias MarketFetching.{Pair, ExchangeMarket, PairMarketData}
 
 	@api_base_url "https://api.ddex.io/v3"
 	@market_endpoint "markets/tickers"
@@ -43,8 +43,6 @@ defmodule MarketFetching.DdexFetcher do
 
   def handle_frame({:text, message}, %{currencies: c} = state) do
     {:ok, p} = Poison.decode(message)
-
-    IO.inspect(p)
 
     case p do
       nil ->
@@ -105,10 +103,26 @@ defmodule MarketFetching.DdexFetcher do
 
     case valid_values?(strings: [bs, qs, ba, qa], numbers: [lp, cb, ca, bv]) do
       true ->
-        generic_market_pair([bs, qs, ba, qa, lp, cb, ca, bv], :ddex)
+        market_pair([bs, qs, ba, qa, lp, cb, ca, bv])
       false ->
         nil
     end
+  end
+
+  defp market_pair([bs, qs, ba, qa, lp, cb, ca, bv]) do
+    %Pair{
+      base_symbol: bs,
+      quote_symbol: qs,
+      base_address: ba,
+      quote_address: qa,
+      market_data: %PairMarketData{
+        exchange: :ddex,
+        last_price: :math.pow(parse_float(lp), -1),
+        current_bid: :math.pow(parse_float(cb), -1),
+        current_ask: :math.pow(parse_float(ca), -1),
+        base_volume: parse_float(bv)
+      }
+    }
   end
 
 	def fetch_market() do

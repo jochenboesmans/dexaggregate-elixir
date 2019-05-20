@@ -119,7 +119,6 @@ defmodule Market do
   defp format_market(m, ra) do
     pairs =
       Map.values(m)
-      |> IO.inspect()
       |> Enum.sort_by(&combined_volume_across_exchanges/1, &>=/2)
       |> Enum.map(fn p ->
         new_md = Enum.map(p.market_data, fn {exchange, emd} ->  Map.put(emd, :exchange, exchange) end)
