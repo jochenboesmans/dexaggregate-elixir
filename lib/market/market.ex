@@ -60,7 +60,7 @@ defmodule Market do
   @impl true
   def handle_call({:get_rebased_market, %{rebase_address: ra, exchanges: e} = _args}, _from, %{market: m} = state) do
     fm =
-      Market.Rebasing.rebase_market(ra, m, 4)
+      Market.Rebasing.rebase_market(ra, m, 3)
       |> filter_by_exchanges(e)
       |> format_market(ra)
 

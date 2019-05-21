@@ -14,10 +14,19 @@ defmodule Market.Rebasing do
 	"""
 	def rebase_market(rebase_address, market, max_depth) do
 		Enum.reduce(market, %{}, fn ({pair_id, p}, acc) ->
-			rebased_pair = %{p | market_data: rebase_market_data(p, rebase_address, market, max_depth)}
-			Map.put(acc, pair_id, rebased_pair)
-		end)
+      rebased_pair = Task.async(fn -> rebase_pair([p, rebase_address, market, max_depth]) end)
+      Map.put(acc, pair_id, rebased_pair)
+    end)
+
+    |> Enum.reduce(%{}, fn ({k, p}, acc) ->
+      result = Task.await(p)
+      Map.put(acc, k, result)
+    end)
 	end
+
+  def rebase_pair([p, rebase_address, market, max_depth]) do
+    %{p | market_data: rebase_market_data(p, rebase_address, market, max_depth)}
+  end
 
 	@doc """
 		Rebases all market data for a given pair to a token with a given rebase_address as the token's address.
