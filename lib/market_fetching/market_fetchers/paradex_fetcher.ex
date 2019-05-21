@@ -67,7 +67,7 @@ defmodule MarketFetching.ParadexFetcher do
 			base_address: ba,
 			quote_address: qa,
 			market_data: %PairMarketData{
-				exchange: :ddex,
+				exchange: :paradex,
 				last_price: safe_power(parse_float(lp), -1),
 				current_bid: safe_power(parse_float(cb), -1),
 				current_ask: safe_power(parse_float(ca), -1),
