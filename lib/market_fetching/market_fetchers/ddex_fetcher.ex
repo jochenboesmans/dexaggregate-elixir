@@ -117,9 +117,9 @@ defmodule MarketFetching.DdexFetcher do
       quote_address: qa,
       market_data: %PairMarketData{
         exchange: :ddex,
-        last_price: :math.pow(parse_float(lp), -1),
-        current_bid: :math.pow(parse_float(cb), -1),
-        current_ask: :math.pow(parse_float(ca), -1),
+        last_price: safe_power(parse_float(lp), -1),
+        current_bid: safe_power(parse_float(cb), -1),
+        current_ask: safe_power(parse_float(ca), -1),
         base_volume: parse_float(bv)
       }
     }

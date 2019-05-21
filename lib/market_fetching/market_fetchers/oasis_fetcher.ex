@@ -5,7 +5,7 @@ defmodule MarketFetching.OasisFetcher do
 	use Task, restart: :permanent
 
   import MarketFetching.Util
-	alias MarketFetching.ExchangeMarket
+	alias MarketFetching.{ExchangeMarket, Pair, PairMarketData}
 
   @market_endpoint "http://api.oasisdex.com/v1/markets"
   @currencies %{
@@ -44,12 +44,12 @@ defmodule MarketFetching.OasisFetcher do
 							"ask" => ca,
 							"vol" => bv,
 						} = pair
-						[qs, bs] = String.split(id, "/")
+						[bs, qs] = String.split(id, "/")
 						[ba, qa] = [c[bs], c[qs]]
 
 						case valid_values?(strings: [bs, qs, ba, qa], numbers: [lp, cb, ca, bv]) do
 							true ->
-								[generic_market_pair([bs, qs, ba, qa, lp, cb, ca, bv], :oasis) | acc]
+								[market_pair([bs, qs, ba, qa, lp, cb, ca, bv]) | acc]
 							false ->
 								acc
 						end
@@ -61,6 +61,22 @@ defmodule MarketFetching.OasisFetcher do
 		%ExchangeMarket{
 			exchange: :oasis,
 			market: complete_market
+		}
+	end
+
+	defp market_pair([bs, qs, ba, qa, lp, cb, ca, bv]) do
+		%Pair{
+			base_symbol: bs,
+			quote_symbol: qs,
+			base_address: ba,
+			quote_address: qa,
+			market_data: %PairMarketData{
+				exchange: :oasis,
+				last_price: safe_power(parse_float(lp), -1),
+				current_bid: safe_power(parse_float(cb), -1),
+				current_ask: safe_power(parse_float(ca), -1),
+				base_volume: parse_float(bv),
+			}
 		}
 	end
 

@@ -5,7 +5,7 @@ defmodule MarketFetching.KyberFetcher do
   use Task, restart: :permanent
 
   import MarketFetching.Util
-  alias MarketFetching.ExchangeMarket
+  alias MarketFetching.{ExchangeMarket, Pair, PairMarketData}
 
   @base_api_url "https://api.kyber.network"
   @market_endpoint "market"
@@ -40,13 +40,13 @@ defmodule MarketFetching.KyberFetcher do
                   "last_traded" => lp,
                   "current_bid" => cb,
                   "current_ask" => ca,
-                  "eth_24h_volume" => bv
+                  "token_24h_volume" => bv
                 } = p
                 [ba, qa] = [c[bs], c[qs]]
 
                 case valid_values?(strings: [bs, qs, ba, qa], numbers: [lp, cb, ca, bv]) do
                   true ->
-                    [generic_market_pair([bs, qs, ba, qa, lp, cb, ca, bv], :kyber) | acc]
+                    [market_pair([bs, qs, ba, qa, lp, cb, ca, bv]) | acc]
                   false ->
                     acc
                 end
@@ -61,6 +61,22 @@ defmodule MarketFetching.KyberFetcher do
     %ExchangeMarket{
       exchange: :kyber,
       market: complete_market,
+    }
+  end
+
+  defp market_pair([bs, qs, ba, qa, lp, cb, ca, bv]) do
+    %Pair{
+      base_symbol: bs,
+      quote_symbol: qs,
+      base_address: ba,
+      quote_address: qa,
+      market_data: %PairMarketData{
+        exchange: :kyber,
+        last_price: safe_power(parse_float(lp), -1),
+        current_bid: safe_power(parse_float(cb), -1),
+        current_ask: safe_power(parse_float(ca), -1),
+        base_volume: parse_float(bv),
+      }
     }
   end
 

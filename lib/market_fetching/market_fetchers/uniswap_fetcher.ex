@@ -83,10 +83,10 @@ defmodule MarketFetching.UniswapFetcher do
 			quote_address: qa,
 			market_data: %PairMarketData{
 				exchange: :uniswap,
-				last_price: :math.pow(parse_float(lp), -1),
-				current_bid: :math.pow(parse_float(cb), -1),
-				current_ask: :math.pow(parse_float(ca), -1),
-				base_volume: :math.pow(parse_float(bv), -18)
+				last_price: safe_power(parse_float(lp), -1),
+				current_bid: safe_power(parse_float(cb), -1),
+				current_ask: safe_power(parse_float(ca), -1),
+				base_volume: safe_power(parse_float(bv), -18)
 			}
 		}
 	end

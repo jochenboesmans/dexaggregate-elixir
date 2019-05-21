@@ -32,8 +32,8 @@ defmodule MarketFetching.RadarFetcher do
 					Enum.reduce(market, [], fn (p, acc) ->
 						%{
 							"id" => id,
-							"baseTokenAddress" => ba,
-							"quoteTokenAddress" => qa,
+							"baseTokenAddress" => qa,
+							"quoteTokenAddress" => ba,
 							"ticker" => %{
 								"price" => lp,
 								"bestBid" => cb,

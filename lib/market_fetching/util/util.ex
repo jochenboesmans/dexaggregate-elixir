@@ -96,6 +96,15 @@ defmodule MarketFetching.Util do
 		end
 	end
 
+	def safe_power(number, power) do
+		case number == 0 do
+			true ->
+				number
+			false ->
+				:math.pow(number, power)
+		end
+	end
+
 
 	@doc """
 		Determines whether a given string has a valid value to be included in the market.
