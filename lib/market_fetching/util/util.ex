@@ -22,8 +22,6 @@ defmodule MarketFetching.Util do
 		case HTTPoison.get(url, args) do
 			{:ok, response} ->
 				decode(response)
-			#{:ok, {:error, message}} ->
-				#{:error, message}
 			{:error, message} ->
 				{:error, message}
 		end

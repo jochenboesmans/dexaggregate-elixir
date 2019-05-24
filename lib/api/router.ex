@@ -7,18 +7,18 @@ defmodule API.Router do
 	plug Plug.Parsers,
 		parsers: [:urlencoded, :multipart, :json, Absinthe.Plug.Parser],
 		pass: ["*/*"],
-		json_decoder: Jason
+		json_decoder: Poison
 
 	plug :match
 	plug :dispatch
 
 	forward "/graphql/regular",
 		to: Absinthe.Plug,
-		init_opts: [schema: Graphql.Schema, json_codec: Jason]
+		schema: Graphql.Schema
 
 	forward "/graphql/graphiql",
 		to: Absinthe.Plug.GraphiQL,
-		init_opts: [schema: Graphql.Schema, json_codec: Jason]
+		schema: Graphql.Schema
 
 	get "/market" do
 		conn

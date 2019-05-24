@@ -42,11 +42,18 @@ defmodule Market do
   end
 
   @doc """
-    Returns the raw market as maintained by this module.
+    Returns the raw market.
   """
   @impl true
   def handle_call(:get_market, _from,  %{market: m} = state) do
-    {:reply, m, state}
+    r =
+      Map.values(m)
+      |> Enum.map(fn p ->
+        new_md = Enum.map(p.market_data, fn {exchange, emd} ->  Map.put(emd, :exchange, exchange) end)
+        %{p | market_data: new_md}
+      end)
+
+    {:reply, r, state}
   end
 
   @doc """
