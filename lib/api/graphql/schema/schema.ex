@@ -21,5 +21,10 @@ defmodule Graphql.Schema do
 		field :exchanges, list_of(:string) do
 			resolve &Content.get_exchanges/3
 		end
+
+		@desc "Get data about the last update to the market."
+		field :last_update, :last_update do
+			resolve &Content.get_last_update/3
+		end
 	end
 end

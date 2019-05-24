@@ -25,4 +25,10 @@ defmodule Graphql.Schema.ContentTypes do
 		field :current_ask, :float
 		field :base_volume, :float
 	end
+
+	@desc "Data about the last update to the market."
+	object :last_update do
+		field :timestamp, :integer
+		field :exchange, :string
+	end
 end

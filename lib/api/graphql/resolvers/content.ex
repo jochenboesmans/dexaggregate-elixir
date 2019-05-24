@@ -12,4 +12,8 @@ defmodule Graphql.Resolvers.Content do
 	def get_exchanges(_parent, _args, _resolution) do
 		{:ok, Market.get(:exchanges)}
 	end
+
+	def get_last_update(_parent, _args, _resolution) do
+		{:ok, Market.get(:last_update)}
+	end
 end
