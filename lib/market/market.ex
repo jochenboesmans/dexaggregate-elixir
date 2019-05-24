@@ -28,7 +28,7 @@ defmodule Market do
     Updates the market with the given pair or exchange market.
   """
   def update(pair_or_exchange_market) do
-    RebasedMarketCache.clear()
+    Rebasing.Cache.clear()
     GenServer.cast(__MODULE__, {:update, pair_or_exchange_market})
   end
 
@@ -54,17 +54,10 @@ defmodule Market do
   """
   @impl true
   def handle_call({:get_rebased_market, %{rebase_address: ra} = _args}, _from, %{market: m} = state) do
-    case RebasedMarketCache.get(ra) do
-      {:found, rm} ->
-        {:reply, rm, state}
-      {:not_found, _} ->
-        fm =
-          Market.Rebasing.rebase_market(ra, m, 3)
-          |> format_market(ra)
-
-        RebasedMarketCache.add(ra, fm)
-        {:reply, fm, state}
-    end
+    fm =
+      Market.Rebasing.rebase_market(ra, m, 3)
+      |> format_market(ra)
+    {:reply, fm, state}
   end
 
   @doc """

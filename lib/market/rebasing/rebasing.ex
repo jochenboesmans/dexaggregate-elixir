@@ -13,25 +13,22 @@ defmodule Market.Rebasing do
 		Rebases all pairs in a given market to a token with a given rebase_address as the token's address.
 	"""
 	def rebase_market(rebase_address, market, max_depth) do
-		start = :os.system_time()
-		mid_result = Enum.map(market, fn ({pair_id, p}) ->
-			{pair_id, Task.async(fn -> rebase_pair([p, rebase_address, market, max_depth]) end)}
-    end)
+		case Rebasing.Cache.get({:rebase_market, {rebase_address, max_depth}}) do
+			{:found, cached_market} ->
+				cached_market
+			{:not_found, _} ->
+				created_tasks = Enum.map(market, fn ({pair_id, p}) ->
+					{pair_id, Task.async(fn -> rebase_pair([p, rebase_address, market, max_depth]) end)}
+				end)
 
-		mid = :os.system_time()
+				rebased_market = Enum.reduce(created_tasks, %{}, fn ({k, p}, acc) ->
+					result = Task.await(p)
+					Map.put(acc, k, result)
+				end)
 
-		result = Enum.reduce(mid_result, %{}, fn ({k, p}, acc) ->
-      result = Task.await(p)
-      Map.put(acc, k, result)
-    end)
-
-		last = :os.system_time()
-
-		IO.puts("new rebase:")
-		IO.inspect(mid - start)
-		IO.inspect(last - mid)
-
-		result
+				Rebasing.Cache.add({:rebase_market, {rebase_address, max_depth}, rebased_market})
+				rebased_market
+		end
 	end
 
   def rebase_pair([p, rebase_address, market, max_depth]) do
@@ -151,13 +148,10 @@ defmodule Market.Rebasing do
 		Calculates the values that determine a volume-weighted rate.
 	"""
 	defp sums_for_deep_rebasing(rate, original_pair, rebase_address, market, max_depth) do
-		Enum.reduce(
-			rebase_paths(rebase_address, original_pair, market, max_depth),
-			%{combined_volume: 0, volume_weighted_sum: 0},
-			fn (rebase_path, sums) ->
-				update_sums(sums, rebase_path, rate, market, rebase_address)
-			end
-		)
+		rebase_paths = try_expand_path([original_pair], rebase_address, market, max_depth)
+
+		Enum.reduce(rebase_paths, %{combined_volume: 0, volume_weighted_sum: 0}, fn (rebase_path, sums) ->
+			update_sums(sums, rebase_path, rate, market, rebase_address) end)
 	end
 
 	@doc """
@@ -204,13 +198,6 @@ defmodule Market.Rebasing do
 			volume_weighted_sum: sums.volume_weighted_sum + (weight * rebased_rate),
 			combined_volume: sums.combined_volume + weight
 		}
-	end
-
-	@doc """
-		Finds all possible rebases from the given base_address to the given rebase_address with the specified depth.
-	"""
-	def rebase_paths(rebase_address, original_pair, market, max_depth) do
-    try_expand_path([original_pair], rebase_address, market, max_depth)
 	end
 
 	@doc """
