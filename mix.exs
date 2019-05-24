@@ -25,6 +25,7 @@ defmodule DexAggregate.MixProject do
     [
       {:httpoison, "~> 1.5"},
       {:poison, "~> 4.0"},
+      {:jason, "~> 1.1"},
       {:websockex, "~> 0.4.0"},
       {:plug_cowboy, "~> 2.0"},
       {:memoize, "~> 1.3"},

@@ -10,6 +10,7 @@ defmodule DexAggregate.Application do
 			{Market, name: Market},
 			{FetcherSupervisor, name: FetcherSupervisor},
 			{API.Router, name: API.Router},
+			{RebasedMarketCache, name: RebasedMarketCache}
 		]
 		options = [
 			strategy: :one_for_one,

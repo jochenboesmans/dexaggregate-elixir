@@ -28,16 +28,12 @@ defmodule Market do
     Updates the market with the given pair or exchange market.
   """
   def update(pair_or_exchange_market) do
+    RebasedMarketCache.clear()
     GenServer.cast(__MODULE__, {:update, pair_or_exchange_market})
   end
 
   def start_link(_options) do
-    children = []
-    options = [
-      strategy: :one_for_one,
-      name: __MODULE__
-    ]
-    GenServer.start_link(__MODULE__, children, options)
+    GenServer.start_link(__MODULE__, nil, name: __MODULE__)
   end
 
   @impl true
@@ -54,17 +50,21 @@ defmodule Market do
   end
 
   @doc """
-    Returns the market rebased in a token with a specified rebase_address and
-    filtered by the specified exchanges.
+    Returns the market rebased in a token with a specified rebase_address.
   """
   @impl true
-  def handle_call({:get_rebased_market, %{rebase_address: ra, exchanges: e} = _args}, _from, %{market: m} = state) do
-    fm =
-      Market.Rebasing.rebase_market(ra, m, 4)
-      |> filter_by_exchanges(e)
-      |> format_market(ra)
+  def handle_call({:get_rebased_market, %{rebase_address: ra} = _args}, _from, %{market: m} = state) do
+    case RebasedMarketCache.get(ra) do
+      {:found, rm} ->
+        {:reply, rm, state}
+      {:not_found, _} ->
+        fm =
+          Market.Rebasing.rebase_market(ra, m, 3)
+          |> format_market(ra)
 
-    {:reply, fm, state}
+        RebasedMarketCache.add(ra, fm)
+        {:reply, fm, state}
+    end
   end
 
   @doc """
