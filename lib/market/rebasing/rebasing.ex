@@ -76,17 +76,26 @@ defmodule Market.Rebasing do
 			20_000.0
 	"""
 	def rebase_rate(rate, rebase_address, base_address, market) do
-		case rebase_address == base_address do
-			true ->
-				rate
-			false ->
-				rebase_pair_id = pair_id(rebase_address, base_address)
-				case Map.has_key?(market, rebase_pair_id) do
-					true ->
-						rate * volume_weighted_spread_average(market[rebase_pair_id], market)
-					false ->
-						0
-				end
+		case Rebasing.Cache.get({:rebase_rate, {rate, rebase_address, base_address}}) do
+			{:found, cached_result} ->
+				cached_result
+			{:not_found, _} ->
+				result =
+					case rebase_address == base_address do
+						true ->
+							rate
+						false ->
+							rebase_pair_id = pair_id(rebase_address, base_address)
+							case Map.has_key?(market, rebase_pair_id) do
+								true ->
+									rate * volume_weighted_spread_average(market[rebase_pair_id], market)
+								false ->
+									0
+							end
+					end
+
+				Rebasing.Cache.add({:rebase_rate, {rate, rebase_address, base_address}, result})
+				result
 		end
 	end
 
@@ -123,8 +132,16 @@ defmodule Market.Rebasing do
 
 	"""
 	def combined_volume_across_exchanges(p, market) do
-		%Pair{market_data: pmd} = market[pair_id(p)]
-		Enum.reduce(pmd, 0, fn ({_exchange_id, %ExchangeMarketData{base_volume: bv}}, sum) -> sum + bv end)
+		case Rebasing.Cache.get({:combined_volume_across_exchanges, p}) do
+			{:found, cached_result} ->
+				cached_result
+			{:not_found, _} ->
+				%Pair{market_data: pmd} = market[pair_id(p)]
+				result = Enum.reduce(pmd, 0, fn ({_exchange_id, %ExchangeMarketData{base_volume: bv}}, sum) -> sum + bv end)
+
+				Rebasing.Cache.add({:combined_volume_across_exchanges, p, result})
+				result
+		end
 	end
 
 	@doc """
@@ -132,15 +149,25 @@ defmodule Market.Rebasing do
 		from the given base_address to the given rebase_address with a maximum path length of 2 rebases.
 	"""
 	def deeply_rebase_rate(rate, original_pair, rebase_address, market, max_depth) do
-		%{combined_volume: cv, volume_weighted_sum: vws} =
-			sums_for_deep_rebasing(rate, original_pair, rebase_address, market, max_depth)
-		case cv do
-			0 ->
-				0
-			0.0 ->
-				0.0
-			_ ->
-				vws / cv
+		case Rebasing.Cache.get({:deeply_rebase_rate, {rate, original_pair, rebase_address, max_depth}}) do
+			{:found, cached_result} ->
+				cached_result
+			{:not_found, _} ->
+				%{combined_volume: cv, volume_weighted_sum: vws} =
+					sums_for_deep_rebasing(rate, original_pair, rebase_address, market, max_depth)
+
+				result =
+					case cv do
+						0 ->
+							0
+						0.0 ->
+							0.0
+						_ ->
+							vws / cv
+					end
+
+				Rebasing.Cache.add({:deeply_rebase_rate, {rate, original_pair, rebase_address, max_depth}, result})
+				result
 		end
 	end
 
@@ -218,23 +245,31 @@ defmodule Market.Rebasing do
 		Returns a list of all paths that expand the given path_to_expand.
 	"""
 	defp expand_path([last_pair | _] = path_to_expand, rebase_address, market, max_depth) do
-		Enum.reduce(
-			market,
-			[],
-			fn ({_id, %Pair{quote_address: next_pair_qa} = next_pair}, paths_acc) ->
-				case next_pair_qa == last_pair.base_address do
-					true ->
-						expanded_path = [next_pair | path_to_expand]
-						case try_expand_path(expanded_path, rebase_address, market, max_depth) do
-							nil ->
+		case Rebasing.Cache.get({:expand_path, {path_to_expand, rebase_address, max_depth}}) do
+			{:found, cached_result} ->
+				cached_result
+			{:not_found, _} ->
+				result = Enum.reduce(
+					market,
+					[],
+					fn ({_id, %Pair{quote_address: next_pair_qa} = next_pair}, paths_acc) ->
+						case next_pair_qa == last_pair.base_address do
+							true ->
+								expanded_path = [next_pair | path_to_expand]
+								case try_expand_path(expanded_path, rebase_address, market, max_depth) do
+									nil ->
+										paths_acc
+									all_paths_expanding_this ->
+										all_paths_expanding_this ++ paths_acc
+								end
+							false ->
 								paths_acc
-							all_paths_expanding_this ->
-								all_paths_expanding_this ++ paths_acc
 						end
-					false ->
-						paths_acc
-				end
-			end)
+					end)
+
+				Rebasing.Cache.add({:expand_path, {path_to_expand, rebase_address, max_depth}, result})
+				result
+		end
 	end
 
 	@doc """
@@ -268,22 +303,32 @@ defmodule Market.Rebasing do
 			240.0
 	"""
 	def volume_weighted_spread_average(p, market) do
-		case Map.has_key?(market, pair_id(p)) do
-			true ->
-				%Pair{market_data: pmd} = market[pair_id(p)]
-				combined_volume = combined_volume_across_exchanges(p, market)
-				weighted_sums = %{
-					current_bids: Enum.reduce(pmd, 0,
-						fn ({_pair_id, %ExchangeMarketData{base_volume: bv, current_bid: cb}}, sum) -> sum + (bv * cb) end
-					),
-					current_asks: Enum.reduce(pmd, 0,
-						fn ({_pair_id, %ExchangeMarketData{base_volume: bv, current_ask: ca}}, sum) -> sum + (bv * ca) end
-					)
-				}
-				average(weighted_sums, combined_volume)
-			false ->
-				0
+		case Rebasing.Cache.get({:volume_weighted_spread_average, p}) do
+			{:found, cached_result} ->
+				cached_result
+			{:not_found, _} ->
+				result =
+					case Map.has_key?(market, pair_id(p)) do
+						true ->
+							%Pair{market_data: pmd} = market[pair_id(p)]
+							combined_volume = combined_volume_across_exchanges(p, market)
+							weighted_sums = %{
+								current_bids: Enum.reduce(pmd, 0,
+									fn ({_pair_id, %ExchangeMarketData{base_volume: bv, current_bid: cb}}, sum) -> sum + (bv * cb) end
+								),
+								current_asks: Enum.reduce(pmd, 0,
+									fn ({_pair_id, %ExchangeMarketData{base_volume: bv, current_ask: ca}}, sum) -> sum + (bv * ca) end
+								)
+							}
+							average(weighted_sums, combined_volume)
+						false ->
+							0
+					end
+
+				Rebasing.Cache.add({:volume_weighted_spread_average, p, result})
+				result
 		end
+
 	end
 
 	defp average(weighted_sums, total_sum) do
