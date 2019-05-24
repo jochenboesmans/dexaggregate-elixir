@@ -22,6 +22,8 @@ defmodule MarketFetching.Util do
 		case HTTPoison.get(url, args) do
 			{:ok, response} ->
 				decode(response)
+			#{:ok, {:error, message}} ->
+				#{:error, message}
 			{:error, message} ->
 				{:error, message}
 		end
@@ -46,8 +48,8 @@ defmodule MarketFetching.Util do
 		case Poison.decode(body) do
 			{:ok, decoded_body} ->
 				{:ok, decoded_body}
-			:error ->
-				{:error, "Couldn't decode body of HTTP response."}
+			{:error, message} ->
+				{:error, message}
 		end
 	end
 
