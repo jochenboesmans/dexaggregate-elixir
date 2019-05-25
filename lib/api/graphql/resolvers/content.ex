@@ -2,18 +2,38 @@ defmodule Graphql.Resolvers.Content do
 	@moduledoc false
 
 	def get_market(_parent, _args, _resolution) do
-		{:ok, Market.get(:market)}
+		case Market.get(:market) do
+			nil ->
+				{:error, "Market not found."}
+			m ->
+				{:ok, m}
+		end
 	end
 
 	def get_rebased_market(_parent, args, _resolution) do
-		{:ok, Market.get({:rebased_market, args})}
+		case Market.get({:rebased_market, args}) do
+			nil ->
+				{:error, "Failed to rebase market to specified token address."}
+			rm ->
+				{:ok, rm}
+		end
 	end
 
 	def get_exchanges(_parent, _args, _resolution) do
-		{:ok, Market.get(:exchanges)}
+		case Market.get(:exchanges) do
+			nil ->
+				{:error, "Failed to retrieve exchanges in market."}
+			e ->
+				{:ok, e}
+		end
 	end
 
 	def get_last_update(_parent, _args, _resolution) do
-		{:ok, Market.get(:last_update)}
+		case Market.get(:last_update) do
+			nil ->
+				{:error, "Failed to retrieve last update to market."}
+			lu ->
+				{:ok, lu}
+		end
 	end
 end
