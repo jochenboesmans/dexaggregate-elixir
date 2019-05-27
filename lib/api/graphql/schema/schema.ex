@@ -8,12 +8,15 @@ defmodule Graphql.Schema do
 	query do
 		@desc "Get the market, not rebased."
 		field :market, list_of(:pair) do
+			arg :market_ids, list_of(non_null(:id))
 			resolve &Content.get_market/3
 		end
 
 		@desc "Get the market rebased in the specified token."
 		field :rebased_market, :rebased_market do
 			arg :rebase_address, non_null(:string)
+			arg :exchanges, list_of(non_null(:string))
+			arg :market_ids, list_of(non_null(:id))
 			resolve &Content.get_rebased_market/3
 		end
 

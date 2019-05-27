@@ -10,6 +10,7 @@ defmodule Graphql.Schema.ContentTypes do
 
 	@desc "A pair in the market."
 	object :pair do
+		field :id, non_null(:id)
 		field :base_symbol, :string
 		field :base_address, :string
 		field :quote_symbol, :string

@@ -13,8 +13,8 @@ defmodule Market do
     case what_to_get do
       :market ->
         GenServer.call(__MODULE__, :get_market)
-      {:rebased_market, args} ->
-        GenServer.call(__MODULE__, {:get_rebased_market, args})
+      {:rebased_market, ra} ->
+        GenServer.call(__MODULE__, {:get_rebased_market, ra})
       :exchanges ->
         GenServer.call(__MODULE__, :get_exchanges)
       :last_update ->
@@ -60,7 +60,7 @@ defmodule Market do
     Returns the market rebased in a token with a specified rebase_address.
   """
   @impl true
-  def handle_call({:get_rebased_market, %{rebase_address: ra} = _args}, _from, %{market: m} = state) do
+  def handle_call({:get_rebased_market, ra}, _from, %{market: m} = state) do
     fm =
       Market.Rebasing.rebase_market(ra, m, 3)
       |> format_market(ra)
@@ -86,35 +86,6 @@ defmodule Market do
   def handle_call(:get_last_update, _from, %{last_update: lu} = state) do
     {:reply, lu, state}
   end
-
-  @doc """
-    Returns a partial market containing all pairs trading on the given exchanges.
-  """
-  defp filter_by_exchanges(market, exchanges) do
-    case exchanges do
-      :all ->
-        market
-      exchs ->
-        Enum.reduce(market, %{}, fn ({k, p}, acc1) ->
-          filtered_pmd = Enum.reduce(p.market_data, %{}, fn({e, emd}, acc2) ->
-            case Enum.member?(exchs, e) do
-              true ->
-                Map.put(acc2, e, emd)
-              false ->
-                acc2
-            end
-          end)
-
-          case map_size(filtered_pmd) do
-            0 ->
-              acc1
-            _ ->
-              Map.put(acc1, k, %{p | market_data: filtered_pmd})
-          end
-        end)
-    end
-  end
-
 
   defp format_market(m, ra) do
     pairs =
