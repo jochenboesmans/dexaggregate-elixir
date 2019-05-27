@@ -4,12 +4,15 @@ defmodule Graphql.Resolvers.Content do
 	import Graphql.Resolvers.Util
 
 	def get_market(_parent, args, _resolution) do
-		%{exchange: e, market_ids: ids} = args
 		case Market.get(:market) do
 			nil ->
 				{:error, "Market not found."}
 			m ->
-				{:ok, filter_market_by_exchanges(m, e) |> filter_market_by_market_ids(ids)}
+				r =
+					format_market(m)
+					|> filter_market_by_exchanges(args)
+					|> filter_market_by_market_ids(args)
+				{:ok, r}
 		end
 
 	end

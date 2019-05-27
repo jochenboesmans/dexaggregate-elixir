@@ -46,14 +46,7 @@ defmodule Market do
   """
   @impl true
   def handle_call(:get_market, _from,  %{market: m} = state) do
-    r =
-      Map.values(m)
-      |> Enum.map(fn p ->
-        new_md = Enum.map(p.market_data, fn {exchange, emd} ->  Map.put(emd, :exchange, exchange) end)
-        %{p | market_data: new_md}
-      end)
-
-    {:reply, r, state}
+    {:reply, m, state}
   end
 
   @doc """
