@@ -13,22 +13,28 @@ defmodule Market.Rebasing do
 		Rebases all pairs in a given market to a token with a given rebase_address as the token's address.
 	"""
 	def rebase_market(rebase_address, market, max_depth) do
-		case Rebasing.Cache.get({:rebase_market, {rebase_address, max_depth}}) do
-			{:found, cached_market} ->
-				cached_market
-			{:not_found, _} ->
-				created_tasks = Enum.map(market, fn ({pair_id, p}) ->
-					{pair_id, Task.async(fn -> rebase_pair([p, rebase_address, market, max_depth]) end)}
-				end)
+		pairs =
+			case Rebasing.Cache.get({:rebase_market, {rebase_address, max_depth}}) do
+				{:found, cached_market} ->
+					cached_market
+				{:not_found, _} ->
+					created_tasks = Enum.map(market, fn ({pair_id, p}) ->
+						{pair_id, Task.async(fn -> rebase_pair([p, rebase_address, market, max_depth]) end)}
+					end)
 
-				rebased_market = Enum.reduce(created_tasks, %{}, fn ({k, p}, acc) ->
-					result = Task.await(p)
-					Map.put(acc, k, result)
-				end)
+					rebased_market = Enum.reduce(created_tasks, %{}, fn ({k, p}, acc) ->
+						result = Task.await(p)
+						Map.put(acc, k, result)
+					end)
 
-				Rebasing.Cache.add({:rebase_market, {rebase_address, max_depth}, rebased_market})
-				rebased_market
-		end
+					Rebasing.Cache.add({:rebase_market, {rebase_address, max_depth}, rebased_market})
+					rebased_market
+			end
+
+		%Market.Market{
+			pairs: pairs,
+			base_address: rebase_address,
+		}
 	end
 
   def rebase_pair([p, rebase_address, market, max_depth]) do

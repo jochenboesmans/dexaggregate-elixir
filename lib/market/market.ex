@@ -54,10 +54,7 @@ defmodule Market do
   """
   @impl true
   def handle_call({:get_rebased_market, ra}, _from, %{market: m} = state) do
-    fm =
-      Market.Rebasing.rebase_market(ra, m, 3)
-      |> format_market(ra)
-    {:reply, fm, state}
+    {:reply, Market.Rebasing.rebase_market(ra, m, 3), state}
   end
 
   @doc """
@@ -65,10 +62,7 @@ defmodule Market do
   """
   @impl true
   def handle_call(:get_exchanges, _from, %{market: m} = state) do
-    e =
-      exchanges_in_market(m)
-      |> MapSet.to_list
-    {:reply, e, state}
+    {:reply, exchanges_in_market(m), state}
   end
 
 
@@ -78,30 +72,6 @@ defmodule Market do
   @impl true
   def handle_call(:get_last_update, _from, %{last_update: lu} = state) do
     {:reply, lu, state}
-  end
-
-  defp format_market(m, ra) do
-    pairs =
-      Map.values(m)
-      |> Enum.sort_by(&combined_volume_across_exchanges/1, &>=/2)
-      |> Enum.map(fn p ->
-        new_md = Enum.map(p.market_data, fn {exchange, emd} ->  Map.put(emd, :exchange, exchange) end)
-        %{p | market_data: new_md}
-      end)
-
-    %Market.Market{
-      pairs: pairs,
-      base_address: ra,
-    }
-  end
-
-  @doc """
-    Returns the combined volume of a market pair across all exchanges.
-  """
-  defp combined_volume_across_exchanges(%Market.Pair{market_data: md}) do
-    Enum.reduce(md, 0, fn ({_exchange, %Market.ExchangeMarketData{base_volume: bv}}, acc) ->
-      acc + bv
-    end)
   end
 
   def exchanges_in_market(market) do
