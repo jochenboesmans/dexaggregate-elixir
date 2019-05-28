@@ -50,6 +50,12 @@ defmodule API.Router do
 		put_json_on_conn(conn, result)
 	end
 
+	get "/last_update" do
+		result =
+			Market.get(:last_update)
+			|> Poison.encode!
+	end
+
 	match _ do
 		send_resp(conn, 404, "Requested page was not found.")
 	end
