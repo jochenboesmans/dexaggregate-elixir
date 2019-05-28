@@ -18,9 +18,11 @@ defmodule API.Router do
 		to: Absinthe.Plug,
 		schema: Graphql.Schema
 
-	forward "/graphiql",
-		to: Absinthe.Plug.GraphiQL,
-		schema: Graphql.Schema
+	if Mix.env == :dev do
+		forward "/graphiql",
+			to: Absinthe.Plug.GraphiQL,
+			schema: Graphql.Schema
+	end
 
 	get "/market" do
 		result =
