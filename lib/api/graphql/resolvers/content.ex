@@ -1,32 +1,23 @@
 defmodule Graphql.Resolvers.Content do
 	@moduledoc false
 
-	import Graphql.Resolvers.Util
+	import API.Format
 
 	def get_market(_parent, args, _resolution) do
 		case Market.get(:market) do
 			nil ->
-				{:error, "Market not found."}
+        {:error, "Market not found."}
 			m ->
-				r =
-					format_market(m)
-					|> filter_market_by_exchanges(args)
-					|> filter_market_by_market_ids(args)
-				{:ok, r}
+        {:ok, queryable_market(m, args)}
 		end
-
 	end
 
 	def get_rebased_market(_parent, %{rebase_address: ra} = args, _resolution) do
 		case Market.get({:rebased_market, ra}) do
 			nil ->
 				{:error, "Failed to rebase market to specified token address."}
-			%Market.Market{base_address: ba, pairs: m} ->
-				r =
-					filter_market_by_exchanges(m, args)
-          |> filter_market_by_market_ids(args)
-          |> format_rebased_market()
-				{:ok, %Market.Market{base_address: ba, pairs: r}}
+			%Market.Market{pairs: m} ->
+        {:ok, queryable_rebased_market(m, args)}
 		end
 	end
 
@@ -35,7 +26,7 @@ defmodule Graphql.Resolvers.Content do
 			nil ->
 				{:error, "Failed to retrieve exchanges in market."}
 			e ->
-				{:ok, format_exchanges_in_market(e)}
+				{:ok, queryable_exchanges_in_market(e)}
 		end
 	end
 
@@ -47,4 +38,5 @@ defmodule Graphql.Resolvers.Content do
 				{:ok, lu}
 		end
 	end
+
 end
