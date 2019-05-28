@@ -14,11 +14,11 @@ defmodule API.Router do
 	plug :match
 	plug :dispatch
 
-	forward "/graphql/regular",
+	forward "/graphql",
 		to: Absinthe.Plug,
 		schema: Graphql.Schema
 
-	forward "/graphql/graphiql",
+	forward "/graphiql",
 		to: Absinthe.Plug.GraphiQL,
 		schema: Graphql.Schema
 
