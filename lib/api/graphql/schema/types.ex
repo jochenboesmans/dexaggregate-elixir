@@ -1,4 +1,4 @@
-defmodule Graphql.Schema.ContentTypes do
+defmodule Graphql.Schema.Types do
 	@moduledoc false
 	use Absinthe.Schema.Notation
 

@@ -3,6 +3,7 @@ defmodule API.Router do
 		A simple router for the application's API.
 	"""
 	use Plug.Router
+	use Absinthe.Phoenix.Endpoint
 
 	import API.Format
 
@@ -14,13 +15,16 @@ defmodule API.Router do
 	plug :match
 	plug :dispatch
 
-	forward "/graphql",
-		to: Absinthe.Plug,
-		schema: Graphql.Schema
-
 	if Mix.env == :dev do
-		forward "/graphiql",
-			to: Absinthe.Plug.GraphiQL,
+		forward "/graphiql", Absinthe.Plug.GraphiQL,
+			schema: Graphql.Schema,
+			socket: Graphql.Socket
+	end
+
+	scope "/api" do
+		pipe_through [:api]
+
+		forward "/", Absinthe.Plug,
 			schema: Graphql.Schema
 	end
 

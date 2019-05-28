@@ -10,6 +10,7 @@ defmodule DexAggregate.Application do
 			{Market, name: Market},
 			{FetcherSupervisor, name: FetcherSupervisor},
 			{API.Router, name: API.Router},
+			{Absinthe.Subscription, [API.Router], name: API.Router},
 			{Rebasing.Cache, name: Rebasing.Cache}
 		]
 		options = [

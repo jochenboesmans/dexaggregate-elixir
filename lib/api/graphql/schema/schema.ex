@@ -2,7 +2,7 @@ defmodule Graphql.Schema do
 	@moduledoc false
 	use Absinthe.Schema
 
-	import_types Graphql.Schema.ContentTypes
+	import_types Graphql.Schema.Types
 	alias Graphql.Resolvers.Content
 
 	query do
@@ -29,6 +29,19 @@ defmodule Graphql.Schema do
 		@desc "Get data about the last update to the market."
 		field :last_update, :last_update do
 			resolve &Content.get_last_update/3
+		end
+	end
+
+	subscription do
+		field :updated_market, list_of(:pair) do
+			arg :exchanges, list_of(non_null(:string))
+			arg :market_ids, list_of(non_null(:id))
+
+			config fn _args, _ ->
+				{:ok, topic: "*"}
+			end
+
+			resolve &Content.get_market/3
 		end
 	end
 end
