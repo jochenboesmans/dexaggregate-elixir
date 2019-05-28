@@ -4,6 +4,8 @@ defmodule API.Router do
 	"""
 	use Plug.Router
 
+	import API.Format
+
 	plug Plug.Parsers,
 		parsers: [:urlencoded, :multipart, :json, Absinthe.Plug.Parser],
 		pass: ["*/*"],
@@ -21,26 +23,31 @@ defmodule API.Router do
 		schema: Graphql.Schema
 
 	get "/market" do
-		conn
-		|> put_resp_content_type("application/json")
-		|> send_resp(200, Poison.encode!(Market.get(:market)))
+		result =
+			Market.get(:market)
+			|> queryable_market(%{})
+			|> Poison.encode!
+
+		put_json_on_conn(conn, result)
 	end
 
 	@dai_address "0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359"
 	get "/dai_rebased_market" do
-		args = %{
-			rebase_address: @dai_address,
-			exchanges: :all
-		}
-		conn
-		|> put_resp_content_type("application/json")
-		|> send_resp(200, Poison.encode!(Market.get({:rebased_market, args})))
+		result =
+			Market.get({:rebased_market, @dai_address}).pairs
+			|> queryable_rebased_market(%{rebase_address: @dai_address})
+			|> Poison.encode!
+
+		put_json_on_conn(conn, result)
 	end
 
 	get "/exchanges" do
-		conn
-		|> put_resp_content_type("application/json")
-		|> send_resp(200, Poison.encode!(Market.get(:exchanges)))
+		result =
+			Market.get(:exchanges)
+			|> queryable_exchanges_in_market
+			|> Poison.encode!
+
+		put_json_on_conn(conn, result)
 	end
 
 	match _ do
@@ -57,5 +64,11 @@ defmodule API.Router do
 	def start_link(_arg) do
 		[port: port] = Application.get_env(:dexaggregate_elixir, __MODULE__, :port)
 		Plug.Cowboy.http(__MODULE__, [], port: port)
+	end
+
+	defp put_json_on_conn(conn, data) do
+		conn
+		|> put_resp_content_type("application/json")
+		|> send_resp(200, data)
 	end
 end
