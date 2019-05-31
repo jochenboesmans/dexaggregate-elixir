@@ -37,7 +37,7 @@ defmodule Graphql.Schema do
 			arg :exchanges, list_of(non_null(:string))
 			arg :market_ids, list_of(non_null(:id))
 
-			config fn _args, _ ->
+			config fn _args, _info ->
 				{:ok, topic: "*"}
 			end
 

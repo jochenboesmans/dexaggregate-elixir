@@ -1,16 +1,13 @@
-defmodule DexAggregate.Application do
-	@moduledoc false
-
+defmodule Dexaggregatex.Application do
 	use Application
-
 	alias MarketFetching.FetcherSupervisor
 
 	def start(_type, _args) do
 		children = [
 			{Market, name: Market},
 			{FetcherSupervisor, name: FetcherSupervisor},
-			{API.Router, name: API.Router},
-			{Absinthe.Subscription, [API.Router], name: API.Router},
+			{API.Endpoint, name: Endpoint},
+			{Absinthe.Subscription, [API.Endpoint]},
 			{Rebasing.Cache, name: Rebasing.Cache}
 		]
 		options = [
@@ -18,6 +15,13 @@ defmodule DexAggregate.Application do
 			name: __MODULE__
 		]
 		Supervisor.start_link(children, options)
+	end
+
+	# Tell Phoenix to update the endpoint configuration
+	# whenever the application is updated.
+	def config_change(changed, _new, removed) do
+		API.Endpoint.config_change(changed, removed)
+		:ok
 	end
 
 end

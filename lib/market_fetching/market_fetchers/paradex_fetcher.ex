@@ -101,7 +101,7 @@ defmodule MarketFetching.ParadexFetcher do
 	end
 
 	defp fetch_and_decode_with_api_key(url) do
-		[api_key: key] = Application.get_env(:dexaggregate_elixir, __MODULE__, :api_key)
+		[api_key: key] = Application.get_env(:dexaggregatex, MarketFetching, :api_key)
 		fetch_and_decode(url, [{"API-KEY", key}])
 	end
 end
