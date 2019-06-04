@@ -8,6 +8,9 @@ defmodule MarketFetching.UniswapFetcher do
 	alias MarketFetching.{Pair, ExchangeMarket, PairMarketData}
 
 	@base_api_url "https://uniswap-analytics.appspot.com/api/v1"
+	@graph_http "https://api.thegraph.com/subgraphs/name/graphprotocol/uniswap"
+	@graph_ws "wss://api.thegraph.com/subgraphs/name/graphprotocol/uniswap"
+
 	@market_endpoint "ticker"
 
 	@poll_interval 10_000
@@ -41,31 +44,49 @@ defmodule MarketFetching.UniswapFetcher do
 		|> Enum.each(fn x -> maybe_update(x) end)
 	end
 
+	def fetch_data() do
+		Neuron.Config.set(url: @graph_http)
+
+		{:ok, %Neuron.Response{body:
+			%{"data" =>
+				%{"exchanges" => ex}
+			}
+		}} = Neuron.query("""
+			{
+				exchanges {
+					id
+					tokenAddress
+					tokenSymbol
+					lastPrice
+					price
+					tradeVolumeEth
+					tradeVolumeToken
+				}
+			}
+		""")
+
+		ex
+	end
+
 	def exchange_market() do
-    c = @currencies
-
 		complete_market =
-			Enum.reduce(@exchange_addresses, [], fn ({t, ea}, acc) ->
-				#IO.inspect("#{@base_api_url}/#{@market_endpoint}?exchangeAddress=#{ea}")
-				case fetch_and_decode("#{@base_api_url}/#{@market_endpoint}?exchangeAddress=#{ea}") do
-					{:ok, p} ->
-						%{
-							"lastTradePrice" => lp,
-							"price" => cb = ca,
-							"tradeVolume" => bv
-						} = p
+			Enum.reduce(fetch_data(), [], fn (e, acc) ->
+				%{
+					"id" => exchange_address,
+					"lastPrice" => lp,
+					"price" => cb = ca,
+					"tradeVolumeEth" => bv,
+					"tokenSymbol" => qs,
+					"tokenAddress" => qa
+				} = e
 
-						[bs, qs] = ["ETH", t]
-						[ba, qa] = [eth_address(), c[t]]
+				[bs, ba] = ["ETH", eth_address()]
 
-						case valid_values?(strings: [bs, qs, ba, qa], numbers: [lp, cb, ca, bv]) do
-							true ->
-								[market_pair([bs, qs, ba, qa, lp, cb, ca, bv]) | acc]
-							false ->
-								acc
-						end
-					{:error, _message} ->
-						nil
+				case valid_values?(strings: [bs, qs, ba, qa], numbers: [lp, cb, ca, bv]) do
+					true ->
+						[market_pair([bs, qs, ba, qa, lp, cb, ca, bv]) | acc]
+					false ->
+						acc
 				end
 			end)
 
@@ -73,6 +94,7 @@ defmodule MarketFetching.UniswapFetcher do
 			exchange: :uniswap,
 			market: complete_market
 		}
+
 	end
 
 	defp market_pair([bs, qs, ba, qa, lp, cb, ca, bv]) do
@@ -86,7 +108,7 @@ defmodule MarketFetching.UniswapFetcher do
 				last_price: safe_power(parse_float(lp), -1),
 				current_bid: safe_power(parse_float(cb), -1),
 				current_ask: safe_power(parse_float(ca), -1),
-				base_volume: safe_power(parse_float(bv), -18)
+				base_volume: parse_float(bv)
 			}
 		}
 	end

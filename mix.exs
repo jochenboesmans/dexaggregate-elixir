@@ -32,13 +32,14 @@ defmodule DexAggregate.MixProject do
       {:phoenix_html, "~> 2.11"},
       {:phoenix_live_reload, "~> 1.2", only: :dev},
       {:httpoison, "~> 1.5"},
-      {:poison, "~> 4.0"},
+      {:poison, "~> 3.1"},
       {:jason, "~> 1.1"},
       {:websockex, "~> 0.4.0"},
       {:plug_cowboy, "~> 2.0"},
 	    {:absinthe, "~> 1.4"},
 	    {:absinthe_plug, "~> 1.4"},
-      {:absinthe_phoenix, "~> 1.4"}
+      {:absinthe_phoenix, "~> 1.4"},
+      {:neuron, "~> 1.2.0"}
       # How to add deps (run "mix deps.get" afterwards):
       # {:dep_from_hexpm, "~> 0.3.0"},
       # {:dep_from_git, git: "https://github.com/elixir-lang/my_dep.git", tag: "0.1.0"}
