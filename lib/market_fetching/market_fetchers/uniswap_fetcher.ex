@@ -108,7 +108,7 @@ defmodule MarketFetching.UniswapFetcher do
 				last_price: safe_power(parse_float(lp), -1),
 				current_bid: safe_power(parse_float(cb), -1),
 				current_ask: safe_power(parse_float(ca), -1),
-				base_volume: parse_float(bv)
+				base_volume: parse_float(bv) * safe_power(10, -2)
 			}
 		}
 	end
