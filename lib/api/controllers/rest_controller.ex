@@ -1,13 +1,13 @@
 defmodule API.RestController do
 	use API, :controller
 
-	def get(conn, %{what_to_get: what} = _params) do
+	def get(conn, %{"what_to_get" => what} = _params) do
 		result =
 			case what do
-				:last_market -> get_last_update()
-				:exchanges -> get_exchanges()
-				:dai_rebased_market -> get_dai_rebased_market()
-				:market -> get_market()
+				"last_market" -> get_last_update()
+				"exchanges" -> get_exchanges()
+				"dai_rebased_market" -> get_dai_rebased_market()
+				"market" -> get_market()
 				_ -> %{"error" => "please use a valid route."}
 			end
 			|> Poison.encode!

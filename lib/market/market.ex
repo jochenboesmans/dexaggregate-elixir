@@ -101,7 +101,6 @@ defmodule Market do
       timestamp: :os.system_time(),
       exchange: exchange
     }
-    Absinthe.Subscription.publish(API.Router, updated_market, updated_market: updated_market)
     {:noreply, %{state | market: updated_market, last_update: updated_last_update}}
   end
 
