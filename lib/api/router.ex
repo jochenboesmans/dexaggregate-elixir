@@ -5,7 +5,7 @@ defmodule API.Router do
 		plug :accepts, ["json"]
 	end
 
-	scope "/", API do
+	scope "/" do
 		pipe_through :api
 
 		if Mix.env == :dev do
@@ -17,6 +17,6 @@ defmodule API.Router do
 		forward "/graphql", Absinthe.Plug,
 			schema: Graphql.Schema
 
-		get "/:what_to_get", RestController, :get
+		get "/:what_to_get", API.RestController, :get
 	end
 end

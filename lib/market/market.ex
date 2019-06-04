@@ -101,6 +101,9 @@ defmodule Market do
       timestamp: :os.system_time(),
       exchange: exchange
     }
+    Supervisor.start_link([
+      {Task, fn -> Absinthe.Subscription.publish(API.Endpoint, updated_market, [updated_market: "*", updated_rebased_market: "*"]) end}
+    ], strategy: :one_for_one)
     {:noreply, %{state | market: updated_market, last_update: updated_last_update}}
   end
 

@@ -43,5 +43,17 @@ defmodule Graphql.Schema do
 
 			resolve &Content.get_market/3
 		end
+
+		field :updated_rebased_market, :rebased_market do
+			arg :rebase_address, non_null(:string)
+			arg :exchanges, list_of(non_null(:string))
+			arg :market_ids, list_of(non_null(:id))
+
+			config fn _args, _info ->
+				{:ok, topic: "*"}
+			end
+
+			resolve &Content.get_rebased_market/3
+		end
 	end
 end
