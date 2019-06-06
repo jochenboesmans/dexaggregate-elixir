@@ -10,7 +10,7 @@ defmodule Dexaggregatex.MarketFetching.Util do
 		iex> Dexaggregatex.MarketFetching.Util.eth_address()
 		"0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
 	"""
-	@spec eth_address() :: String.t()
+	@spec eth_address() :: String.t
 	def eth_address() do
 		"0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
 	end
@@ -18,42 +18,42 @@ defmodule Dexaggregatex.MarketFetching.Util do
 	@doc """
 		Issues a get request to the specified url and returns the JSON-decoded response.
 	"""
-	@spec fetch_and_decode(String.t(), [tuple()])
-				:: {:error, String.t()} | {:ok, any()}
+	@spec fetch_and_decode(String.t, [tuple])
+				:: :error | {:ok, Poison.Parser.t}
 	def fetch_and_decode(url, headers \\ []) do
 		case HTTPoison.get(url, headers) do
 			{:ok, response} ->
 				decode(response)
-			{:error, message} ->
-				{:error, message}
+			{:error, _} ->
+				:error
 		end
 	end
 
 	@doc """
 		Issues an empty post request to the specified url and returns the JSON-decoded response.
 	"""
-	@spec post_and_decode(String.t())
-				:: {:error, String.t()} | {:ok, any()}
+	@spec post_and_decode(String.t)
+				:: :error | {:ok, Poison.Parser.t}
 	def post_and_decode(url) do
 		case HTTPoison.post(url, Poison.encode!(%{})) do
 			{:ok, response} ->
 				decode(response)
-			{:error, message} ->
-				{:error, message}
+			{:error, _} ->
+				:error
 		end
 	end
 
 	@doc """
 		Returns the JSON-decoded version of the body of a given HTTPoison response.
 	"""
-	@spec decode(HTTPoison.Response.t())
-				:: {:error, String.t()} | {:ok, any()}
+	@spec decode(HTTPoison.Response.t)
+				:: :error | {:ok, Poison.Parser.t}
 	def decode(%HTTPoison.Response{body: body}) do
 		case Poison.decode(body) do
 			{:ok, decoded_body} ->
 				{:ok, decoded_body}
-			{:error, message} ->
-				{:error, message}
+			{:error, _} ->
+				:error
 		end
 	end
 
@@ -75,7 +75,6 @@ defmodule Dexaggregatex.MarketFetching.Util do
 				case Float.parse(float_string) do
 					:error -> false
 					{0.0, ""} -> false
-					{0, ""} -> false
 					{_valid, ""} -> true
 					_contains_non_numbers -> false
 				end

@@ -26,7 +26,7 @@ defmodule Dexaggregatex.MarketFetching.UniswapFetcher do
 		|> Enum.each(fn x -> maybe_update(x) end)
 	end
 
-	@spec fetch_data() :: {:ok, [map()]} | :fail
+	@spec fetch_data() :: {:ok, [map()]} | :error
 	def fetch_data() do
 		Neuron.Config.set(url: @graph_http)
 
@@ -51,11 +51,11 @@ defmodule Dexaggregatex.MarketFetching.UniswapFetcher do
 			}} ->
 				{:ok, data}
 			_ ->
-				:fail
+				:error
 		end
 	end
 
-	@spec exchange_market() :: ExchangeMarket.t()
+	@spec exchange_market() :: ExchangeMarket.t
 	def exchange_market() do
 		complete_market =
 			case fetch_data() do
@@ -78,7 +78,7 @@ defmodule Dexaggregatex.MarketFetching.UniswapFetcher do
 								acc
 						end
 					end)
-				:fail ->
+				:error ->
 					nil
 			end
 

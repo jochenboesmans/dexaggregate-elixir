@@ -38,7 +38,7 @@ defmodule Dexaggregatex.API.GraphQL.Resolvers.Content do
 			nil ->
 				{:error, "Failed to retrieve last update to market."}
 			lu ->
-				{:ok, lu}
+				{:ok, queryable_last_update(lu)}
 		end
 	end
 

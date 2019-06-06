@@ -82,7 +82,7 @@ defmodule Dexaggregatex.MarketFetching.DdexFetcher do
               valid_pair -> [valid_pair | acc]
             end
           end)
-        {:error, _message} ->
+				:error ->
           nil
       end
 
@@ -132,8 +132,8 @@ defmodule Dexaggregatex.MarketFetching.DdexFetcher do
 		case fetch_and_decode("#{@api_base_url}/#{@market_endpoint}") do
 			{:ok, %{"data" => %{"tickers" => market}}} ->
 				{:ok, market}
-			{:error, message} ->
-				{:error, message}
+			:error ->
+				:error
 		end
 	end
 
@@ -141,9 +141,8 @@ defmodule Dexaggregatex.MarketFetching.DdexFetcher do
     case fetch_and_decode("#{@api_base_url}/#{@currencies_endpoint}") do
       {:ok, %{"data" => %{"markets" => markets}}} ->
         Enum.map(markets, fn p -> p["id"] end)
-      {:error, message} ->
-        {:error, message}
-
+			:error ->
+				:error
     end
   end
 
@@ -155,8 +154,8 @@ defmodule Dexaggregatex.MarketFetching.DdexFetcher do
 					|> Map.put(c["baseToken"], c["baseTokenAddress"])
 					|> Map.put(c["quoteToken"], c["quoteTokenAddress"])
 				end)
-			{:error, message} ->
-				{:error, message}
+			:error ->
+				:error
 		end
 	end
 end

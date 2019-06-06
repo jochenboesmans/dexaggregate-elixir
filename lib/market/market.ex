@@ -108,7 +108,8 @@ defmodule Dexaggregatex.Market do
         {:noreply, state}
       {:update, updated_market} ->
         updated_last_update = %LastUpdate{
-          timestamp: :os.system_time(),
+          timestamp: :os.system_time(:millisecond),
+          utc_time: NaiveDateTime.utc_now(),
           exchange: exchange
         }
         Supervisor.start_link([

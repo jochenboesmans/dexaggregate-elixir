@@ -1,7 +1,7 @@
 defmodule Dexaggregatex.API.Format do
   @moduledoc false
 
-  alias Dexaggregatex.Market.Structs.Market
+  alias Dexaggregatex.Market.Structs.{Market, LastUpdate}
 
   def queryable_market(m, args) do
     filter_market_by_exchanges(m, args)
@@ -17,6 +17,14 @@ defmodule Dexaggregatex.API.Format do
 
   def queryable_exchanges_in_market(eim) do
     format_exchanges_in_market(eim)
+  end
+
+  def queryable_last_update(%LastUpdate{timestamp: ts, utc_time: ut, exchange: ex}) do
+    %{
+      timestamp: ts,
+      utc_time: NaiveDateTime.to_string(ut),
+      exchange: Atom.to_string(ex)
+    }
   end
 
   defp format_market(m) do

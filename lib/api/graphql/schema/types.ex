@@ -30,6 +30,7 @@ defmodule Dexaggregatex.API.GraphQL.Schema.Types do
 	@desc "Data about the last update to the market."
 	object :last_update do
 		field :timestamp, :integer
+		field :utc_time, :string
 		field :exchange, :string
 	end
 end

@@ -51,7 +51,7 @@ defmodule Dexaggregatex.MarketFetching.ParadexFetcher do
 								acc
 						end
 					end)
-				{:error, _message} ->
+				:error ->
 					nil
 			end
 
@@ -61,7 +61,7 @@ defmodule Dexaggregatex.MarketFetching.ParadexFetcher do
 		}
 	end
 
-	@spec market_pair([String.t() | number()]) :: Pair.t()
+	@spec market_pair([String.t | number]) :: Pair.t
 	defp market_pair([bs, qs, ba, qa, lp, cb, ca, bv]) do
 		%Pair{
 			base_symbol: bs,
@@ -80,17 +80,19 @@ defmodule Dexaggregatex.MarketFetching.ParadexFetcher do
 
 	defp currencies() do
 		case fetch_and_decode_with_api_key("#{@base_api_url}/#{@currencies_endpoint}") do
-			{:ok, currencies} -> currencies
-			{:error, _message} -> nil
+			{:ok, currencies} ->
+				Enum.reduce(currencies, %{}, fn (c, acc) ->
+					Map.put(acc, c["symbol"], c["address"]) end)
+			:error ->
+				nil
 		end
-		|> Enum.reduce(%{}, fn (c, acc) -> Map.put(acc, c["symbol"], c["address"]) end)
 	end
 
 	defp ohlcv(id) do
 		case fetch_and_decode_with_api_key("#{@base_api_url}/#{@ohlcv_endpoint}?market=#{id}&period=1d&amount=1") do
 			{:ok, %{"error" => _}} -> nil
 			{:ok, [%{"volume" => vol}]} -> vol
-			{:error, _message} -> nil
+			:error -> nil
 		end
 	end
 
@@ -98,7 +100,7 @@ defmodule Dexaggregatex.MarketFetching.ParadexFetcher do
 		case fetch_and_decode_with_api_key("#{@base_api_url}/#{@ticker_endpoint}?market=#{id}") do
 			{:ok, %{"error" => _}} -> [nil, nil, nil]
 			{:ok, [%{"lastPrice" => last, "bestBid" => bid, "bestAsk" => ask}]} -> [last, bid, ask]
-			{:error, _message} -> [nil, nil, nil]
+			:error -> [nil, nil, nil]
 		end
 	end
 

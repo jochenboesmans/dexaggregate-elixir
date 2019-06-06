@@ -52,10 +52,10 @@ defmodule Dexaggregatex.MarketFetching.KyberFetcher do
                     acc
                 end
               end)
-            {:error, _message} ->
+            :error ->
               nil
           end
-        {:error, _message} ->
+        :error ->
           nil
       end
 
@@ -86,8 +86,8 @@ defmodule Dexaggregatex.MarketFetching.KyberFetcher do
     case fetch_and_decode(url) do
       {:ok, %{"data" => data}} ->
         {:ok, data}
-      {:error, message} ->
-        {:error, message}
+      :error ->
+        :error
     end
   end
 

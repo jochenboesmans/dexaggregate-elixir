@@ -54,7 +54,7 @@ defmodule Dexaggregatex.MarketFetching.OasisFetcher do
 							false ->
 								acc
 						end
-					{:error, _message} ->
+					:error ->
 						acc
 				end
 			end)
@@ -86,8 +86,8 @@ defmodule Dexaggregatex.MarketFetching.OasisFetcher do
 		case fetch_and_decode("#{@market_endpoint}/#{bs}/#{qs}") do
 			{:ok, %{"data" => pair}} ->
 				{:ok, pair}
-			{:error, message} ->
-				{:error, message}
+			:error ->
+				:error
 		end
 	end
 end

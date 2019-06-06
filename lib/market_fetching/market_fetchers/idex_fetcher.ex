@@ -58,10 +58,10 @@ defmodule Dexaggregatex.MarketFetching.IdexFetcher do
                     acc
                 end
               end)
-            {:error, _message} ->
+            :error ->
               nil
           end
-        {:error, _message} ->
+        :error ->
           nil
     end
 

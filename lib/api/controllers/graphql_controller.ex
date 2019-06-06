@@ -1,4 +1,4 @@
-defmodule Dexaggregatex.API.GraphqlController do
+defmodule Dexaggregatex.API.GraphQLController do
 	alias Dexaggregatex.API
 
 	use API, :controller

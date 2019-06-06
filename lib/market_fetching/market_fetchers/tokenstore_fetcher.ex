@@ -47,7 +47,7 @@ defmodule Dexaggregatex.MarketFetching.TokenstoreFetcher do
 								acc
 						end
 					end)
-				{:error, _message} ->
+				:error ->
 					nil
 			end
 

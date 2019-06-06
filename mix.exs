@@ -9,7 +9,8 @@ defmodule Dexaggregatex.MixProject do
       elixirc_paths: elixirc_paths(Mix.env()),
       compilers: [:phoenix] ++ Mix.compilers(),
       start_permanent: Mix.env() == :prod,
-      deps: deps()
+      deps: deps(),
+      dialyzer: [plt_add_deps: :transitive]
     ]
   end
 
@@ -38,7 +39,8 @@ defmodule Dexaggregatex.MixProject do
 	    {:absinthe, "~> 1.4"},
 	    {:absinthe_plug, "~> 1.4"},
       {:absinthe_phoenix, "~> 1.4"},
-      {:neuron, "~> 1.2.0"}
+      {:neuron, "~> 1.2.0"},
+      {:dialyxir, "~> 0.5", only: [:dev], runtime: false}
       # How to add deps (run "mix deps.get" afterwards):
       # {:dep_from_hexpm, "~> 0.3.0"},
       # {:dep_from_git, git: "https://github.com/elixir-lang/my_dep.git", tag: "0.1.0"}

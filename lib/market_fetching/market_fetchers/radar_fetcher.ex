@@ -53,7 +53,7 @@ defmodule Dexaggregatex.MarketFetching.RadarFetcher do
 								acc
 						end
 					end)
-				{:error, _message} ->
+				:error ->
 					nil
 			end
 
