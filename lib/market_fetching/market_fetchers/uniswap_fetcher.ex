@@ -35,18 +35,16 @@ defmodule Dexaggregatex.MarketFetching.UniswapFetcher do
 			}
 		}} = Neuron.query("""
 			{
-				exchanges {
+				exchanges (first: 50, orderBy: tradeVolumeEth, orderDirection: desc) {
 					id
 					tokenAddress
 					tokenSymbol
 					lastPrice
 					price
 					tradeVolumeEth
-					tradeVolumeToken
 				}
 			}
 		""")
-
 		ex
 	end
 
@@ -89,6 +87,7 @@ defmodule Dexaggregatex.MarketFetching.UniswapFetcher do
 				last_price: safe_power(parse_float(lp), -1),
 				current_bid: safe_power(parse_float(cb), -1),
 				current_ask: safe_power(parse_float(ca), -1),
+				# correcting by 10^-2 here because volumes from the graph seem blown up.
 				base_volume: parse_float(bv) * safe_power(10, -2)
 			}
 		}
