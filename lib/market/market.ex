@@ -91,26 +91,31 @@ defmodule Dexaggregatex.Market do
   @impl true
   def handle_cast({:update, %ExchangeMarket{} = em}, %{market: m} = state) do
     %ExchangeMarket{exchange: exchange} = em
-    updated_market = add_exchange_market(m, em)
-    update_reply(updated_market, exchange, state)
+    add_exchange_market_result = add_exchange_market(m, em)
+    update_reply(add_exchange_market_result, exchange, state)
   end
 
   @impl true
   def handle_cast({:update, %MarketFetchingPair{} = p}, %{market: m} = state) do
     %MarketFetchingPair{market_data: %PairMarketData{exchange: exchange}} = p
-    updated_market = add_pair(m, p)
-    update_reply(updated_market, exchange, state)
+    add_pair_result = add_pair(m, p)
+    update_reply(add_pair_result, exchange, state)
   end
 
-  defp update_reply(updated_market, exchange, state) do
-    updated_last_update = %LastUpdate{
-      timestamp: :os.system_time(),
-      exchange: exchange
-    }
-    Supervisor.start_link([
-      {Task, fn -> Absinthe.Subscription.publish(Endpoint, updated_market, [updated_market: "*", updated_rebased_market: "*"]) end}
-    ], strategy: :one_for_one)
-    {:noreply, %{state | market: updated_market, last_update: updated_last_update}}
+  defp update_reply(add_result, exchange, state) do
+    case add_result do
+      {:no_update, _updated_market} ->
+        {:noreply, state}
+      {:update, updated_market} ->
+        updated_last_update = %LastUpdate{
+          timestamp: :os.system_time(),
+          exchange: exchange
+        }
+        Supervisor.start_link([
+          {Task, fn -> Absinthe.Subscription.publish(Endpoint, updated_market, [updated_market: "*", updated_rebased_market: "*"]) end}
+        ], strategy: :one_for_one)
+        {:noreply, %{state | market: updated_market, last_update: updated_last_update}}
+    end
   end
 
 
@@ -140,9 +145,10 @@ defmodule Dexaggregatex.Market do
       base_volume: bv,
     }
 
-    market_entry =
-      case Map.has_key?(pairs, id) do
-        false ->
+    case Map.has_key?(pairs, id) do
+      # Add new entry if Market doesn't have MarketPair yet.
+      false ->
+        market_entry =
           %MarketPair{
             base_address: ba,
             quote_address: qa,
@@ -152,19 +158,30 @@ defmodule Dexaggregatex.Market do
               ex => emd
             }
           }
-        true ->
-          %{pairs[id] | market_data: Map.put(pairs[id].market_data, ex, emd)}
-      end
-
-    Map.put(pairs, id, market_entry)
+        {:update, Map.put(pairs, id, market_entry)}
+      # Append or update ExchangeMarketData of existing MarketPair if it does.
+      true ->
+        case pairs[id].market_data[ex] == emd do
+          true ->
+            {:no_update, pairs}
+          false ->
+            market_entry = %{pairs[id] | market_data: Map.put(pairs[id].market_data, ex, emd)}
+            {:update, Map.put(pairs, id, market_entry)}
+        end
+    end
   end
 
   @doc """
     Adds all pairs of a given ExchangeMarket to the market.
   """
   defp add_exchange_market(prev_market, %ExchangeMarket{market: m}) do
-    Enum.reduce(m, prev_market, fn (p, acc) ->
-      add_pair(acc, p)
+    Enum.reduce(m, {:no_update, prev_market}, fn (p, {_update_status, market_acc}) ->
+      case add_pair(market_acc, p) do
+        {:no_update, updated_market} ->
+          {:no_update, updated_market}
+        {:update, updated_market} ->
+          {:update, updated_market}
+      end
     end)
   end
 end
