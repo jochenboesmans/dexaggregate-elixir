@@ -1,21 +1,52 @@
-# dexaggregate_elixir
+# dexaggregatex
 
-An Elixir port of the NodeJS back-end.
+GraphQL API serving aggregated market data from decentralized exchanges.
 
-## Installation
+## Example usage
 
-If [available in Hex](https://hex.pm/docs/publish), the package can be installed
-by adding `dexaggregate_elixir` to your list of dependencies in `mix.exs`:
-
-```elixir
-def deps do
-  [
-    {:dexaggregate_elixir, "~> 0.1.0"}
-  ]
-end
+1. Subscribe to an aggregated market model with all prices and volumes denominated in DAI (as specified by the rebaseAddress argument). 
+```graphql
+subscription rebasedMarket {
+  updatedRebasedMarket (rebaseAddress: "0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359") {
+    baseAddress,
+    pairs {
+      baseSymbol,
+      baseAddress,
+      quoteSymbol,
+      quoteAddress,
+      marketData {
+        exchange,
+        lastPrice,
+        currentAsk,
+        currentBid,
+        baseVolume
+      }
+    }
+  }
+}
 ```
 
-Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
-and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
-be found at [https://hexdocs.pm/elixir_docs](https://hexdocs.pm/elixir_docs).
+2. Get data about the last update to the market.
+
+```graphql
+query lastUpdate {
+    lastUpdate {
+        exchange
+        timestamp
+    }
+}
+```
+
+3. Get a list of names of the exchanges currently included in the market model.
+
+```graphql
+query exchangeInMarket {
+  exchanges
+}
+```
+
+
+
+
+
 
