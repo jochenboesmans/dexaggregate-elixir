@@ -1,11 +1,11 @@
-defmodule MarketFetching.RadarFetcher do
+defmodule Dexaggregatex.MarketFetching.RadarFetcher do
 	@moduledoc """
 		Fetches the Radar Relay market and updates the global Market accordingly.
 	"""
 	use Task, restart: :permanent
 
-	import MarketFetching.Util
-	alias MarketFetching.ExchangeMarket
+	import Dexaggregatex.MarketFetching.Util
+	alias Dexaggregatex.MarketFetching.Structs.ExchangeMarket
 
 	@base_api_url "https://api.radarrelay.com/v2"
 	@market_endpoint "markets"

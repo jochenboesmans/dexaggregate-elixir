@@ -1,11 +1,11 @@
-defmodule MarketFetching.KyberFetcher do
+defmodule Dexaggregatex.MarketFetching.KyberFetcher do
   @moduledoc """
     Fetches the Kyber market and updates the global Market accordingly.
   """
   use Task, restart: :permanent
 
-  import MarketFetching.Util
-  alias MarketFetching.{ExchangeMarket, Pair, PairMarketData}
+  import Dexaggregatex.MarketFetching.Util
+  alias Dexaggregatex.MarketFetching.Structs.{ExchangeMarket, Pair, PairMarketData}
 
   @base_api_url "https://api.kyber.network"
   @market_endpoint "market"

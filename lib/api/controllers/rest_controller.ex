@@ -1,4 +1,7 @@
-defmodule API.RestController do
+defmodule Dexaggregatex.API.RestController do
+	alias Dexaggregatex.{API, Market}
+
+	import API.Format
 	use API, :controller
 
 	def get(conn, %{"what_to_get" => what} = _params) do

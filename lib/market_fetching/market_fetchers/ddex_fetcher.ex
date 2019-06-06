@@ -1,12 +1,13 @@
-defmodule MarketFetching.DdexFetcher do
+defmodule Dexaggregatex.MarketFetching.DdexFetcher do
 	@moduledoc """
 		Fetches the Ddex market and updates the global Market accordingly.
 	"""
   use WebSockex
 	use Task
 
-	import MarketFetching.Util
-  alias MarketFetching.{Pair, ExchangeMarket, PairMarketData}
+	import Dexaggregatex.MarketFetching.Util
+  alias Dexaggregatex.MarketFetching.Structs.{Pair, ExchangeMarket, PairMarketData}
+	alias Dexaggregatex.Market
 
 	@api_base_url "https://api.ddex.io/v3"
 	@market_endpoint "markets/tickers"
@@ -28,7 +29,7 @@ defmodule MarketFetching.DdexFetcher do
 	end
 
   def subscribe_to_market(c) do
-    m = MarketFetching.DdexFetcher.fetch_pairs()
+    m = fetch_pairs()
     {:ok, pid} = WebSockex.start_link(@ws_url, __MODULE__, %{currencies: c, pairs: m})
     sub_message = %{
       type: "subscribe",

@@ -1,9 +1,9 @@
-defmodule Graphql.Schema do
+defmodule Dexaggregatex.API.GraphQL.Schema do
 	@moduledoc false
 	use Absinthe.Schema
 
-	import_types Graphql.Schema.Types
-	alias Graphql.Resolvers.Content
+	import_types Dexaggregatex.API.GraphQL.Schema.Types
+	alias Dexaggregatex.API.GraphQL.Resolvers.Content
 
 	query do
 		@desc "Get the market, not rebased."

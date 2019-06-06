@@ -1,4 +1,4 @@
-defmodule DexAggregate.MixProject do
+defmodule Dexaggregatex.MixProject do
   use Mix.Project
 
   def project do

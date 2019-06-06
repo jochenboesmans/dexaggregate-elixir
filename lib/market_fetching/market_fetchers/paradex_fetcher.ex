@@ -1,11 +1,11 @@
-defmodule MarketFetching.ParadexFetcher do
+defmodule Dexaggregatex.MarketFetching.ParadexFetcher do
 	@moduledoc """
 		Fetches the Paradex market and updates the global Market accordingly.
 	"""
 	use Task, restart: :permanent
 
-  import MarketFetching.Util
-	alias MarketFetching.{Pair, ExchangeMarket, PairMarketData}
+  import Dexaggregatex.MarketFetching.Util
+	alias Dexaggregatex.MarketFetching.Structs.{Pair, ExchangeMarket, PairMarketData}
 
   @base_api_url "https://api.paradex.io/api/v1"
   @currencies_endpoint "tokens"
@@ -101,7 +101,7 @@ defmodule MarketFetching.ParadexFetcher do
 	end
 
 	defp fetch_and_decode_with_api_key(url) do
-		[api_key: key] = Application.get_env(:dexaggregatex, MarketFetching, :api_key)
+		[api_key: key] = Application.get_env(:dexaggregatex, __MODULE__, :api_key)
 		fetch_and_decode(url, [{"API-KEY", key}])
 	end
 end

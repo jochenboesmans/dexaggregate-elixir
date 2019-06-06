@@ -1,10 +1,16 @@
-defmodule Market do
+defmodule Dexaggregatex.Market do
   @moduledoc """
     Module maintaining the global market model.
   """
   use GenServer
 
-  import Market.Util
+  alias Dexaggregatex.Market.Rebasing
+  alias Dexaggregatex.Market.Structs.{ExchangeMarketData, LastUpdate}
+  alias Dexaggregatex.Market.Structs.Pair, as: MarketPair
+  alias Dexaggregatex.MarketFetching.Structs.{ExchangeMarket, PairMarketData}
+  alias Dexaggregatex.MarketFetching.Structs.Pair, as: MarketFetchingPair
+  alias Dexaggregatex.API.Endpoint
+  import Dexaggregatex.Market.Util
 
   @doc """
     Gets various data from this module's state.
@@ -54,7 +60,7 @@ defmodule Market do
   """
   @impl true
   def handle_call({:get_rebased_market, ra}, _from, %{market: m} = state) do
-    {:reply, Market.Rebasing.rebase_market(ra, m, 3), state}
+    {:reply, Rebasing.rebase_market(ra, m, 3), state}
   end
 
   @doc """
@@ -83,26 +89,26 @@ defmodule Market do
   end
 
   @impl true
-  def handle_cast({:update, %MarketFetching.ExchangeMarket{} = em}, %{market: m} = state) do
-    %MarketFetching.ExchangeMarket{exchange: exchange} = em
+  def handle_cast({:update, %ExchangeMarket{} = em}, %{market: m} = state) do
+    %ExchangeMarket{exchange: exchange} = em
     updated_market = add_exchange_market(m, em)
     update_reply(updated_market, exchange, state)
   end
 
   @impl true
-  def handle_cast({:update, %MarketFetching.Pair{} = p}, %{market: m} = state) do
-    %MarketFetching.Pair{market_data: %MarketFetching.PairMarketData{exchange: exchange}} = p
+  def handle_cast({:update, %MarketFetchingPair{} = p}, %{market: m} = state) do
+    %MarketFetchingPair{market_data: %PairMarketData{exchange: exchange}} = p
     updated_market = add_pair(m, p)
     update_reply(updated_market, exchange, state)
   end
 
   defp update_reply(updated_market, exchange, state) do
-    updated_last_update = %Market.LastUpdate{
+    updated_last_update = %LastUpdate{
       timestamp: :os.system_time(),
       exchange: exchange
     }
     Supervisor.start_link([
-      {Task, fn -> Absinthe.Subscription.publish(API.Endpoint, updated_market, [updated_market: "*", updated_rebased_market: "*"]) end}
+      {Task, fn -> Absinthe.Subscription.publish(Endpoint, updated_market, [updated_market: "*", updated_rebased_market: "*"]) end}
     ], strategy: :one_for_one)
     {:noreply, %{state | market: updated_market, last_update: updated_last_update}}
   end
@@ -111,13 +117,13 @@ defmodule Market do
   @doc """
     Adds a single pair to the market.
   """
-  defp add_pair(pairs, %MarketFetching.Pair{} = p) do
-    %MarketFetching.Pair{
+  defp add_pair(pairs, %MarketFetchingPair{} = p) do
+    %MarketFetchingPair{
       base_address: ba,
       quote_address: qa,
       base_symbol: bs,
       quote_symbol: qs,
-      market_data: %MarketFetching.PairMarketData{
+      market_data: %PairMarketData{
         exchange: ex,
         last_price: lp,
         current_bid: cb,
@@ -127,7 +133,7 @@ defmodule Market do
     } = p
 
     id = pair_id(ba, qa)
-    emd = %Market.ExchangeMarketData{
+    emd = %ExchangeMarketData{
       last_price: lp,
       current_bid: cb,
       current_ask: ca,
@@ -137,7 +143,7 @@ defmodule Market do
     market_entry =
       case Map.has_key?(pairs, id) do
         false ->
-          %Market.Pair{
+          %MarketPair{
             base_address: ba,
             quote_address: qa,
             base_symbol: bs,
@@ -156,7 +162,7 @@ defmodule Market do
   @doc """
     Adds all pairs of a given ExchangeMarket to the market.
   """
-  defp add_exchange_market(prev_market, %MarketFetching.ExchangeMarket{market: m}) do
+  defp add_exchange_market(prev_market, %ExchangeMarket{market: m}) do
     Enum.reduce(m, prev_market, fn (p, acc) ->
       add_pair(acc, p)
     end)

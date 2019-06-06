@@ -1,4 +1,7 @@
-defmodule API.Router do
+defmodule Dexaggregatex.API.Router do
+	alias Dexaggregatex.API
+	alias API.{Socket, RestController, GraphQL}
+
 	use API, :router
 
 	pipeline :api do
@@ -10,13 +13,13 @@ defmodule API.Router do
 
 		if Mix.env == :dev do
 			forward "/graphiql", Absinthe.Plug.GraphiQL,
-				schema: Graphql.Schema,
-				socket: API.Socket
+				schema: GraphQL.Schema,
+				socket: Socket
 		end
 
 		forward "/graphql", Absinthe.Plug,
-			schema: Graphql.Schema
+			schema: GraphQL.Schema
 
-		get "/:what_to_get", API.RestController, :get
+		get "/:what_to_get", RestController, :get
 	end
 end

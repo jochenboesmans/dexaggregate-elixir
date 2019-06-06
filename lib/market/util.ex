@@ -1,9 +1,8 @@
-defmodule Market.Util do
+defmodule Dexaggregatex.Market.Util do
 	@moduledoc """
 		Generic functions used for maintaining the market model.
 	"""
-
-	alias Market.Pair
+	alias Dexaggregatex.Market.Structs.Pair
 
 	@doc """
 		Determines the internal id of a Market.Pair.

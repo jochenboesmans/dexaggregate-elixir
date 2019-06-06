@@ -1,7 +1,9 @@
-defmodule API.Socket do
+defmodule Dexaggregatex.API.Socket do
+  alias Dexaggregatex.API.GraphQL
+
   use Phoenix.Socket
   use Absinthe.Phoenix.Socket,
-    schema: Graphql.Schema
+    schema: GraphQL.Schema
 
   def connect(_params, socket) do
     socket = Absinthe.Phoenix.Socket.put_options(socket, [

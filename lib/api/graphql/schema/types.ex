@@ -1,4 +1,4 @@
-defmodule Graphql.Schema.Types do
+defmodule Dexaggregatex.API.GraphQL.Schema.Types do
 	@moduledoc false
 	use Absinthe.Schema.Notation
 

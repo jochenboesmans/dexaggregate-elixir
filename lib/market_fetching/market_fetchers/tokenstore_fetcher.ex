@@ -1,11 +1,11 @@
-defmodule MarketFetching.TokenstoreFetcher do
+defmodule Dexaggregatex.MarketFetching.TokenstoreFetcher do
 	@moduledoc """
 		Fetches the Tokenstore market and updates the global Market accordingly.
 	"""
 	use Task, restart: :permanent
 
-	import MarketFetching.Util
-	alias MarketFetching.ExchangeMarket
+	import Dexaggregatex.MarketFetching.Util
+	alias Dexaggregatex.MarketFetching.Structs.ExchangeMarket
 
 	@base_api_url "https://v1-1.api.token.store"
 	@market_endpoint "ticker"

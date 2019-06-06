@@ -1,14 +1,15 @@
-defmodule MarketFetching.Util do
+defmodule Dexaggregatex.MarketFetching.Util do
 	@moduledoc """
 		Generic functions used for market fetching.
 	"""
-	alias MarketFetching.{Pair, ExchangeMarket, PairMarketData}
+	alias Dexaggregatex.MarketFetching.Structs.{
+		Pair, ExchangeMarket, PairMarketData}
 
 	@doc """
 		Returns an Ethereum address referring to Ether as if it were an Ethereum token.
 
 	## Examples
-		iex> MarketFetching.Util.eth_address()
+		iex> Dexaggregatex.MarketFetching.Util.eth_address()
 		"0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
 	"""
 	def eth_address() do
@@ -55,7 +56,7 @@ defmodule MarketFetching.Util do
 		Tries to parse a float from a given value. Returns true only when the value can be purely parsed to a useful float.
 
 	## Examples
-		iex> MarketFetching.Util.valid_float?("1.1")
+		iex> Dexaggregatex.MarketFetching.Util.valid_float?("1.1")
 		true
 	"""
 	def valid_float?(float_string) do
@@ -79,7 +80,7 @@ defmodule MarketFetching.Util do
 		Parses a pure float from a given value.
 
 	## Examples
-		iex> MarketFetching.Util.parse_float("1.1")
+		iex> Dexaggregatex.MarketFetching.Util.parse_float("1.1")
 		1.1
 	"""
 	def parse_float(float_string) do
@@ -110,7 +111,7 @@ defmodule MarketFetching.Util do
 		Determines whether a given string has a valid value to be included in the market.
 
 	## Examples
-		iex> MarketFetching.Util.valid_string?("ETH")
+		iex> Dexaggregatex.MarketFetching.Util.valid_string?("ETH")
 		true
 	"""
 	def valid_string?(string) do
@@ -158,7 +159,7 @@ defmodule MarketFetching.Util do
 			[] ->
 				nil
 			_ ->
-				Market.update(x)
+				Dexaggregatex.Market.update(x)
 		end
 	end
 end

@@ -1,5 +1,7 @@
-defmodule Rebasing.Cache do
-  @moduledoc false
+defmodule Dexaggregatex.Market.Rebasing.Cache do
+  @moduledoc """
+    Simple cache to avoid recomputation during rebasing.
+  """
   use GenServer
 
   @initial_state %{

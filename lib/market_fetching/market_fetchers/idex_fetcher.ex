@@ -1,11 +1,11 @@
-defmodule MarketFetching.IdexFetcher do
+defmodule Dexaggregatex.MarketFetching.IdexFetcher do
   @moduledoc """
     Fetches the Idex market and updates the global Market accordingly.
   """
   use Task, restart: :permanent
 
-  import MarketFetching.Util
-  alias MarketFetching.ExchangeMarket
+  import Dexaggregatex.MarketFetching.Util
+  alias Dexaggregatex.MarketFetching.Structs.ExchangeMarket
 
   @base_api_url "https://api.idex.market"
   @market_endpoint "returnTicker"

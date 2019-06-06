@@ -1,16 +1,17 @@
-defmodule Market.Rebasing do
+defmodule Dexaggregatex.Market.Rebasing do
 	@moduledoc """
-		Functions for rebasing pairs of a market to a token.
+		Logic for rebasing pairs of a market to a token, denominating all rates in this token.
 	"""
 
-	import Market.Util
-	alias Market.{ExchangeMarketData, Pair}
+	import Dexaggregatex.Market.Util
+	alias Dexaggregatex.Market.Structs.{ExchangeMarketData, Pair, Market}
+	alias Dexaggregatex.Market.Rebasing
 
 	# Makes sure private functions are testable.
 	@compile if Mix.env == :test, do: :export_all
 
 	@doc """
-		Rebases all pairs in a given market to a token with a given rebase_address as the token's address.
+		Rebases all pairs in a given market to a token with a given rebase_address.
 	"""
 	def rebase_market(rebase_address, market, max_depth) do
 		pairs =
@@ -31,7 +32,7 @@ defmodule Market.Rebasing do
 					rebased_market
 			end
 
-		%Market.Market{
+		%Market{
 			pairs: pairs,
 			base_address: rebase_address,
 		}
@@ -78,7 +79,7 @@ defmodule Market.Rebasing do
 			...>	  }
 			...>  }
 			...> }
-			iex> Rebasing.rebase_rate(100, dai_address, eth_address, sample_market)
+			iex> Dexaggregatex.Market.Rebasing.rebase_rate(100, dai_address, eth_address, sample_market)
 			20_000.0
 	"""
 	def rebase_rate(rate, rebase_address, base_address, market) do
@@ -133,7 +134,7 @@ defmodule Market.Rebasing do
 			...>	  }
 			...>  }
 			iex> sample_market = %{Market.Util.pair_id(dai_eth) => dai_eth}
-			iex> Rebasing.combined_volume_across_exchanges(dai_eth, sample_market)
+			iex> Dexaggregatex.Market.Rebasing.combined_volume_across_exchanges(dai_eth, sample_market)
 			250
 
 	"""
@@ -284,19 +285,19 @@ defmodule Market.Rebasing do
 		## Examples
 			iex> dai_address = "0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359"
 			iex> eth_address = "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
-			iex> eth_dai = %Market.Pair{
+			iex> eth_dai = %Dexaggregatex.Market.Structs.Pair{
 			...>    base_symbol: "DAI",
 			...>		quote_symbol: "ETH",
 			...>		quote_address: eth_address,
 			...>		base_address: dai_address,
 			...>		market_data: %{
-			...>			:oasis => %Market.ExchangeMarketData{
+			...>			:oasis => %Dexaggregatex.Market.Structs.ExchangeMarketData{
 			...>			  last_price: 0,
 			...>			  current_bid: 200,
 			...>			  current_ask: 400,
 			...>			  base_volume: 1,
 			...>		  },
-			...>			:kyber => %Market.ExchangeMarketData{
+			...>			:kyber => %Dexaggregatex.Market.Structs.ExchangeMarketData{
 			...>				last_price: 0,
 			...>				current_bid: 150,
 			...>				current_ask: 300,
@@ -304,8 +305,8 @@ defmodule Market.Rebasing do
 			...>			}
 			...>	  }
 			...>  }
-			iex> sample_market = %{Market.Util.pair_id(dai_address, eth_address) => eth_dai}
-			iex> Rebasing.volume_weighted_spread_average(eth_dai, sample_market)
+			iex> sample_market = %{Dexaggregatex.Market.Util.pair_id(dai_address, eth_address) => eth_dai}
+			iex> Dexaggregatex.Market.Rebasing.volume_weighted_spread_average(eth_dai, sample_market)
 			240.0
 	"""
 	def volume_weighted_spread_average(p, market) do

@@ -1,11 +1,11 @@
-defmodule MarketFetching.OasisFetcher do
+defmodule Dexaggregatex.MarketFetching.OasisFetcher do
 	@moduledoc """
 		Fetches the Oasis market and updates the global Market accordingly.
 	"""
 	use Task, restart: :permanent
 
-  import MarketFetching.Util
-	alias MarketFetching.{ExchangeMarket, Pair, PairMarketData}
+  import Dexaggregatex.MarketFetching.Util
+	alias Dexaggregatex.MarketFetching.Structs.{ExchangeMarket, Pair, PairMarketData}
 
   @market_endpoint "http://api.oasisdex.com/v1/markets"
   @currencies %{

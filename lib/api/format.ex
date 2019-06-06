@@ -1,5 +1,7 @@
-defmodule API.Format do
+defmodule Dexaggregatex.API.Format do
   @moduledoc false
+
+  alias Dexaggregatex.Market.Structs.Market
 
   def queryable_market(m, args) do
     filter_market_by_exchanges(m, args)
@@ -43,7 +45,7 @@ defmodule API.Format do
       end)
       |> Enum.sort_by(&combined_volume_across_exchanges/1, &>=/2)
 
-    %Market.Market{base_address: ba, pairs: pairs}
+    %Market{base_address: ba, pairs: pairs}
   end
 
   defp format_exchanges_in_market(eim) do
