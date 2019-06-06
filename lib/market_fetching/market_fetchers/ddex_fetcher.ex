@@ -1,21 +1,22 @@
 defmodule Dexaggregatex.MarketFetching.DdexFetcher do
 	@moduledoc """
-		Fetches the Ddex market and updates the global Market accordingly.
+	Fetches the Ddex market and updates the global Market accordingly.
 	"""
   use WebSockex
 	use Task
 
-	import Dexaggregatex.MarketFetching.{Util, Common}
-  alias Dexaggregatex.MarketFetching.Structs.{Pair, ExchangeMarket, PairMarketData}
+	alias Dexaggregatex.MarketFetching.Structs.{Pair, ExchangeMarket, PairMarketData}
 	alias Dexaggregatex.Market
+
+	import Dexaggregatex.MarketFetching.{Util, Common}
+
+	# Makes sure private functions are testable.
+	@compile if Mix.env == :test, do: :export_all
 
 	@api_base_url "https://api.ddex.io/v3"
 	@market_endpoint "markets/tickers"
 	@currencies_endpoint "markets"
   @ws_url "wss://ws.ddex.io/v3"
-
-	# Makes sure private functions are testable.
-	@compile if Mix.env == :test, do: :export_all
 
 	def start_link(_arg) do
 		Task.start_link(__MODULE__, :start, [])
@@ -110,7 +111,8 @@ defmodule Dexaggregatex.MarketFetching.DdexFetcher do
     end
   end
 
-  defp market_pair([bs, qs, ba, qa, lp, cb, ca, bv]) do
+	@spec market_pair([String.t() | number()]) :: Pair.t()
+	defp market_pair([bs, qs, ba, qa, lp, cb, ca, bv]) do
     %Pair{
       base_symbol: bs,
       quote_symbol: qs,

@@ -2,11 +2,13 @@ defmodule Dexaggregatex.MarketFetching.UniswapFetcher do
 	@moduledoc """
 	Polls the Uniswap market and updates the market accordingly.
 	"""
-	# Task will be restarted upon crash.
 	use Task, restart: :permanent
 
 	import Dexaggregatex.MarketFetching.{Util, Common}
 	alias Dexaggregatex.MarketFetching.Structs.{Pair, ExchangeMarket, PairMarketData}
+
+	# Makes sure private functions are testable.
+	@compile if Mix.env == :test, do: :export_all
 
 	@graph_http "https://api.thegraph.com/subgraphs/name/graphprotocol/uniswap"
 	# Use ws for subscriptions later.

@@ -1,6 +1,6 @@
 defmodule Dexaggregatex.MarketFetching.KyberFetcher do
   @moduledoc """
-    Fetches the Kyber market and updates the global Market accordingly.
+  Fetches the Kyber market and updates the global Market accordingly.
   """
   use Task, restart: :permanent
 
@@ -26,6 +26,7 @@ defmodule Dexaggregatex.MarketFetching.KyberFetcher do
     |> Enum.each(fn x -> maybe_update(x) end)
   end
 
+  @spec exchange_market() :: ExchangeMarket.t()
   def exchange_market() do
     complete_market =
       case get_from_api("#{@base_api_url}/#{@currencies_endpoint}") do
@@ -64,6 +65,7 @@ defmodule Dexaggregatex.MarketFetching.KyberFetcher do
     }
   end
 
+  @spec market_pair([String.t() | number()]) :: Pair.t()
   defp market_pair([bs, qs, ba, qa, lp, cb, ca, bv]) do
     %Pair{
       base_symbol: bs,

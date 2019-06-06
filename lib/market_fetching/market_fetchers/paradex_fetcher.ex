@@ -1,18 +1,18 @@
 defmodule Dexaggregatex.MarketFetching.ParadexFetcher do
 	@moduledoc """
-		Fetches the Paradex market and updates the global Market accordingly.
+	Fetches the Paradex market and updates the global Market accordingly.
 	"""
 	use Task, restart: :permanent
 
-	import Dexaggregatex.MarketFetching.{Util, Common}
 	alias Dexaggregatex.MarketFetching.Structs.{Pair, ExchangeMarket, PairMarketData}
+
+	import Dexaggregatex.MarketFetching.{Util, Common}
 
   @base_api_url "https://api.paradex.io/api/v1"
   @currencies_endpoint "tokens"
   @market_endpoint "markets"
   @ohlcv_endpoint "ohlcv"
   @ticker_endpoint "ticker"
-
 	@poll_interval 10_000
 
 	# Makes sure private functions are testable.
@@ -28,6 +28,7 @@ defmodule Dexaggregatex.MarketFetching.ParadexFetcher do
 		|> Enum.each(fn x -> maybe_update(x) end)
 	end
 
+	@spec exchange_market() :: ExchangeMarket.t()
 	def exchange_market() do
 		c = currencies()
 
@@ -60,6 +61,7 @@ defmodule Dexaggregatex.MarketFetching.ParadexFetcher do
 		}
 	end
 
+	@spec market_pair([String.t() | number()]) :: Pair.t()
 	defp market_pair([bs, qs, ba, qa, lp, cb, ca, bv]) do
 		%Pair{
 			base_symbol: bs,

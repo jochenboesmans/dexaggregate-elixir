@@ -25,7 +25,7 @@ defmodule Dexaggregatex.MarketFetching.TokenstoreFetcher do
 		|> Enum.each(fn x -> maybe_update(x) end)
 	end
 
-	def exchange_market() do
+	defp exchange_market() do
 		complete_market =
 			case fetch_and_decode("#{@base_api_url}/#{@market_endpoint}") do
 				{:ok, market} ->
