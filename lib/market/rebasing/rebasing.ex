@@ -64,13 +64,14 @@ defmodule Dexaggregatex.Market.Rebasing do
 			iex> dai_address = "0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359"
 			iex> eth_address = "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
 			iex> sample_market = %{
-			...>  Market.Util.pair_id(dai_address, eth_address) => %Market.Pair{
+			...>  Dexaggregatex.Market.Util.pair_id(dai_address, eth_address) =>
+			...>	%Dexaggregatex.Market.Structs.Pair{
 			...>    base_symbol: "DAI",
 			...>		quote_symbol: "ETH",
 			...>		quote_address: eth_address,
 			...>		base_address: dai_address,
 			...>		market_data: %{:oasis =>
-			...>      %Market.ExchangeMarketData{
+			...>      %Dexaggregatex.Market.Structs.ExchangeMarketData{
 			...>			  last_price: 200,
 			...>			  current_bid: 195,
 			...>			  current_ask: 205,
@@ -113,19 +114,19 @@ defmodule Dexaggregatex.Market.Rebasing do
 		## Examples
 			iex> dai_address = "0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359"
 			iex> eth_address = "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
-			iex> dai_eth = %Market.Pair{
+			iex> dai_eth = %Dexaggregatex.Market.Structs.Pair{
 			...>    base_symbol: "DAI",
 			...>		quote_symbol: "ETH",
 			...>		quote_address: eth_address,
 			...>		base_address: dai_address,
 			...>		market_data: %{
-			...>			:oasis => %Market.ExchangeMarketData{
+			...>			:oasis => %Dexaggregatex.Market.Structs.ExchangeMarketData{
 			...>			  last_price: 0,
 			...>			  current_bid: 0,
 			...>			  current_ask: 0,
 			...>			  base_volume: 100,
 			...>		  },
-			...>			:kyber => %Market.ExchangeMarketData{
+			...>			:kyber => %Dexaggregatex.Market.Structs.ExchangeMarketData{
 			...>				last_price: 0,
 			...>				current_bid: 0,
 			...>				current_ask: 0,
@@ -133,7 +134,7 @@ defmodule Dexaggregatex.Market.Rebasing do
 			...>			}
 			...>	  }
 			...>  }
-			iex> sample_market = %{Market.Util.pair_id(dai_eth) => dai_eth}
+			iex> sample_market = %{Dexaggregatex.Market.Util.pair_id(dai_eth) => dai_eth}
 			iex> Dexaggregatex.Market.Rebasing.combined_volume_across_exchanges(dai_eth, sample_market)
 			250
 

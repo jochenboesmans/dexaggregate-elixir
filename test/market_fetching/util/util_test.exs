@@ -1,6 +1,6 @@
 defmodule Test.MarketFetching.Util do
   use ExUnit.Case, async: true
 
-  alias MarketFetching.Util
+  alias Dexaggregatex.MarketFetching.Util
   doctest Util
 end

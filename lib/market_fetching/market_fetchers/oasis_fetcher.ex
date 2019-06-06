@@ -4,7 +4,7 @@ defmodule Dexaggregatex.MarketFetching.OasisFetcher do
 	"""
 	use Task, restart: :permanent
 
-  import Dexaggregatex.MarketFetching.Util
+	import Dexaggregatex.MarketFetching.{Util, Common}
 	alias Dexaggregatex.MarketFetching.Structs.{ExchangeMarket, Pair, PairMarketData}
 
   @market_endpoint "http://api.oasisdex.com/v1/markets"

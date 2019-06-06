@@ -5,7 +5,7 @@ defmodule Dexaggregatex.MarketFetching.UniswapFetcher do
 	# Task will be restarted upon crash.
 	use Task, restart: :permanent
 
-	import Dexaggregatex.MarketFetching.Util
+	import Dexaggregatex.MarketFetching.{Util, Common}
 	alias Dexaggregatex.MarketFetching.Structs.{Pair, ExchangeMarket, PairMarketData}
 
 	@graph_http "https://api.thegraph.com/subgraphs/name/graphprotocol/uniswap"
@@ -24,6 +24,7 @@ defmodule Dexaggregatex.MarketFetching.UniswapFetcher do
 		|> Enum.each(fn x -> maybe_update(x) end)
 	end
 
+	@spec fetch_data() :: {:ok, [map()]} | :fail
 	def fetch_data() do
 		Neuron.Config.set(url: @graph_http)
 
@@ -45,11 +46,14 @@ defmodule Dexaggregatex.MarketFetching.UniswapFetcher do
 				%{"data" =>
 					%{"exchanges" => data}
 				}
-			}} -> {:ok, data}
-			_ -> :fail
+			}} ->
+				{:ok, data}
+			_ ->
+				:fail
 		end
 	end
 
+	@spec exchange_market() :: ExchangeMarket.t()
 	def exchange_market() do
 		complete_market =
 			case fetch_data() do
@@ -82,6 +86,7 @@ defmodule Dexaggregatex.MarketFetching.UniswapFetcher do
 		}
 	end
 
+	@spec market_pair([String.t() | number()]) :: Pair.t()
 	defp market_pair([bs, qs, ba, qa, lp, cb, ca, bv]) do
 		%Pair{
 			base_symbol: bs,

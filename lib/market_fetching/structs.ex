@@ -45,13 +45,13 @@ defmodule Dexaggregatex.MarketFetching.Structs do
 
 		@typedoc """
 		* exchange: atom representing exchange (i.e. :uniswap).
-		* last_price: float representing the last price for the quote token.
-		* current_bid: float representing the highest current bid price for the quote token.
-		* current_ask: float representing the lowest current ask price for the quote token.
-		* base_volume: float representing a pair's volume.
+		* last_price: number representing the last price for the quote token.
+		* current_bid: number representing the highest current bid price for the quote token.
+		* current_ask: number representing the lowest current ask price for the quote token.
+		* base_volume: number representing a pair's volume.
 		"""
-		@type t :: %__MODULE__{exchange: atom(), last_price: float(),
-								 current_bid: float(), current_ask: float(), base_volume: float()}
+		@type t :: %__MODULE__{exchange: atom(), last_price: number(),
+								 current_bid: number(), current_ask: number(), base_volume: number()}
 	end
 
 end

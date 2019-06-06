@@ -4,7 +4,7 @@ defmodule Dexaggregatex.MarketFetching.TokenstoreFetcher do
 	"""
 	use Task, restart: :permanent
 
-	import Dexaggregatex.MarketFetching.Util
+	import Dexaggregatex.MarketFetching.{Util, Common}
 	alias Dexaggregatex.MarketFetching.Structs.ExchangeMarket
 
 	@base_api_url "https://v1-1.api.token.store"

@@ -1,9 +1,7 @@
 defmodule Dexaggregatex.MarketFetching.Util do
 	@moduledoc """
-		Generic functions used for market fetching.
+		Utility functions used for market fetching.
 	"""
-	alias Dexaggregatex.MarketFetching.Structs.{
-		Pair, ExchangeMarket, PairMarketData}
 
 	@doc """
 		Returns an Ethereum address referring to Ether as if it were an Ethereum token.
@@ -12,6 +10,7 @@ defmodule Dexaggregatex.MarketFetching.Util do
 		iex> Dexaggregatex.MarketFetching.Util.eth_address()
 		"0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
 	"""
+	@spec eth_address() :: String.t()
 	def eth_address() do
 		"0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
 	end
@@ -19,8 +18,10 @@ defmodule Dexaggregatex.MarketFetching.Util do
 	@doc """
 		Issues a get request to the specified url and returns the JSON-decoded response.
 	"""
-	def fetch_and_decode(url, args \\ []) do
-		case HTTPoison.get(url, args) do
+	@spec fetch_and_decode(String.t(), [tuple()])
+				:: {:error, String.t()} | {:ok, any()}
+	def fetch_and_decode(url, headers \\ []) do
+		case HTTPoison.get(url, headers) do
 			{:ok, response} ->
 				decode(response)
 			{:error, message} ->
@@ -31,6 +32,8 @@ defmodule Dexaggregatex.MarketFetching.Util do
 	@doc """
 		Issues an empty post request to the specified url and returns the JSON-decoded response.
 	"""
+	@spec post_and_decode(String.t())
+				:: {:error, String.t()} | {:ok, any()}
 	def post_and_decode(url) do
 		case HTTPoison.post(url, Poison.encode!(%{})) do
 			{:ok, response} ->
@@ -43,6 +46,8 @@ defmodule Dexaggregatex.MarketFetching.Util do
 	@doc """
 		Returns the JSON-decoded version of the body of a given HTTPoison response.
 	"""
+	@spec decode(HTTPoison.Response.t())
+				:: {:error, String.t()} | {:ok, any()}
 	def decode(%HTTPoison.Response{body: body}) do
 		case Poison.decode(body) do
 			{:ok, decoded_body} ->
@@ -59,6 +64,7 @@ defmodule Dexaggregatex.MarketFetching.Util do
 		iex> Dexaggregatex.MarketFetching.Util.valid_float?("1.1")
 		true
 	"""
+	@spec valid_float?(any()) :: boolean()
 	def valid_float?(float_string) do
 		cond do
 			float_string == nil ->
@@ -83,10 +89,14 @@ defmodule Dexaggregatex.MarketFetching.Util do
 		iex> Dexaggregatex.MarketFetching.Util.parse_float("1.1")
 		1.1
 	"""
+	@spec parse_float(any()) :: float()
 	def parse_float(float_string) do
 		case is_float(float_string) || is_integer(float_string) do
 			true ->
-				float_string
+				case is_float(float_string) do
+					true -> float_string
+					false -> float_string / 1
+				end
 			false ->
 				case valid_float?(float_string) do
 					true ->
@@ -97,69 +107,30 @@ defmodule Dexaggregatex.MarketFetching.Util do
 		end
 	end
 
+	@doc """
+	Safely raises a number to a power.
+
+	## Examples
+		iex> Dexaggregatex.MarketFetching.Util.safe_power(0, 0)
+		1
+
+		iex> Dexaggregatex.MarketFetching.Util.safe_power(0, -1)
+		0
+
+		iex> Dexaggregatex.MarketFetching.Util.safe_power(2, -1)
+		0.5
+	"""
+	@spec safe_power(number(), number()) :: number()
 	def safe_power(number, power) do
 		case number == 0 do
 			true ->
-				number
+				case power == 0 do
+					true -> 1
+					false -> number
+				end
 			false ->
 				:math.pow(number, power)
 		end
 	end
 
-
-	@doc """
-		Determines whether a given string has a valid value to be included in the market.
-
-	## Examples
-		iex> Dexaggregatex.MarketFetching.Util.valid_string?("ETH")
-		true
-	"""
-	def valid_string?(string) do
-		case string do
-			nil -> false
-			"" -> false
-			_ -> true
-		end
-	end
-
-	@doc """
-		Determines whether all given values have a valid value to be included in the market.
-	"""
-	def valid_values?(strings: exp_strings, numbers: exp_numbers) do
-		Enum.all?(exp_strings, fn s -> valid_string?(s) end)
-		&& Enum.all?(exp_numbers, fn n -> valid_float?(n) end)
-	end
-
-	@doc """
-		Formats given pair data in a well-formed PairMarketData structure.
-	"""
-	def generic_market_pair([bs, qs, ba, qa, lp, cb, ca, bv], exchange) do
-		%Pair{
-			base_symbol: bs,
-			quote_symbol: qs,
-			base_address: ba,
-			quote_address: qa,
-			market_data: %PairMarketData{
-				exchange: exchange,
-				last_price: parse_float(lp),
-				current_bid: parse_float(cb),
-				current_ask: parse_float(ca),
-				base_volume: parse_float(bv),
-			}
-		}
-	end
-
-	@doc """
-		Updates the global market with the given exchange market if it holds valid pairs.
-	"""
-	def maybe_update(%ExchangeMarket{market: complete_market} = x) do
-		case complete_market do
-			nil ->
-				nil
-			[] ->
-				nil
-			_ ->
-				Dexaggregatex.Market.update(x)
-		end
-	end
 end

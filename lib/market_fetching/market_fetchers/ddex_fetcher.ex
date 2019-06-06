@@ -5,7 +5,7 @@ defmodule Dexaggregatex.MarketFetching.DdexFetcher do
   use WebSockex
 	use Task
 
-	import Dexaggregatex.MarketFetching.Util
+	import Dexaggregatex.MarketFetching.{Util, Common}
   alias Dexaggregatex.MarketFetching.Structs.{Pair, ExchangeMarket, PairMarketData}
 	alias Dexaggregatex.Market
 
