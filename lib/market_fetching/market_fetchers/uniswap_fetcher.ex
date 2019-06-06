@@ -9,7 +9,7 @@ defmodule Dexaggregatex.MarketFetching.UniswapFetcher do
 
 	@graph_http "https://api.thegraph.com/subgraphs/name/graphprotocol/uniswap"
 	# use ws for subscriptions later.
-	#@graph_ws "wss://api.thegraph.com/subgraphs/name/graphprotocol/uniswap"
+	# @graph_ws "wss://api.thegraph.com/subgraphs/name/graphprotocol/uniswap"
 
 	@poll_interval 10_000
 
@@ -29,11 +29,7 @@ defmodule Dexaggregatex.MarketFetching.UniswapFetcher do
 	def fetch_data() do
 		Neuron.Config.set(url: @graph_http)
 
-		{:ok, %Neuron.Response{body:
-			%{"data" =>
-				%{"exchanges" => ex}
-			}
-		}} = Neuron.query("""
+		query = Neuron.query("""
 			{
 				exchanges (first: 50, orderBy: tradeVolumeEth, orderDirection: desc) {
 					id
@@ -45,35 +41,47 @@ defmodule Dexaggregatex.MarketFetching.UniswapFetcher do
 				}
 			}
 		""")
-		ex
+
+		case query do
+			{:ok, %Neuron.Response{body:
+				%{"data" =>
+					%{"exchanges" => data}
+				}
+			}} -> {:ok, data}
+			_ -> :fail
+		end
 	end
 
 	def exchange_market() do
 		complete_market =
-			Enum.reduce(fetch_data(), [], fn (e, acc) ->
-				%{
-					"lastPrice" => lp,
-					"price" => cb = ca,
-					"tradeVolumeEth" => bv,
-					"tokenSymbol" => qs,
-					"tokenAddress" => qa
-				} = e
+			case fetch_data() do
+				{:ok, data} ->
+					Enum.reduce(data, [], fn (e, acc) ->
+						%{
+							"lastPrice" => lp,
+							"price" => cb = ca,
+							"tradeVolumeEth" => bv,
+							"tokenSymbol" => qs,
+							"tokenAddress" => qa
+						} = e
 
-				[bs, ba] = ["ETH", eth_address()]
+						[bs, ba] = ["ETH", eth_address()]
 
-				case valid_values?(strings: [bs, qs, ba, qa], numbers: [lp, cb, ca, bv]) do
-					true ->
-						[market_pair([bs, qs, ba, qa, lp, cb, ca, bv]) | acc]
-					false ->
-						acc
-				end
-			end)
+						case valid_values?(strings: [bs, qs, ba, qa], numbers: [lp, cb, ca, bv]) do
+							true ->
+								[market_pair([bs, qs, ba, qa, lp, cb, ca, bv]) | acc]
+							false ->
+								acc
+						end
+					end)
+				:fail ->
+					nil
+			end
 
 		%ExchangeMarket{
 			exchange: :uniswap,
 			market: complete_market
 		}
-
 	end
 
 	defp market_pair([bs, qs, ba, qa, lp, cb, ca, bv]) do
