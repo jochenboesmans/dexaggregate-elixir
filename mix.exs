@@ -13,7 +13,6 @@ defmodule Dexaggregatex.MixProject do
     ]
   end
 
-  # Standard OTP application config
   def application do
     [
       mod: {Dexaggregatex.Application, []},

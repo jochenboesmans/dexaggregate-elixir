@@ -1,20 +1,18 @@
 defmodule Dexaggregatex.MarketFetching.UniswapFetcher do
 	@moduledoc """
-		Fetches the Uniswap market and updates the global Market accordingly.
+	Polls the Uniswap market and updates the market accordingly.
 	"""
+	# Task will be restarted upon crash.
 	use Task, restart: :permanent
 
 	import Dexaggregatex.MarketFetching.Util
 	alias Dexaggregatex.MarketFetching.Structs.{Pair, ExchangeMarket, PairMarketData}
 
 	@graph_http "https://api.thegraph.com/subgraphs/name/graphprotocol/uniswap"
-	# use ws for subscriptions later.
+	# Use ws for subscriptions later.
 	# @graph_ws "wss://api.thegraph.com/subgraphs/name/graphprotocol/uniswap"
 
 	@poll_interval 10_000
-
-	# Makes sure private functions are testable.
-	@compile if Mix.env == :test, do: :export_all
 
 	def start_link(_arg) do
 		Task.start_link(__MODULE__, :poll, [])

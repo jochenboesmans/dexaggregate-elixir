@@ -1,23 +1,23 @@
 defmodule Dexaggregatex.Application do
-	use Application
 	alias Dexaggregatex.{
 		Market,
 		MarketFetching.FetcherSupervisor,
 		API.Endpoint,
 		Market.Rebasing
 	}
-
+	use Application
 
 	def start(_type, _args) do
 		children = [
-			{Market, name: Market},
-			{FetcherSupervisor, name: FetcherSupervisor},
-			{Endpoint, name: Endpoint},
+			Market,
+			FetcherSupervisor,
+			Endpoint,
 			{Absinthe.Subscription, [Endpoint]},
-			{Rebasing.Cache, name: Rebasing.Cache}
+			Rebasing.Cache
 		]
 		options = [
-			strategy: :one_for_one,
+			# All children will be restarted if one crashes.
+			strategy: :one_for_all,
 			name: __MODULE__
 		]
 		Supervisor.start_link(children, options)
