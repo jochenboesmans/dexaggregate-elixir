@@ -176,12 +176,7 @@ defmodule Dexaggregatex.Market do
   """
   defp add_exchange_market(prev_market, %ExchangeMarket{market: m}) do
     Enum.reduce(m, {:no_update, prev_market}, fn (p, {_update_status, market_acc}) ->
-      case add_pair(market_acc, p) do
-        {:no_update, updated_market} ->
-          {:no_update, updated_market}
-        {:update, updated_market} ->
-          {:update, updated_market}
-      end
+      add_pair(market_acc, p)
     end)
   end
 end
