@@ -30,7 +30,7 @@ defmodule Dexaggregatex.MarketFetching.OasisFetcher do
 		|> Enum.each(fn x -> maybe_update(x) end)
 	end
 
-	@spec exchange_market() :: ExchangeMarket.t()
+	@spec exchange_market() :: ExchangeMarket.t
 	def exchange_market() do
 		c = @currencies
 
@@ -65,7 +65,7 @@ defmodule Dexaggregatex.MarketFetching.OasisFetcher do
 		}
 	end
 
-	@spec market_pair([String.t() | number()]) :: Pair.t()
+	@spec market_pair([String.t | number]) :: Pair.t
 	defp market_pair([bs, qs, ba, qa, lp, cb, ca, bv]) do
 		%Pair{
 			base_symbol: bs,
@@ -82,6 +82,7 @@ defmodule Dexaggregatex.MarketFetching.OasisFetcher do
 		}
 	end
 
+	@spec fetch_pair([String.t, String.t]) :: {:ok, map} | :error
 	defp fetch_pair([bs, qs]) do
 		case fetch_and_decode("#{@market_endpoint}/#{bs}/#{qs}") do
 			{:ok, %{"data" => pair}} ->

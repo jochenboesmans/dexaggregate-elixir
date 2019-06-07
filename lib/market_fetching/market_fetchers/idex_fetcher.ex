@@ -26,7 +26,7 @@ defmodule Dexaggregatex.MarketFetching.IdexFetcher do
     |> Enum.each(fn x -> maybe_update(x) end)
   end
 
-  @spec exchange_market() :: ExchangeMarket.t()
+  @spec exchange_market() :: ExchangeMarket.t
   def exchange_market() do
     complete_market =
       case post_and_decode("#{@base_api_url}/#{@currencies_endpoint}") do

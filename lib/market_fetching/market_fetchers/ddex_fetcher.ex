@@ -71,7 +71,7 @@ defmodule Dexaggregatex.MarketFetching.DdexFetcher do
     {:reply, frame, state}
   end
 
-
+	@spec initial_exchange_market(map) :: ExchangeMarket.t
   def initial_exchange_market(c) do
     complete_market =
       case fetch_market() do
@@ -92,6 +92,7 @@ defmodule Dexaggregatex.MarketFetching.DdexFetcher do
     }
   end
 
+	@spec try_get_valid_pair(map, map) :: Pair.t | nil
 	def try_get_valid_pair(p, c) do
 		%{
 			"price" => lp,
@@ -111,7 +112,7 @@ defmodule Dexaggregatex.MarketFetching.DdexFetcher do
     end
   end
 
-	@spec market_pair([String.t() | number()]) :: Pair.t()
+	@spec market_pair([String.t | number]) :: Pair.t
 	defp market_pair([bs, qs, ba, qa, lp, cb, ca, bv]) do
     %Pair{
       base_symbol: bs,
@@ -128,6 +129,7 @@ defmodule Dexaggregatex.MarketFetching.DdexFetcher do
     }
   end
 
+	@spec fetch_market() :: {:ok, [any]} | :error
 	def fetch_market() do
 		case fetch_and_decode("#{@api_base_url}/#{@market_endpoint}") do
 			{:ok, %{"data" => %{"tickers" => market}}} ->
@@ -137,6 +139,7 @@ defmodule Dexaggregatex.MarketFetching.DdexFetcher do
 		end
 	end
 
+	@spec fetch_pairs() :: {:ok, [String.t]} | :error
   def fetch_pairs() do
     case fetch_and_decode("#{@api_base_url}/#{@currencies_endpoint}") do
       {:ok, %{"data" => %{"markets" => markets}}} ->
@@ -146,6 +149,7 @@ defmodule Dexaggregatex.MarketFetching.DdexFetcher do
     end
   end
 
+	@spec fetch_currencies() :: {:ok, map} | :error
 	def fetch_currencies() do
 		case fetch_and_decode("#{@api_base_url}/#{@currencies_endpoint}") do
 			{:ok, %{"data" => %{"markets" => currencies}}} ->

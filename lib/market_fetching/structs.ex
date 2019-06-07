@@ -14,7 +14,7 @@ defmodule Dexaggregatex.MarketFetching.Structs do
 		* exchange: atom representing exchange (i.e. :uniswap).
 		* market: list of pairs on the exchange.
 		"""
-		@type t :: %__MODULE__{exchange: atom(), market: [Pair]}
+		@type t :: %__MODULE__{exchange: atom, market: [Pair]}
 	end
 
 	defmodule Pair do
@@ -31,8 +31,8 @@ defmodule Dexaggregatex.MarketFetching.Structs do
 		* quote_address: string representing the address of the quote token.
 		* market_data: struct representing this pair's market data.
 		"""
-		@type t :: %__MODULE__{base_symbol: String.t(), quote_symbol: String.t(), base_address: String.t(),
-							 quote_address: String.t(), market_data: PairMarketData.t()}
+		@type t :: %__MODULE__{base_symbol: String.t, quote_symbol: String.t, base_address: String.t,
+							 quote_address: String.t, market_data: PairMarketData.t}
 	end
 
 	defmodule PairMarketData do
@@ -50,8 +50,8 @@ defmodule Dexaggregatex.MarketFetching.Structs do
 		* current_ask: number representing the lowest current ask price for the quote token.
 		* base_volume: number representing a pair's volume.
 		"""
-		@type t :: %__MODULE__{exchange: atom(), last_price: number(),
-								 current_bid: number(), current_ask: number(), base_volume: number()}
+		@type t :: %__MODULE__{exchange: atom, last_price: number,
+								 current_bid: number, current_ask: number, base_volume: number}
 	end
 
 end

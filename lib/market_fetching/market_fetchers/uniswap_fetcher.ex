@@ -26,7 +26,7 @@ defmodule Dexaggregatex.MarketFetching.UniswapFetcher do
 		|> Enum.each(fn x -> maybe_update(x) end)
 	end
 
-	@spec fetch_data() :: {:ok, [map()]} | :error
+	@spec fetch_data() :: {:ok, [map]} | :error
 	def fetch_data() do
 		Neuron.Config.set(url: @graph_http)
 
@@ -88,7 +88,7 @@ defmodule Dexaggregatex.MarketFetching.UniswapFetcher do
 		}
 	end
 
-	@spec market_pair([String.t() | number()]) :: Pair.t()
+	@spec market_pair([String.t | number]) :: Pair.t
 	defp market_pair([bs, qs, ba, qa, lp, cb, ca, bv]) do
 		%Pair{
 			base_symbol: bs,

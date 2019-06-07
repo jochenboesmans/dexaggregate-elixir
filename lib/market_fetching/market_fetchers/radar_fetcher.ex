@@ -25,7 +25,7 @@ defmodule Dexaggregatex.MarketFetching.RadarFetcher do
 		|> Enum.each(fn x -> maybe_update(x) end)
 	end
 
-	@spec exchange_market() :: ExchangeMarket.t()
+	@spec exchange_market() :: ExchangeMarket.t
 	def exchange_market() do
 		complete_market =
 			case fetch_and_decode("#{@base_api_url}/#{@market_endpoint}?include=base,ticker,stats") do

@@ -78,6 +78,7 @@ defmodule Dexaggregatex.MarketFetching.ParadexFetcher do
 		}
 	end
 
+	@spec currencies() :: map | nil
 	defp currencies() do
 		case fetch_and_decode_with_api_key("#{@base_api_url}/#{@currencies_endpoint}") do
 			{:ok, currencies} ->
@@ -88,6 +89,7 @@ defmodule Dexaggregatex.MarketFetching.ParadexFetcher do
 		end
 	end
 
+	@spec ohlcv(String.t) :: binary | nil
 	defp ohlcv(id) do
 		case fetch_and_decode_with_api_key("#{@base_api_url}/#{@ohlcv_endpoint}?market=#{id}&period=1d&amount=1") do
 			{:ok, %{"error" => _}} -> nil
@@ -96,6 +98,7 @@ defmodule Dexaggregatex.MarketFetching.ParadexFetcher do
 		end
 	end
 
+	@spec ticker(String.t) :: [binary]
 	defp ticker(id) do
 		case fetch_and_decode_with_api_key("#{@base_api_url}/#{@ticker_endpoint}?market=#{id}") do
 			{:ok, %{"error" => _}} -> [nil, nil, nil]
@@ -104,6 +107,7 @@ defmodule Dexaggregatex.MarketFetching.ParadexFetcher do
 		end
 	end
 
+	@spec fetch_and_decode_with_api_key(String.t) :: {:ok, any} | :error
 	defp fetch_and_decode_with_api_key(url) do
 		[api_key: key] = Application.get_env(:dexaggregatex, __MODULE__, :api_key)
 		fetch_and_decode(url, [{"API-KEY", key}])

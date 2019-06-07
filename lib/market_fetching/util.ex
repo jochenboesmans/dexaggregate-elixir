@@ -64,7 +64,7 @@ defmodule Dexaggregatex.MarketFetching.Util do
 		iex> Dexaggregatex.MarketFetching.Util.valid_float?("1.1")
 		true
 	"""
-	@spec valid_float?(any()) :: boolean()
+	@spec valid_float?(any) :: boolean
 	def valid_float?(float_string) do
 		cond do
 			float_string == nil ->
@@ -88,7 +88,7 @@ defmodule Dexaggregatex.MarketFetching.Util do
 		iex> Dexaggregatex.MarketFetching.Util.parse_float("1.1")
 		1.1
 	"""
-	@spec parse_float(any()) :: float()
+	@spec parse_float(any) :: float
 	def parse_float(float_string) do
 		case is_float(float_string) || is_integer(float_string) do
 			true ->
@@ -119,7 +119,7 @@ defmodule Dexaggregatex.MarketFetching.Util do
 		iex> Dexaggregatex.MarketFetching.Util.safe_power(2, -1)
 		0.5
 	"""
-	@spec safe_power(number(), number()) :: number()
+	@spec safe_power(number, number) :: number
 	def safe_power(number, power) do
 		case number == 0 do
 			true ->
