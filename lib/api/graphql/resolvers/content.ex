@@ -2,7 +2,7 @@ defmodule Dexaggregatex.API.GraphQL.Resolvers.Content do
 	@moduledoc false
 
 	alias Dexaggregatex.Market
-	alias Dexaggregatex.Market.Structs
+	alias Dexaggregatex.Market.Structs.RebasedMarket
 
 	import Dexaggregatex.API.Format
 
@@ -19,7 +19,7 @@ defmodule Dexaggregatex.API.GraphQL.Resolvers.Content do
 		case Market.get({:rebased_market, ra}) do
 			nil ->
 				{:error, "Failed to rebase market to specified token address."}
-			%Structs.Market{pairs: m} ->
+			%RebasedMarket{pairs: m} ->
         {:ok, queryable_rebased_market(m, args)}
 		end
 	end

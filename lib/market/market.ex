@@ -1,11 +1,12 @@
 defmodule Dexaggregatex.Market do
   @moduledoc """
-    Module maintaining the global market model.
+  Module maintaining the global market model.
   """
   use GenServer
 
   alias Dexaggregatex.Market.Rebasing
-  alias Dexaggregatex.Market.Structs.{ExchangeMarketData, LastUpdate}
+  alias Dexaggregatex.Market.Structs
+  alias Dexaggregatex.Market.Structs.{RebasedMarket, Market, ExchangeMarketData, LastUpdate}
   alias Dexaggregatex.Market.Structs.Pair, as: MarketPair
   alias Dexaggregatex.MarketFetching.Structs.{ExchangeMarket, PairMarketData}
   alias Dexaggregatex.MarketFetching.Structs.Pair, as: MarketFetchingPair
@@ -13,8 +14,9 @@ defmodule Dexaggregatex.Market do
   import Dexaggregatex.Market.Util
 
   @doc """
-    Gets various data from this module's state.
+  Gets various data from this GenServer's state.
   """
+  @spec get(atom | tuple) :: term | {:error, String.t}
   def get(what_to_get) do
     case what_to_get do
       :market ->
@@ -26,13 +28,14 @@ defmodule Dexaggregatex.Market do
       :last_update ->
         GenServer.call(__MODULE__, :get_last_update)
       _ ->
-        nil
+        {:error, "Bad argument."}
     end
   end
 
   @doc """
-    Updates the market with the given pair or exchange market.
+  Updates the market with the given pair or exchange market.
   """
+  @spec update(MarketFetchingPair.t | ExchangeMarket.t) :: :ok
   def update(pair_or_exchange_market) do
     Rebasing.Cache.clear()
     GenServer.cast(__MODULE__, {:update, pair_or_exchange_market})
@@ -42,46 +45,61 @@ defmodule Dexaggregatex.Market do
     GenServer.start_link(__MODULE__, nil, name: __MODULE__)
   end
 
+  @doc """
+  Initializes the market with empty structs.
+  """
   @impl true
+  @spec init(any) :: {:ok, map}
   def init(_initial_market) do
-    {:ok, %{market: %{}, last_update: nil}}
+    {:ok, %{
+      market: %Market{pairs: %{}},
+      last_update: %LastUpdate{timestamp: nil, utc_time: nil, exchange: nil}
+    }}
   end
 
   @doc """
-    Returns the raw market.
+  Returns the raw market, as maintained by this module.
   """
   @impl true
+  @spec handle_call(atom, GenServer.from, map) :: {:reply, Structs.Market.t, map}
   def handle_call(:get_market, _from,  %{market: m} = state) do
     {:reply, m, state}
   end
 
   @doc """
-    Returns the market rebased in a token with a specified rebase_address.
+  Returns the market rebased in a token with a specified rebase_address.
   """
   @impl true
+  @spec handle_call({atom, String.t}, GenServer.from, map)
+        :: {:reply, RebasedMarket.t, map}
   def handle_call({:get_rebased_market, ra}, _from, %{market: m} = state) do
     {:reply, Rebasing.rebase_market(ra, m, 3), state}
   end
 
   @doc """
-    Returns a list of all the exchanges of which pairs are included in the market.
+  Returns a list of all the exchanges of which pairs are included in the market.
   """
   @impl true
+  @spec handle_call(atom, GenServer.from, map)
+        :: {:reply, [atom], map}
   def handle_call(:get_exchanges, _from, %{market: m} = state) do
     {:reply, exchanges_in_market(m), state}
   end
 
 
   @doc """
-    Returns a data structure containing data about the last market update.
+  Returns a data structure containing data about the last market update.
   """
   @impl true
+  @spec handle_call(atom, GenServer.from, map)
+        :: {:reply, LastUpdate.t, map}
   def handle_call(:get_last_update, _from, %{last_update: lu} = state) do
     {:reply, lu, state}
   end
 
-  def exchanges_in_market(market) do
-    Enum.reduce(market, MapSet.new(), fn ({_k, p}, acc1) ->
+  @spec exchanges_in_market(Structs.Market.t) :: MapSet.t(atom)
+  defp exchanges_in_market(%Structs.Market{pairs: pairs}) do
+    Enum.reduce(pairs, MapSet.new(), fn ({_k, p}, acc1) ->
       Enum.reduce(p.market_data, acc1, fn {exchange, _emd}, acc2->
         MapSet.put(acc2, exchange)
       end)
@@ -89,6 +107,7 @@ defmodule Dexaggregatex.Market do
   end
 
   @impl true
+  @spec handle_cast({atom, ExchangeMarket.t}, map) :: {:noreply, map}
   def handle_cast({:update, %ExchangeMarket{} = em}, %{market: m} = state) do
     %ExchangeMarket{exchange: exchange} = em
     add_exchange_market_result = add_exchange_market(m, em)
@@ -96,12 +115,14 @@ defmodule Dexaggregatex.Market do
   end
 
   @impl true
+  @spec handle_cast({atom, MarketFetchingPair.t}, map) :: {:noreply, map}
   def handle_cast({:update, %MarketFetchingPair{} = p}, %{market: m} = state) do
     %MarketFetchingPair{market_data: %PairMarketData{exchange: exchange}} = p
     add_pair_result = add_pair(m, p)
     update_reply(add_pair_result, exchange, state)
   end
 
+  @spec update_reply({atom, Structs.Market.t}, atom, map) :: {:noreply, map}
   defp update_reply(add_result, exchange, state) do
     case add_result do
       {:no_update, _updated_market} ->
@@ -113,17 +134,19 @@ defmodule Dexaggregatex.Market do
           exchange: exchange
         }
         Supervisor.start_link([
-          {Task, fn -> Absinthe.Subscription.publish(Endpoint, updated_market, [updated_market: "*", updated_rebased_market: "*"]) end}
+          {Task, fn -> Absinthe.Subscription.publish(
+                         Endpoint, updated_market, [updated_market: "*", updated_rebased_market: "*"]) end}
         ], strategy: :one_for_one)
         {:noreply, %{state | market: updated_market, last_update: updated_last_update}}
     end
   end
 
-
   @doc """
-    Adds a single pair to the market.
+  Adds a single pair to the market.
   """
-  defp add_pair(pairs, %MarketFetchingPair{} = p) do
+  @spec add_pair(Structs.Market.t, MarketFetchingPair.t)
+        :: {:no_update, Structs.Market.t} | {:update, Structs.Market.t}
+  defp add_pair(%Market{pairs: pairs}, %MarketFetchingPair{} = p) do
     %MarketFetchingPair{
       base_address: ba,
       quote_address: qa,
@@ -159,23 +182,25 @@ defmodule Dexaggregatex.Market do
               ex => emd
             }
           }
-        {:update, Map.put(pairs, id, market_entry)}
+        {:update, %Market{pairs: Map.put(pairs, id, market_entry)}}
       # Append or update ExchangeMarketData of existing MarketPair if it does.
       true ->
         case pairs[id].market_data[ex] == emd do
           true ->
-            {:no_update, pairs}
+            {:no_update, %Market{pairs: pairs}}
           false ->
             market_entry = %{pairs[id] | market_data: Map.put(pairs[id].market_data, ex, emd)}
-            {:update, Map.put(pairs, id, market_entry)}
+            {:update, %Market{pairs: Map.put(pairs, id, market_entry)}}
         end
     end
   end
 
   @doc """
-    Adds all pairs of a given ExchangeMarket to the market.
+  Adds all pairs of a given ExchangeMarket to the market.
   """
-  defp add_exchange_market(prev_market, %ExchangeMarket{market: m}) do
+  @spec add_exchange_market(Structs.Market.t, ExchangeMarket.t)
+        :: {:no_update, Structs.Market.t} | {:update, Structs.Market.t}
+  defp add_exchange_market(%Market{} = prev_market, %ExchangeMarket{market: m}) do
     Enum.reduce(m, {:no_update, prev_market}, fn (p, {_update_status, market_acc}) ->
       add_pair(market_acc, p)
     end)

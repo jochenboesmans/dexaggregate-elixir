@@ -23,14 +23,20 @@ defmodule Dexaggregatex.MarketFetching.DdexFetcher do
 	end
 
 	def start() do
-		c = fetch_currencies()
-		m = initial_exchange_market(c)
-		maybe_update(m)
+		c = case fetch_currencies() do
+			{:ok, currencies} -> currencies
+			:error -> nil
+		end
+		maybe_update(initial_exchange_market(c))
     subscribe_to_market(c)
 	end
 
   def subscribe_to_market(c) do
-    m = fetch_pairs()
+    m =
+			case fetch_pairs() do
+				{:ok, pairs} -> pairs
+				:error -> []
+			end
     {:ok, pid} = WebSockex.start_link(@ws_url, __MODULE__, %{currencies: c, pairs: m})
     sub_message = %{
       type: "subscribe",
@@ -143,7 +149,7 @@ defmodule Dexaggregatex.MarketFetching.DdexFetcher do
   def fetch_pairs() do
     case fetch_and_decode("#{@api_base_url}/#{@currencies_endpoint}") do
       {:ok, %{"data" => %{"markets" => markets}}} ->
-        Enum.map(markets, fn p -> p["id"] end)
+				{:ok, Enum.map(markets, fn p -> p["id"] end)}
 			:error ->
 				:error
     end
@@ -153,11 +159,11 @@ defmodule Dexaggregatex.MarketFetching.DdexFetcher do
 	def fetch_currencies() do
 		case fetch_and_decode("#{@api_base_url}/#{@currencies_endpoint}") do
 			{:ok, %{"data" => %{"markets" => currencies}}} ->
-				Enum.reduce(currencies, %{}, fn (c, acc) ->
+				{:ok, Enum.reduce(currencies, %{}, fn (c, acc) ->
 					acc
 					|> Map.put(c["baseToken"], c["baseTokenAddress"])
 					|> Map.put(c["quoteToken"], c["quoteTokenAddress"])
-				end)
+				end)}
 			:error ->
 				:error
 		end

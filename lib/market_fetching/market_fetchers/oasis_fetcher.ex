@@ -82,7 +82,7 @@ defmodule Dexaggregatex.MarketFetching.OasisFetcher do
 		}
 	end
 
-	@spec fetch_pair([String.t, String.t]) :: {:ok, map} | :error
+	@spec fetch_pair([String.t]) :: {:ok, map} | :error
 	defp fetch_pair([bs, qs]) do
 		case fetch_and_decode("#{@market_endpoint}/#{bs}/#{qs}") do
 			{:ok, %{"data" => pair}} ->

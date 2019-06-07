@@ -1,7 +1,7 @@
 defmodule Dexaggregatex.API.Format do
   @moduledoc false
 
-  alias Dexaggregatex.Market.Structs.{Market, LastUpdate}
+  alias Dexaggregatex.Market.Structs.{RebasedMarket, LastUpdate}
 
   def queryable_market(m, args) do
     filter_market_by_exchanges(m, args)
@@ -53,7 +53,7 @@ defmodule Dexaggregatex.API.Format do
       end)
       |> Enum.sort_by(&combined_volume_across_exchanges/1, &>=/2)
 
-    %Market{base_address: ba, pairs: pairs}
+    %RebasedMarket{base_address: ba, pairs: pairs}
   end
 
   defp format_exchanges_in_market(eim) do

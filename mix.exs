@@ -27,7 +27,7 @@ defmodule Dexaggregatex.MixProject do
   defp elixirc_paths(:test), do: ["lib", "test/support"]
   defp elixirc_paths(_), do: ["lib"]
 
-  defp description() do
+  defp desc() do
     "GraphQL API serving aggregated market data from decentralized exchanges."
   end
 

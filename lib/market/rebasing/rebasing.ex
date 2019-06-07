@@ -4,7 +4,8 @@ defmodule Dexaggregatex.Market.Rebasing do
 	"""
 
 	import Dexaggregatex.Market.Util
-	alias Dexaggregatex.Market.Structs.{ExchangeMarketData, Pair, Market}
+	alias Dexaggregatex.Market.Structs
+	alias Dexaggregatex.Market.Structs.{ExchangeMarketData, Pair, RebasedMarket}
 	alias Dexaggregatex.Market.Rebasing
 
 	# Makes sure private functions are testable.
@@ -13,14 +14,14 @@ defmodule Dexaggregatex.Market.Rebasing do
 	@doc """
 		Rebases all pairs in a given market to a token with a given rebase_address.
 	"""
-	def rebase_market(rebase_address, market, max_depth) do
-		pairs =
+	def rebase_market(rebase_address, %Structs.Market{pairs: pairs}, max_depth) do
+		rebased_pairs =
 			case Rebasing.Cache.get({:rebase_market, {rebase_address, max_depth}}) do
 				{:found, cached_market} ->
 					cached_market
 				{:not_found, _} ->
-					created_tasks = Enum.map(market, fn ({pair_id, p}) ->
-						{pair_id, Task.async(fn -> rebase_pair([p, rebase_address, market, max_depth]) end)}
+					created_tasks = Enum.map(pairs, fn ({pair_id, p}) ->
+						{pair_id, Task.async(fn -> rebase_pair([p, rebase_address, pairs, max_depth]) end)}
 					end)
 
 					rebased_market = Enum.reduce(created_tasks, %{}, fn ({k, p}, acc) ->
@@ -32,8 +33,8 @@ defmodule Dexaggregatex.Market.Rebasing do
 					rebased_market
 			end
 
-		%Market{
-			pairs: pairs,
+		%RebasedMarket{
+			pairs: rebased_pairs,
 			base_address: rebase_address,
 		}
 	end

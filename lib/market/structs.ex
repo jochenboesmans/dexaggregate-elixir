@@ -3,9 +3,9 @@ defmodule Dexaggregatex.Market.Structs do
 	Data structures representing parts of the internal market model.
 	"""
 
-	defmodule Market do
+	defmodule RebasedMarket do
 		@moduledoc """
-		Data structure representing a market, for which all market data is based in a specific base address.
+		Data structure representing a market, for which all market data is based in a specific base token.
 		"""
 		@enforce_keys [:base_address, :pairs]
 		defstruct [:base_address, :pairs]
@@ -14,7 +14,20 @@ defmodule Dexaggregatex.Market.Structs do
 		* base_address: string representing the address of the token in which this market's data is based.
 		* pairs: list of pairs in the market.
 		"""
-		@type t :: %__MODULE__{base_address: String.t(), pairs: [Pair]}
+		@type t :: %__MODULE__{base_address: String.t, pairs: [Pair]}
+	end
+
+	defmodule Market do
+		@moduledoc """
+		Data structure representing a raw market, for which all market data is based in each pair's respective base token.
+		"""
+		@enforce_keys [:pairs]
+		defstruct [:pairs]
+
+		@typedoc """
+		* pairs: map of ids and pairs in the market.
+		"""
+		@type t :: %__MODULE__{pairs: map}
 	end
 
 	defmodule Pair do
@@ -31,8 +44,8 @@ defmodule Dexaggregatex.Market.Structs do
 		* quote_symbol: string representing the address of the quote token.
 		* market_data: struct representing this pair's market data.
 		"""
-		@type t :: %__MODULE__{base_symbol: String.t(), quote_symbol: String.t(), base_address: String.t(),
-							 quote_address: String.t(), market_data: [ExchangeMarketData.t()]}
+		@type t :: %__MODULE__{base_symbol: String.t, quote_symbol: String.t, base_address: String.t,
+							 quote_address: String.t, market_data: [ExchangeMarketData.t]}
 	end
 
 	defmodule ExchangeMarketData do
@@ -48,8 +61,8 @@ defmodule Dexaggregatex.Market.Structs do
 		* current_ask: number representing the lowest current ask price for the quote token.
 		* base_volume: number representing a pair's volume.
 		"""
-		@type t :: %__MODULE__{last_price: number(), current_bid: number(),
-								 current_ask: number(), base_volume: number()}
+		@type t :: %__MODULE__{last_price: number, current_bid: number,
+								 current_ask: number, base_volume: number}
 	end
 
 	defmodule LastUpdate do
@@ -64,7 +77,7 @@ defmodule Dexaggregatex.Market.Structs do
 		* utc_time: struct representing the utc time of the last update.
 		* exchange: atom representing the exchange that caused the last update.
 		"""
-		@type t :: %__MODULE__{timestamp: integer(), utc_time: NaiveDateTime.t(), exchange: atom()}
+		@type t :: %__MODULE__{timestamp: integer, utc_time: NaiveDateTime.t, exchange: atom}
 	end
 
 end

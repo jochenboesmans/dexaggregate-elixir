@@ -28,7 +28,7 @@ defmodule Dexaggregatex.MarketFetching.ParadexFetcher do
 		|> Enum.each(fn x -> maybe_update(x) end)
 	end
 
-	@spec exchange_market() :: ExchangeMarket.t()
+	@spec exchange_market() :: ExchangeMarket.t
 	def exchange_market() do
 		c = currencies()
 
