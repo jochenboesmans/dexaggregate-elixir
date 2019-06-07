@@ -6,6 +6,8 @@ defmodule Dexaggregatex.MixProject do
       app: :dexaggregatex,
       version: "0.1.0",
       elixir: "~> 1.8",
+      description: desc(),
+      package: package(),
       elixirc_paths: elixirc_paths(Mix.env()),
       compilers: [:phoenix] ++ Mix.compilers(),
       start_permanent: Mix.env() == :prod,
@@ -24,6 +26,16 @@ defmodule Dexaggregatex.MixProject do
   # Specifies which paths to compile per environment.
   defp elixirc_paths(:test), do: ["lib", "test/support"]
   defp elixirc_paths(_), do: ["lib"]
+
+  defp description() do
+    "GraphQL API serving aggregated market data from decentralized exchanges."
+  end
+
+  defp package() do
+    [
+      licenses: ["GNU AGPLv3"]
+    ]
+  end
 
   defp deps do
     [
