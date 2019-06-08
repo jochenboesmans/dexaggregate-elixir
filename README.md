@@ -47,7 +47,7 @@ subscription kyberMarket {
 
 3. Subscribe to data about the last update to the market.
 ```graphql
-query lastUpdate {
+subscription lastUpdate {
   lastUpdate {
     exchange
     timestamp
@@ -58,10 +58,12 @@ query lastUpdate {
 
 4. Subscribe to a list of all exchanges currently included in the market.
 ```graphql
-query exchanges {
+subscription exchanges {
   exchanges
 }
 ```
+
+All of these subscriptions are also available as simple GraphQL queries.
 
 
 
