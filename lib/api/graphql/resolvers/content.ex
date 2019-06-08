@@ -2,6 +2,7 @@ defmodule Dexaggregatex.API.GraphQL.Resolvers.Content do
 	@moduledoc false
 
 	alias Dexaggregatex.Market
+	alias Dexaggregatex.Market.Structs
 	alias Dexaggregatex.Market.Structs.RebasedMarket
 
 	import Dexaggregatex.API.Format
@@ -10,7 +11,7 @@ defmodule Dexaggregatex.API.GraphQL.Resolvers.Content do
 		case Market.get(:market) do
 			nil ->
         {:error, "Market not found."}
-			m ->
+			%Structs.Market{pairs: m} ->
         {:ok, queryable_market(m, args)}
 		end
 	end

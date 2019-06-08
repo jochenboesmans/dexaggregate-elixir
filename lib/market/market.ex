@@ -142,7 +142,7 @@ defmodule Dexaggregatex.Market do
     Supervisor.start_link([
       {Task, fn -> Absinthe.Subscription.publish(
                      Endpoint, updated_market,
-                     [updated_market: "*", updated_rebased_market: "*", exchanges: "*", last_update: "*"]) end}
+                     [market: "*", rebased_market: "*", exchanges: "*", last_update: "*"]) end}
     ], strategy: :one_for_one)
   end
 

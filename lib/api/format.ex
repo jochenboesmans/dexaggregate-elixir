@@ -1,7 +1,7 @@
 defmodule Dexaggregatex.API.Format do
   @moduledoc false
 
-  alias Dexaggregatex.Market.Structs.{RebasedMarket, LastUpdate}
+  alias Dexaggregatex.Market.Structs.{Market, RebasedMarket, LastUpdate}
 
   def queryable_market(m, args) do
     filter_market_by_exchanges(m, args)
