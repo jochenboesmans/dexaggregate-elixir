@@ -133,12 +133,17 @@ defmodule Dexaggregatex.Market do
           utc_time: NaiveDateTime.utc_now(),
           exchange: exchange
         }
-        Supervisor.start_link([
-          {Task, fn -> Absinthe.Subscription.publish(
-                         Endpoint, updated_market, [updated_market: "*", updated_rebased_market: "*"]) end}
-        ], strategy: :one_for_one)
+        trigger_API_broadcast(updated_market)
         {:noreply, %{state | market: updated_market, last_update: updated_last_update}}
     end
+  end
+
+  defp trigger_API_broadcast(updated_market) do
+    Supervisor.start_link([
+      {Task, fn -> Absinthe.Subscription.publish(
+                     Endpoint, updated_market,
+                     [updated_market: "*", updated_rebased_market: "*", exchanges: "*", last_update: "*"]) end}
+    ], strategy: :one_for_one)
   end
 
   @doc """
