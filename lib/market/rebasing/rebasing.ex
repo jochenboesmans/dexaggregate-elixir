@@ -181,24 +181,31 @@ defmodule Dexaggregatex.Market.Rebasing do
 	end
 
 	@doc """
-		Calculates the values that determine a volume-weighted rate.
+	Calculates the values that determine a volume-weighted rate.
 	"""
-	defp sums_for_deep_rebasing(rate, original_pair, rebase_address, market, max_depth) do
-		rebase_paths = try_expand_path([original_pair], rebase_address, index_by_quote_address(market), max_depth)
+	defp sums_for_deep_rebasing(rate, original_pair, rebase_address, pairs, max_depth) do
+		%Pair{base_address: orig_ba, quote_address: orig_qa} = original_pair
+		base_rebase_paths = try_expand_path_from_base([{orig_qa, orig_ba}], rebase_address, quote_neighbors(pairs), max_depth)
+		quote_rebase_paths = try_expand_path_from_quote([{orig_qa, orig_ba}], rebase_address, base_neighbors(pairs), max_depth)
 
-		Enum.reduce(rebase_paths, %{combined_volume: 0, volume_weighted_sum: 0}, fn (rebase_path, sums) ->
-			update_sums(sums, rebase_path, rate, market, rebase_address) end)
+		r =
+			Enum.reduce(base_rebase_paths, %{combined_volume: 0, volume_weighted_sum: 0}, fn (base_rebase_path, sums) ->
+				base_update_sums(sums, base_rebase_path, rate, pairs, rebase_address)
+			end)
+		Enum.reduce(quote_rebase_paths, r, fn (quote_rebase_path, sums) ->
+			quote_update_sums(sums, quote_rebase_path, rate, pairs, rebase_address)
+		end)
 	end
 
 	@doc """
-	Index to reduce complexity of searching for adjacent pairs.
+	Index to reduce complexity of searching for quote_address neighbors.
 	"""
-	def index_by_quote_address(market) do
-		Enum.reduce(market, %{}, fn ({_id, %Pair{quote_address: qa}} = p, acc) ->
+	def quote_neighbors(pairs) do
+		Enum.reduce(pairs, %{}, fn ({_id, %Pair{quote_address: qa, base_address: ba}}, acc) ->
 			{_old_value, updated_map} = Map.get_and_update(acc, qa, fn v ->
 				case v do
-					nil -> {v, [p]}
-					not_nil -> {v, [p | not_nil]}
+					nil -> {v, [ba]}
+					not_nil -> {v, [ba | not_nil]}
 				end
 			end)
 			updated_map
@@ -206,44 +213,61 @@ defmodule Dexaggregatex.Market.Rebasing do
 	end
 
 	@doc """
-		Updates the given volume-weighted-rate-determining sums based on the given rebase_path.
+	Index to reduce complexity of searching for base_address neighbors.
 	"""
-	defp update_sums(sums, rebase_path, original_rate, market, rebase_address) do
-		max_i = Enum.count(rebase_path) - 1
+	def base_neighbors(pairs) do
+		Enum.reduce(pairs, %{}, fn ({_id, %Pair{quote_address: qa, base_address: ba}}, acc) ->
+			{_old_value, updated_map} = Map.get_and_update(acc, ba, fn v ->
+				case v do
+					nil -> {v, [qa]}
+					not_nil -> {v, [qa | not_nil]}
+				end
+			end)
+			updated_map
+		end)
+	end
+
+	@doc """
+	Updates the given volume-weighted-rate-determining sums based on the given rebase_path.
+	"""
+	defp base_update_sums(sums, base_rebase_path, original_rate, pairs, rebase_address) do
+		max_i = Enum.count(base_rebase_path) - 1
 
 		# Rebase the original_rate for every pair of the rebase_path.
 		rebased_rate =
-			Enum.with_index(rebase_path)
+			Enum.with_index(base_rebase_path)
 			# Iterate through the rebase_path starting from the original_pair, going to the pair based in rebase_address,
 			#	rebasing the original_rate to the base_address of all pairs that aren't the original one.
 			|> List.foldr(original_rate,
-					 fn ({%Pair{base_address: rp_ba, quote_address: rp_qa}, i}, acc) ->
-						 case i === max_i do
-							 true ->
-								 acc
-							 false ->
-								 rebase_rate(acc, rp_ba, rp_qa, market)
-						 end
+				 fn ({{rp_qa, rp_ba}, i}, acc) ->
+					 case i === max_i do
+						 true ->
+							 # Keep original_rate since it's already based in the original pair's base address.
+							 acc
+						 false ->
+							 # Rebase the rate currently based in this pair's quote address (previous pair's base address)
+							 # to this pair's base address.
+							 rebase_rate(acc, rp_ba, rp_qa, pairs)
 					 end
-				 )
+				 end)
 
 		# Calculate each involved pair's combined volume and rebase it in the base address of the ultimate rebase pair.
 		# This rebase_path's weight is the average volume of all involved pairs.
 		weight =
-			Enum.reduce(Enum.with_index(rebase_path), 0, fn ({%Pair{base_address: rp_ba} = rebase_pair, i}, sum) ->
+			Enum.reduce(Enum.with_index(base_rebase_path), 0, fn ({{rp_qa, rp_ba} = _rebase_pair, i}, sum) ->
 				cond do
-          # Exclude volumes of start and end pairs.
-          i === 0 || i === max_i ->
+          # Exclude volumes of start pair.
+          i === max_i ->
             sum
-          # Include volumes of all pairs in between.
+          # Include volumes of all other pairs.
           true ->
             rebased_phase_volume =
-              combined_volume_across_exchanges(rebase_pair, market)
-              |> rebase_rate(rebase_address, rp_ba, market)
+              combined_volume_across_exchanges(pairs[pair_id(rp_ba, rp_qa)], pairs)
+              |> rebase_rate(rebase_address, rp_ba, pairs)
             sum + rebased_phase_volume
         end
 
-			end) / Enum.count(rebase_path)
+			end) / Enum.count(base_rebase_path)
 
 		%{sums |
 			volume_weighted_sum: sums.volume_weighted_sum + (weight * rebased_rate),
@@ -252,41 +276,131 @@ defmodule Dexaggregatex.Market.Rebasing do
 	end
 
 	@doc """
-		Expands the given path_to_expand if necessary.
+	Updates the given volume-weighted-rate-determining sums based on the given rebase_path.
 	"""
-	defp try_expand_path([last_pair | _] = path_to_expand, rebase_address, indexed_market, max_depth) do
+	defp quote_update_sums(sums, quote_rebase_path, original_rate, pairs, rebase_address) do
+		max_i = Enum.count(quote_rebase_path) - 1
+
+		# Rebase the original_rate for every pair of the rebase_path.
+		rebased_rate =
+			Enum.with_index(quote_rebase_path)
+			# Iterate through the rebase_path starting from the original_pair, going to the pair based in rebase_address,
+			#	rebasing the original_rate to the base_address of all pairs that aren't the last one.
+			|> List.foldr(original_rate,
+					 fn ({{rp_qa, rp_ba}, i}, acc) ->
+						 case i === 0 do
+							 true ->
+								 # Keep rate since it's already based in the rebase address.
+								 acc
+							 false ->
+								 # Rebase the rate currently based in this pair's base address
+								 # to this pair's quote address (next pair's base address).
+								 rebase_rate(acc, rp_qa, rp_ba, pairs)
+						 end
+					 end)
+
+		# Calculate each involved pair's combined volume and rebase it in the base address of the ultimate rebase pair.
+		# This rebase_path's weight is the average volume of all involved pairs.
+		weight =
+			Enum.reduce(Enum.with_index(quote_rebase_path), 0, fn ({{rp_qa, rp_ba} = _rebase_pair, i}, sum) ->
+				cond do
+					# Exclude volumes of start pair.
+					i === max_i ->
+						sum
+					# Include volumes of all other pairs.
+					true ->
+						rebased_phase_volume =
+							combined_volume_across_exchanges(pairs[pair_id(rp_ba, rp_qa)], pairs)
+							|> rebase_rate(rebase_address, rp_ba, pairs)
+						sum + rebased_phase_volume
+				end
+
+			end) / Enum.count(quote_rebase_path)
+
+		%{sums |
+			volume_weighted_sum: sums.volume_weighted_sum + (weight * rebased_rate),
+			combined_volume: sums.combined_volume + weight
+		}
+	end
+
+	@doc """
+	Expands the given path_to_expand, if necessary, by finding base address neighbors.
+	"""
+	defp try_expand_path_from_base([{_last_qa, last_ba} | _] = path_to_expand, rebase_address, base_neighbors, max_depth) do
 		cond do
-			last_pair.base_address == rebase_address ->
+			last_ba == rebase_address ->
 				[path_to_expand]
 			Enum.count(path_to_expand) >= max_depth ->
 				[]
 			true ->
-				expand_path(path_to_expand, rebase_address, indexed_market, max_depth)
+				expand_path_from_base(path_to_expand, rebase_address, base_neighbors, max_depth)
 		end
 	end
 
 	@doc """
-		Returns a list of all paths that expand the given path_to_expand.
+	Expands the given path_to_expand, if necessary, by finding quote address neighbors.
 	"""
-	defp expand_path([last_pair | _] = path_to_expand, rebase_address, indexed_market, max_depth) do
-		case Rebasing.Cache.get({:expand_path, {path_to_expand, rebase_address, max_depth}}) do
+	defp try_expand_path_from_quote([{_last_qa, last_ba} | _] = path_to_expand, rebase_address, quote_neighbors, max_depth) do
+		cond do
+			last_ba == rebase_address ->
+				[path_to_expand]
+			Enum.count(path_to_expand) >= max_depth ->
+				[]
+			true ->
+				expand_path_from_quote(path_to_expand, rebase_address, quote_neighbors, max_depth)
+		end
+	end
+
+	@doc """
+	Returns a list of all paths that expand the given path_to_expand that lead to a pair with the given rebase_address,
+	by expanding to base_address neighbors.
+	"""
+	defp expand_path_from_base([{_last_qa, last_ba} | _] = path_to_expand, rebase_address, base_neighbors, max_depth) do
+		case Rebasing.Cache.get({:expand_path_from_base, {path_to_expand, rebase_address, max_depth}}) do
 			{:found, cached_result} ->
 				cached_result
 			{:not_found, _} ->
 				result =
-					case Map.has_key?(indexed_market, last_pair.base_address) do
+					case Map.has_key?(base_neighbors, last_ba) do
 						true ->
 							Enum.reduce(
-								indexed_market[last_pair.base_address],
+								base_neighbors[last_ba],
 								[],
-								fn ({_id, %Pair{} = next_pair}, paths_acc) ->
-									try_expand_path([next_pair | path_to_expand], rebase_address, indexed_market, max_depth) ++ paths_acc
+								fn (new_ba, paths_acc) ->
+									try_expand_path_from_base([{last_ba, new_ba} | path_to_expand], rebase_address, base_neighbors, max_depth) ++ paths_acc
 								end)
 						false ->
 							[]
 					end
 
-				Rebasing.Cache.add({:expand_path, {path_to_expand, rebase_address, max_depth}, result})
+				Rebasing.Cache.add({:expand_path_from_base, {path_to_expand, rebase_address, max_depth}, result})
+				result
+		end
+	end
+
+	@doc """
+	Returns a list of all paths that expand the given path_to_expand that lead to a pair with the given rebase_address,
+	by expanding to quote_address neighbors.
+	"""
+	defp expand_path_from_quote([{last_qa, _last_ba} | _] = path_to_expand, rebase_address, quote_neighbors, max_depth) do
+		case Rebasing.Cache.get({:expand_path_from_quote, {path_to_expand, rebase_address, max_depth}}) do
+			{:found, cached_result} ->
+				cached_result
+			{:not_found, _} ->
+				result =
+					case Map.has_key?(quote_neighbors, last_qa) do
+						true ->
+							Enum.reduce(
+								quote_neighbors[last_qa],
+								[],
+								fn (new_qa, paths_acc) ->
+									try_expand_path_from_quote([{new_qa, last_qa} | path_to_expand], rebase_address, quote_neighbors, max_depth) ++ paths_acc
+								end)
+						false ->
+							[]
+					end
+
+				Rebasing.Cache.add({:expand_path_from_quote, {path_to_expand, rebase_address, max_depth}, result})
 				result
 		end
 	end
