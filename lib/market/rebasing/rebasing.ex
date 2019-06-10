@@ -259,7 +259,7 @@ defmodule Dexaggregatex.Market.Rebasing do
 			last_pair.base_address == rebase_address ->
 				[path_to_expand]
 			Enum.count(path_to_expand) >= max_depth ->
-				nil
+				[]
 			true ->
 				expand_path(path_to_expand, rebase_address, indexed_market, max_depth)
 		end
@@ -280,13 +280,7 @@ defmodule Dexaggregatex.Market.Rebasing do
 								indexed_market[last_pair.base_address],
 								[],
 								fn ({_id, %Pair{} = next_pair}, paths_acc) ->
-									expanded_path = [next_pair | path_to_expand]
-									case try_expand_path(expanded_path, rebase_address, indexed_market, max_depth) do
-										nil ->
-											paths_acc
-										all_paths_expanding_this ->
-											all_paths_expanding_this ++ paths_acc
-									end
+									try_expand_path([next_pair | path_to_expand], rebase_address, indexed_market, max_depth) ++ paths_acc
 								end)
 						false ->
 							[]
