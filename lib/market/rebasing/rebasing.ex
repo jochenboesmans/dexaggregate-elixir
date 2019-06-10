@@ -1,6 +1,6 @@
 defmodule Dexaggregatex.Market.Rebasing do
 	@moduledoc """
-		Logic for rebasing pairs of a market to a token, denominating all rates in this token.
+	Logic for rebasing pairs of a market to a token, denominating all rates in this token.
 	"""
 
 	import Dexaggregatex.Market.Util
@@ -184,10 +184,25 @@ defmodule Dexaggregatex.Market.Rebasing do
 		Calculates the values that determine a volume-weighted rate.
 	"""
 	defp sums_for_deep_rebasing(rate, original_pair, rebase_address, market, max_depth) do
-		rebase_paths = try_expand_path([original_pair], rebase_address, market, max_depth)
+		rebase_paths = try_expand_path([original_pair], rebase_address, index_by_quote_address(market), max_depth)
 
 		Enum.reduce(rebase_paths, %{combined_volume: 0, volume_weighted_sum: 0}, fn (rebase_path, sums) ->
 			update_sums(sums, rebase_path, rate, market, rebase_address) end)
+	end
+
+	@doc """
+	Index to reduce complexity of searching for adjacent pairs.
+	"""
+	def index_by_quote_address(market) do
+		Enum.reduce(market, %{}, fn ({_id, %Pair{quote_address: qa}} = p, acc) ->
+			{_old_value, updated_map} = Map.get_and_update(acc, qa, fn v ->
+				case v do
+					nil -> {v, [p]}
+					not_nil -> {v, [p | not_nil]}
+				end
+			end)
+			updated_map
+		end)
 	end
 
 	@doc """
@@ -239,42 +254,43 @@ defmodule Dexaggregatex.Market.Rebasing do
 	@doc """
 		Expands the given path_to_expand if necessary.
 	"""
-	defp try_expand_path([last_pair | _] = path_to_expand, rebase_address, market, max_depth) do
+	defp try_expand_path([last_pair | _] = path_to_expand, rebase_address, indexed_market, max_depth) do
 		cond do
 			last_pair.base_address == rebase_address ->
 				[path_to_expand]
 			Enum.count(path_to_expand) >= max_depth ->
 				nil
 			true ->
-				expand_path(path_to_expand, rebase_address, market, max_depth)
+				expand_path(path_to_expand, rebase_address, indexed_market, max_depth)
 		end
 	end
 
 	@doc """
 		Returns a list of all paths that expand the given path_to_expand.
 	"""
-	defp expand_path([last_pair | _] = path_to_expand, rebase_address, market, max_depth) do
+	defp expand_path([last_pair | _] = path_to_expand, rebase_address, indexed_market, max_depth) do
 		case Rebasing.Cache.get({:expand_path, {path_to_expand, rebase_address, max_depth}}) do
 			{:found, cached_result} ->
 				cached_result
 			{:not_found, _} ->
-				result = Enum.reduce(
-					market,
-					[],
-					fn ({_id, %Pair{quote_address: next_pair_qa} = next_pair}, paths_acc) ->
-						case next_pair_qa == last_pair.base_address do
-							true ->
-								expanded_path = [next_pair | path_to_expand]
-								case try_expand_path(expanded_path, rebase_address, market, max_depth) do
-									nil ->
-										paths_acc
-									all_paths_expanding_this ->
-										all_paths_expanding_this ++ paths_acc
-								end
-							false ->
-								paths_acc
-						end
-					end)
+				result =
+					case Map.has_key?(indexed_market, last_pair.base_address) do
+						true ->
+							Enum.reduce(
+								indexed_market[last_pair.base_address],
+								[],
+								fn ({_id, %Pair{} = next_pair}, paths_acc) ->
+									expanded_path = [next_pair | path_to_expand]
+									case try_expand_path(expanded_path, rebase_address, indexed_market, max_depth) do
+										nil ->
+											paths_acc
+										all_paths_expanding_this ->
+											all_paths_expanding_this ++ paths_acc
+									end
+								end)
+						false ->
+							[]
+					end
 
 				Rebasing.Cache.add({:expand_path, {path_to_expand, rebase_address, max_depth}, result})
 				result

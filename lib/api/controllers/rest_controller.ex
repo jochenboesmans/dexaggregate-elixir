@@ -9,7 +9,7 @@ defmodule Dexaggregatex.API.RestController do
 	def get(conn, %{"what_to_get" => what} = _params) do
 		result =
 			case what do
-				"last_market" -> get_last_update()
+				"last_update" -> get_last_update()
 				"exchanges" -> get_exchanges()
 				"dai_rebased_market" -> get_dai_rebased_market()
 				"market" -> get_market()
