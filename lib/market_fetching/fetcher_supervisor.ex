@@ -21,7 +21,7 @@ defmodule Dexaggregatex.MarketFetching.FetcherSupervisor do
 			{ParadexFetcher, []},
 			{RadarFetcher, []},
 			{TokenstoreFetcher, []},
-			#{UniswapFetcher, []},
+			{UniswapFetcher, []},
 		]
 		options = [
 			strategy: :one_for_one,

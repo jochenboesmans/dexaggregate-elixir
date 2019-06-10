@@ -32,13 +32,16 @@ defmodule Dexaggregatex.MarketFetching.UniswapFetcher do
 
 		query = Neuron.query("""
 			{
-				exchanges (first: 50, orderBy: tradeVolumeEth, orderDirection: desc) {
+				exchanges (first: 100, orderBy: tradeVolumeEth, orderDirection: desc) {
 					id
 					tokenAddress
 					tokenSymbol
 					lastPrice
 					price
-					tradeVolumeEth
+				}
+				exchangeDayDatas (first: 100, orderBy: ethVolume, orderDirection: desc) {
+					exchangeAddress,
+					ethVolume
 				}
 			}
 		""")
@@ -46,10 +49,10 @@ defmodule Dexaggregatex.MarketFetching.UniswapFetcher do
 		case query do
 			{:ok, %Neuron.Response{body:
 				%{"data" =>
-					%{"exchanges" => data}
+					%{"exchanges" => exs, "exchangeDayDatas" => edds}
 				}
 			}} ->
-				{:ok, data}
+				{:ok, %{exchanges: exs, exchangeDayDatas: edds}}
 			_ ->
 				:error
 		end
@@ -59,23 +62,28 @@ defmodule Dexaggregatex.MarketFetching.UniswapFetcher do
 	def exchange_market() do
 		complete_market =
 			case fetch_data() do
-				{:ok, data} ->
-					Enum.reduce(data, [], fn (e, acc) ->
+				{:ok, %{exchanges: exs, exchangeDayDatas: edds}} ->
+					Enum.reduce(exs, [], fn (e, acc) ->
 						%{
+							"id" => id,
 							"lastPrice" => lp,
 							"price" => cb = ca,
-							"tradeVolumeEth" => bv,
 							"tokenSymbol" => qs,
 							"tokenAddress" => qa
 						} = e
-
 						[bs, ba] = ["ETH", eth_address()]
 
-						case valid_values?(strings: [bs, qs, ba, qa], numbers: [lp, cb, ca, bv]) do
-							true ->
-								[market_pair([bs, qs, ba, qa, lp, cb, ca, bv]) | acc]
-							false ->
+						case Enum.find(edds, fn edd -> edd["exchangeAddress"] == id end) do
+							nil ->
 								acc
+							not_nil ->
+								%{"ethVolume" => bv} = not_nil
+								case valid_values?(strings: [bs, qs, ba, qa], numbers: [lp, cb, ca, bv]) do
+									true ->
+										[market_pair([bs, qs, ba, qa, lp, cb, ca, bv]) | acc]
+									false ->
+										acc
+								end
 						end
 					end)
 				:error ->
@@ -100,8 +108,7 @@ defmodule Dexaggregatex.MarketFetching.UniswapFetcher do
 				last_price: safe_power(parse_float(lp), -1),
 				current_bid: safe_power(parse_float(cb), -1),
 				current_ask: safe_power(parse_float(ca), -1),
-				# correcting by 10^-2 here because volumes from the graph seem blown up.
-				base_volume: parse_float(bv) * safe_power(10, -2)
+				base_volume: parse_float(bv)
 			}
 		}
 	end
