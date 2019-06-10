@@ -7,8 +7,8 @@ defmodule Dexaggregatex.API do
 
 	This can be used in your application as:
 
-	    use API, :controller
-	    use API, :view
+	    use Dexaggregatex.API, :controller
+	    use Dexaggregatex.API, :view
 
 	The definitions below will be executed for every view,
 	controller, etc, so keep them short and clean, focused
