@@ -4,6 +4,7 @@ defmodule Dexaggregatex.MarketFetching.Common do
 	"""
 	alias Dexaggregatex.MarketFetching.Structs.{
 		Pair, ExchangeMarket, PairMarketData}
+	alias Dexaggregatex.Market
 
 	import Dexaggregatex.MarketFetching.Util
 
@@ -66,7 +67,7 @@ defmodule Dexaggregatex.MarketFetching.Common do
 			[] ->
 				nil
 			_ ->
-				Dexaggregatex.Market.update(x)
+				Market.Client.update(x)
 		end
 	end
 end

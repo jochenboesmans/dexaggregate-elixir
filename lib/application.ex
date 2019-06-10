@@ -1,6 +1,6 @@
 defmodule Dexaggregatex.Application do
 	alias Dexaggregatex.{
-		Market,
+		Market.Server,
 		MarketFetching.FetcherSupervisor,
 		API.Endpoint,
 		Market.Rebasing
@@ -9,7 +9,7 @@ defmodule Dexaggregatex.Application do
 
 	def start(_type, _args) do
 		children = [
-			Market,
+			Server,
 			FetcherSupervisor,
 			Endpoint,
 			{Absinthe.Subscription, [Endpoint]},

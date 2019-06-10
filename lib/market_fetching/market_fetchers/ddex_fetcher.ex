@@ -64,7 +64,7 @@ defmodule Dexaggregatex.MarketFetching.DdexFetcher do
       } ->
         case try_get_valid_pair(p, c) do
           nil -> nil
-          valid_pair -> Market.update(valid_pair)
+          valid_pair -> Market.Client.update(valid_pair)
         end
       _ ->
         nil
