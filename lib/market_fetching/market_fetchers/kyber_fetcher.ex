@@ -10,7 +10,7 @@ defmodule Dexaggregatex.MarketFetching.KyberFetcher do
   @base_api_url "https://api.kyber.network"
   @market_endpoint "market"
   @currencies_endpoint "currencies"
-  @poll_interval 10_000
+  @poll_interval 5_000
 
   # Make private functions testable.
   @compile if Mix.env == :test, do: :export_all
@@ -57,7 +57,7 @@ defmodule Dexaggregatex.MarketFetching.KyberFetcher do
 
                 case valid_values?(strings: [bs, qs, ba, qa], numbers: [lp, cb, ca, bv]) do
                   true ->
-                    [market_pair([bs, qs, ba, qa, lp, cb, ca, bv]) | acc]
+                    [market_pair(strings: [bs, qs, ba, qa], numbers: [lp, cb, ca, bv]) | acc]
                   false ->
                     acc
                 end
@@ -78,8 +78,8 @@ defmodule Dexaggregatex.MarketFetching.KyberFetcher do
 	@doc """
 	Makes a well-formatted market pair based on the given data.
 	"""
-  @spec market_pair([String.t | number]) :: Pair.t
-  defp market_pair([bs, qs, ba, qa, lp, cb, ca, bv]) do
+  @spec market_pair(strings: [String.t], numbers: [number]) :: Pair.t
+  defp market_pair(strings: [bs, qs, ba, qa], numbers: [lp, cb, ca, bv]) do
     %Pair{
       base_symbol: bs,
       quote_symbol: qs,
@@ -96,7 +96,7 @@ defmodule Dexaggregatex.MarketFetching.KyberFetcher do
   end
 
 	@doc """
-	Retrieves data by fetching the Kyber API.
+	Retrieves data by fetching from the Kyber API.
 	"""
 	@spec get_from_api(String.t) :: {:ok, [map]} | :error
   defp get_from_api(url) do

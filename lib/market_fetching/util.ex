@@ -22,8 +22,8 @@ defmodule Dexaggregatex.MarketFetching.Util do
 				:: :error | {:ok, Poison.Parser.t}
 	def fetch_and_decode(url, headers \\ []) do
 		case HTTPoison.get(url, headers) do
-			{:ok, response} ->
-				decode(response)
+			{:ok, %HTTPoison.Response{body: body}} ->
+				Poison.decode(body)
 			{:error, _} ->
 				:error
 		end
@@ -36,22 +36,8 @@ defmodule Dexaggregatex.MarketFetching.Util do
 				:: :error | {:ok, Poison.Parser.t}
 	def post_and_decode(url) do
 		case HTTPoison.post(url, Poison.encode!(%{})) do
-			{:ok, response} ->
-				decode(response)
-			{:error, _} ->
-				:error
-		end
-	end
-
-	@doc """
-	Returns the JSON-decoded version of the body of a given HTTPoison response.
-	"""
-	@spec decode(HTTPoison.Response.t)
-				:: :error | {:ok, Poison.Parser.t}
-	def decode(%HTTPoison.Response{body: body}) do
-		case Poison.decode(body) do
-			{:ok, decoded_body} ->
-				{:ok, decoded_body}
+			{:ok, %HTTPoison.Response{body: body}} ->
+				Poison.decode(body)
 			{:error, _} ->
 				:error
 		end

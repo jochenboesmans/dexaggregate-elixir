@@ -1,6 +1,6 @@
 defmodule Dexaggregatex.MarketFetching.RadarFetcher do
 	@moduledoc """
-	Fetches the Radar Relay market and updates the global Market accordingly.
+	Fetches the Radar market and updates the global Market accordingly.
 	"""
 	use Task, restart: :permanent
 
@@ -9,22 +9,32 @@ defmodule Dexaggregatex.MarketFetching.RadarFetcher do
 
 	@base_api_url "https://api.radarrelay.com/v2"
 	@market_endpoint "markets"
+	@poll_interval 5_000
 
-	@poll_interval 10_000
-
-	# Makes sure private functions are testable.
+	# Makes private functions testable.
 	@compile if Mix.env == :test, do: :export_all
 
+	@doc """
+	Starts a RadarFetcher process linked to the caller process.
+	"""
+	@spec start_link(any) :: {:ok, pid}
 	def start_link(_arg) do
 		Task.start_link(__MODULE__, :poll, [])
 	end
 
+	@doc """
+	Polls the Radar market and updates the global Market accordingly.
+	"""
+	@spec poll() :: any
 	def poll() do
 		Stream.interval(@poll_interval)
 		|> Stream.map(fn _x -> exchange_market() end)
 		|> Enum.each(fn x -> maybe_update(x) end)
 	end
 
+	@doc """
+	Fetches and formats data from the Radar API to make up the latest Radar ExchangeMarket.
+	"""
 	@spec exchange_market() :: ExchangeMarket.t
 	def exchange_market() do
 		complete_market =
