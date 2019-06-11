@@ -51,7 +51,7 @@ subscription lastUpdate {
   lastUpdate {
     exchange
     timestamp
-    utc_time
+    utcTime
   }
 }
 ```
