@@ -1,6 +1,6 @@
 defmodule Dexaggregatex.MarketFetching.IdexFetcher do
   @moduledoc """
-  Fetches the Idex market and updates the global Market accordingly.
+  Polls the Idex market and updates the global Market accordingly.
   """
   use Task, restart: :permanent
 
@@ -16,16 +16,27 @@ defmodule Dexaggregatex.MarketFetching.IdexFetcher do
   # Makes sure private functions are testable.
   @compile if Mix.env == :test, do: :export_all
 
+  @doc """
+  Starts an IdexFetcher process linked to the caller process.
+  """
+  @spec start_link(any) :: {:ok, pid}
   def start_link(_arg) do
     Task.start_link(__MODULE__, :poll, [])
   end
 
+  @doc """
+  Polls the Idex market and updates the global Market accordingly.
+  """
+  @spec poll() :: any
   def poll() do
     Stream.interval(@poll_interval)
     |> Stream.map(fn _x -> exchange_market() end)
     |> Enum.each(fn x -> maybe_update(x) end)
   end
 
+  @doc """
+  Fetches and formats data from the Idex API to make up the latest Idex ExchangeMarket.
+  """
   @spec exchange_market() :: ExchangeMarket.t
   def exchange_market() do
     complete_market =
@@ -42,14 +53,8 @@ defmodule Dexaggregatex.MarketFetching.IdexFetcher do
                 } = p
                 [bs, qs] = String.split(k, "_")
 
-                ba =
-                  case c[bs]["address"] do
-                    "0x0000000000000000000000000000000000000000" ->
-                      "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
-                    something_else ->
-                      something_else
-                  end
-                qa = c[qs]["address"]
+                ba = c[bs]["address"] |> fix_eth_address()
+                qa = c[qs]["address"] |> fix_eth_address()
 
                 case valid_values?(strings: [bs, qs, ba, qa], numbers: [lp, cb, ca, bv]) do
                   true ->
@@ -69,5 +74,18 @@ defmodule Dexaggregatex.MarketFetching.IdexFetcher do
       exchange: :idex,
       market: complete_market,
     }
+  end
+
+  @doc """
+  Changes a specified address to the internally used eth_address if it's another representation of it.
+  """
+  @spec fix_eth_address(String.t) :: String.t
+  defp fix_eth_address(address) do
+    case address do
+      "0x0000000000000000000000000000000000000000" ->
+        eth_address()
+      something_else ->
+        something_else
+    end
   end
 end
