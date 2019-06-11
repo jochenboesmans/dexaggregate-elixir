@@ -10,7 +10,7 @@ defmodule Dexaggregatex.MarketFetching.ParadexFetcher do
   @base_api_url "https://api.paradex.io/api/v1"
 	@poll_interval 10_000
 
-	# Makes sure private functions are testable.
+	# Make private functions testable.
 	@compile if Mix.env == :test, do: :export_all
 
 	@doc """
