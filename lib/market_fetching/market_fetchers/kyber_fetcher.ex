@@ -1,6 +1,6 @@
 defmodule Dexaggregatex.MarketFetching.KyberFetcher do
   @moduledoc """
-  Fetches the Kyber market and updates the global Market accordingly.
+  Polls the Kyber market and updates the global Market accordingly.
   """
   use Task, restart: :permanent
 
@@ -10,30 +10,40 @@ defmodule Dexaggregatex.MarketFetching.KyberFetcher do
   @base_api_url "https://api.kyber.network"
   @market_endpoint "market"
   @currencies_endpoint "currencies"
-
   @poll_interval 10_000
 
-  # Makes sure private functions are testable.
+  # Make private functions testable.
   @compile if Mix.env == :test, do: :export_all
 
+	@doc """
+	Starts a KyberFetcher process linked to the caller process.
+	"""
+	@spec start_link(any) :: {:ok, pid}
   def start_link(_arg) do
     Task.start_link(__MODULE__, :poll, [])
   end
 
+	@doc """
+	Polls the Kyber market and updates the global Market accordingly.
+	"""
+	@spec poll() :: any
   def poll() do
     Stream.interval(@poll_interval)
     |> Stream.map(fn _x -> exchange_market() end)
     |> Enum.each(fn x -> maybe_update(x) end)
   end
 
+	@doc """
+	Fetches and formats data from the Kyber API to make up the latest Kyber ExchangeMarket.
+	"""
   @spec exchange_market() :: ExchangeMarket.t
   def exchange_market() do
     complete_market =
       case get_from_api("#{@base_api_url}/#{@currencies_endpoint}") do
         {:ok, currencies} ->
-          c = transform_currencies(currencies)
           case get_from_api("#{@base_api_url}/#{@market_endpoint}") do
             {:ok, market} ->
+							c = index_currencies(currencies)
               Enum.reduce(market, [], fn (p, acc) ->
                 %{
                   "base_symbol" => bs,
@@ -65,6 +75,9 @@ defmodule Dexaggregatex.MarketFetching.KyberFetcher do
     }
   end
 
+	@doc """
+	Makes a well-formatted market pair based on the given data.
+	"""
   @spec market_pair([String.t | number]) :: Pair.t
   defp market_pair([bs, qs, ba, qa, lp, cb, ca, bv]) do
     %Pair{
@@ -82,16 +95,23 @@ defmodule Dexaggregatex.MarketFetching.KyberFetcher do
     }
   end
 
+	@doc """
+	Retrieves data by fetching the Kyber API.
+	"""
+	@spec get_from_api(String.t) :: {:ok, [map]} | :error
   defp get_from_api(url) do
     case fetch_and_decode(url) do
-      {:ok, %{"data" => data}} ->
-        {:ok, data}
-      :error ->
-        :error
+			{:ok, %{"error" => true}} -> :error
+			{:ok, %{"error" => false, "data" => data}} -> {:ok, data}
+      :error -> :error
     end
   end
 
-  defp transform_currencies(currencies) do
+	@doc """
+	Makes an index of tokens (id => address) based on data received from the Kyber API.
+	"""
+	@spec index_currencies([map]) :: %{required(String.t) => String.t}
+  defp index_currencies(currencies) do
     Enum.reduce(currencies, %{}, fn (c, acc) ->
       Map.put(acc, c["symbol"], c["address"])
     end)
