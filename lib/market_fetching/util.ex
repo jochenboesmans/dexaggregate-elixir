@@ -18,8 +18,7 @@ defmodule Dexaggregatex.MarketFetching.Util do
 	@doc """
 	Issues a get request to the specified url and returns the JSON-decoded response.
 	"""
-	@spec fetch_and_decode(String.t, [tuple])
-				:: :error | {:ok, Poison.Parser.t}
+	@spec fetch_and_decode(String.t, [tuple]) :: :error | {:ok, Poison.Parser.t}
 	def fetch_and_decode(url, headers \\ []) do
 		case HTTPoison.get(url, headers) do
 			{:ok, %HTTPoison.Response{body: body}} ->
@@ -32,8 +31,7 @@ defmodule Dexaggregatex.MarketFetching.Util do
 	@doc """
 	Issues an empty post request to the specified url and returns the JSON-decoded response.
 	"""
-	@spec post_and_decode(String.t)
-				:: :error | {:ok, Poison.Parser.t}
+	@spec post_and_decode(String.t) :: :error | {:ok, Poison.Parser.t}
 	def post_and_decode(url) do
 		case HTTPoison.post(url, Poison.encode!(%{})) do
 			{:ok, %HTTPoison.Response{body: body}} ->
@@ -58,7 +56,7 @@ defmodule Dexaggregatex.MarketFetching.Util do
 	def valid_float?(float_string) do
 		cond do
 			!is_binary(float_string) && !is_number(float_string)
-			|| float_string == 0 || float_string == "" ->
+			|| float_string == 0 || float_string == "" || float_string == "N/A" ->
 				false
 			is_number(float_string) ->
 				true

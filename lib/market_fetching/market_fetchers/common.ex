@@ -19,6 +19,9 @@ defmodule Dexaggregatex.MarketFetching.Common do
 
 		iex> Dexaggregatex.MarketFetching.Common.valid_string?("")
 		false
+
+		iex> Dexaggregatex.MarketFetching.Common.valid_string?("N/A")
+		false
 	"""
 	@spec valid_string?(any) :: boolean
 	def valid_string?(value) do
@@ -26,6 +29,7 @@ defmodule Dexaggregatex.MarketFetching.Common do
 			true ->
 				case value do
 					"" -> false
+					"N/A" -> false
 					_ -> true
 				end
 			false ->
