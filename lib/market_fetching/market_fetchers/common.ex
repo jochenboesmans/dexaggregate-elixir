@@ -100,4 +100,14 @@ defmodule Dexaggregatex.MarketFetching.Common do
 				Market.Client.update(x)
 		end
 	end
+
+	@doc """
+	Makes an index of tokens (symbol => address) based on data received from the Kyber API.
+	"""
+	@spec index_currencies([map]) :: %{required(String.t) => String.t}
+	defp index_currencies(currencies) do
+		Enum.reduce(currencies, %{}, fn (c, acc) ->
+			Map.put(acc, c["symbol"], c["address"])
+		end)
+	end
 end

@@ -106,14 +106,4 @@ defmodule Dexaggregatex.MarketFetching.KyberFetcher do
       :error -> :error
     end
   end
-
-	@doc """
-	Makes an index of tokens (id => address) based on data received from the Kyber API.
-	"""
-	@spec index_currencies([map]) :: %{required(String.t) => String.t}
-  defp index_currencies(currencies) do
-    Enum.reduce(currencies, %{}, fn (c, acc) ->
-      Map.put(acc, c["symbol"], c["address"])
-    end)
-  end
 end
