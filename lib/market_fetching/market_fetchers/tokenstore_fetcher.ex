@@ -43,7 +43,7 @@ defmodule Dexaggregatex.MarketFetching.TokenstoreFetcher do
 
 						case valid_values?(strings: [bs, qs, ba, qa], numbers: [lp, cb, ca, bv]) do
 							true ->
-								[generic_market_pair([bs, qs, ba, qa, lp, cb, ca, bv], :tokenstore) | acc]
+								[generic_market_pair(strings: [bs, qs, ba, qa], numbers: [lp, cb, ca, bv], exchange: :tokenstore) | acc]
 							false ->
 								acc
 						end

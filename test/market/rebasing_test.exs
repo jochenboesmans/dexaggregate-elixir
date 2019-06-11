@@ -1,4 +1,4 @@
-defmodule Dexaggregatex.Test.Market.Rebasing do
+defmodule Test.Dexaggregatex.Market.Rebasing do
 	use ExUnit.Case, async: true
 
 	import Dexaggregatex.Market.Util

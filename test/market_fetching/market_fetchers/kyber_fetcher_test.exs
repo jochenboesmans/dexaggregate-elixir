@@ -1,12 +1,13 @@
-defmodule Test.MarketFetching.KyberFetcher do
+defmodule Test.Dexaggregatex.MarketFetching.KyberFetcher do
+	@moduledoc false
 	use ExUnit.Case, async: true
 
 	alias Dexaggregatex.MarketFetching.KyberFetcher, as: KF
 	doctest KF
 
-	describe "transform_currencies/1" do
-		@describetag :transform_currencies
-		test "#1: returns properly transformed data structure on realistic data" do
+	describe "index_currencies/1" do
+		@describetag :index_currencies
+		test "#1: returns proper data structure on realistic input" do
 			sample_currencies =
 				[
 					%{
@@ -31,7 +32,7 @@ defmodule Test.MarketFetching.KyberFetcher do
 					"ETH" => "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
 					"WETH" => "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
 				}
-			assert KF.transform_currencies(sample_currencies) == expected_result
+			assert KF.index_currencies(sample_currencies) == expected_result
 		end
 	end
 end

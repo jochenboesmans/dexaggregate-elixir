@@ -1,10 +1,10 @@
 defmodule Dexaggregatex.MarketFetching.Util do
 	@moduledoc """
-		Utility functions used for market fetching.
+	Utility functions used for market fetching.
 	"""
 
 	@doc """
-		Returns an Ethereum address referring to Ether as if it were an Ethereum token.
+	Returns an Ethereum address referring to Ether as if it were an Ethereum token.
 
 	## Examples
 		iex> Dexaggregatex.MarketFetching.Util.eth_address()
@@ -16,7 +16,7 @@ defmodule Dexaggregatex.MarketFetching.Util do
 	end
 
 	@doc """
-		Issues a get request to the specified url and returns the JSON-decoded response.
+	Issues a get request to the specified url and returns the JSON-decoded response.
 	"""
 	@spec fetch_and_decode(String.t, [tuple])
 				:: :error | {:ok, Poison.Parser.t}
@@ -30,7 +30,7 @@ defmodule Dexaggregatex.MarketFetching.Util do
 	end
 
 	@doc """
-		Issues an empty post request to the specified url and returns the JSON-decoded response.
+	Issues an empty post request to the specified url and returns the JSON-decoded response.
 	"""
 	@spec post_and_decode(String.t)
 				:: :error | {:ok, Poison.Parser.t}
@@ -44,7 +44,7 @@ defmodule Dexaggregatex.MarketFetching.Util do
 	end
 
 	@doc """
-		Returns the JSON-decoded version of the body of a given HTTPoison response.
+	Returns the JSON-decoded version of the body of a given HTTPoison response.
 	"""
 	@spec decode(HTTPoison.Response.t)
 				:: :error | {:ok, Poison.Parser.t}
@@ -58,23 +58,27 @@ defmodule Dexaggregatex.MarketFetching.Util do
 	end
 
 	@doc """
-		Tries to parse a float from a given value. Returns true only when the value can be purely parsed to a useful float.
+	Tries to parse a float from a given value.
+	Returns true only when the value can be purely parsed to a useful float.
 
 	## Examples
 		iex> Dexaggregatex.MarketFetching.Util.valid_float?("1.1")
 		true
+
+		iex> Dexaggregatex.MarketFetching.Util.valid_float?(0.0)
+		false
 	"""
 	@spec valid_float?(any) :: boolean
 	def valid_float?(float_string) do
 		cond do
-			float_string == nil ->
+			!is_binary(float_string) && !is_number(float_string)
+			|| float_string == 0 || float_string == "" ->
 				false
-			is_float(float_string) || is_integer(float_string) ->
+			is_number(float_string) ->
 				true
 			true ->
 				case Float.parse(float_string) do
 					:error -> false
-					{0.0, ""} -> false
 					{_valid, ""} -> true
 					_contains_non_numbers -> false
 				end
@@ -82,7 +86,7 @@ defmodule Dexaggregatex.MarketFetching.Util do
 	end
 
 	@doc """
-		Parses a pure float from a given value.
+	Parses a pure float from a given value.
 
 	## Examples
 		iex> Dexaggregatex.MarketFetching.Util.parse_float("1.1")
@@ -90,7 +94,7 @@ defmodule Dexaggregatex.MarketFetching.Util do
 	"""
 	@spec parse_float(any) :: float
 	def parse_float(float_string) do
-		case is_float(float_string) || is_integer(float_string) do
+		case is_number(float_string) do
 			true ->
 				case is_float(float_string) do
 					true -> float_string
@@ -131,5 +135,4 @@ defmodule Dexaggregatex.MarketFetching.Util do
 				:math.pow(number, power)
 		end
 	end
-
 end

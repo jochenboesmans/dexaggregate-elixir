@@ -48,7 +48,7 @@ defmodule Dexaggregatex.MarketFetching.RadarFetcher do
 
 						case valid_values?(strings: [bs, qs, ba, qa], numbers: [lp, cb, ca, bv]) do
 							true ->
-								[generic_market_pair([bs, qs, ba, qa, lp, cb, ca, bv], :radar) | acc]
+								[generic_market_pair(strings: [bs, qs, ba, qa], numbers: [lp, cb, ca, bv], exchange: :radar) | acc]
 							false ->
 								acc
 						end
