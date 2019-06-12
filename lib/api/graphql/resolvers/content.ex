@@ -1,6 +1,7 @@
 defmodule Dexaggregatex.API.GraphQL.Resolvers.Content do
 	@moduledoc false
 
+	alias Dexaggregatex.Market.Rebasing
 	alias Dexaggregatex.Market.Client, as: MarketClient
 	alias Dexaggregatex.Market.Structs.{RebasedMarket, Market, LastUpdate}
 
@@ -12,8 +13,9 @@ defmodule Dexaggregatex.API.GraphQL.Resolvers.Content do
 	end
 
 	def get_rebased_market(_parent, %{rebase_address: ra} = args, _resolution) do
-		%RebasedMarket{pairs: m} = MarketClient.get({:rebased_market, ra})
-		{:ok, queryable_rebased_market(m, args)}
+		m = %Market{} = MarketClient.get(:market)
+		%RebasedMarket{pairs: rm} = Rebasing.rebase_market(ra, m, 3)
+		{:ok, queryable_rebased_market(rm, args)}
 	end
 
 	def get_exchanges(_parent, _args, _resolution) do
