@@ -25,7 +25,7 @@ defmodule Dexaggregatex.Market.Rebasing do
 					end)
 
 					rebased_market = Enum.reduce(created_tasks, %{}, fn ({k, p}, acc) ->
-						result = Task.await(p)
+						result = Task.await(p, 15_000)
 						Map.put(acc, k, result)
 					end)
 
