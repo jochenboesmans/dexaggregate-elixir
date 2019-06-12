@@ -3,7 +3,7 @@ defmodule Dexaggregatex.MarketFetching.DdexFetcher do
 	Client for the Ddex market.
 	"""
   use WebSockex
-	use Task, restart: :permanent
+	use Task
 
 	import Dexaggregatex.MarketFetching.{Util, Common}
 	alias Dexaggregatex.MarketFetching.Structs.{Pair, ExchangeMarket, PairMarketData}
@@ -30,13 +30,9 @@ defmodule Dexaggregatex.MarketFetching.DdexFetcher do
 	"""
 	@spec start() :: any
 	def start() do
-		c = case currencies() do
-			{:ok, fetched_currencies} ->
-				maybe_update(initial_exchange_market(fetched_currencies))
-				fetched_currencies
-			:error -> nil
-		end
-    subscribe_to_market(c)
+		{:ok, fetched_currencies} = currencies()
+		maybe_update(initial_exchange_market(fetched_currencies))
+		subscribe_to_market(fetched_currencies)
 	end
 
 	@doc """
@@ -68,7 +64,6 @@ defmodule Dexaggregatex.MarketFetching.DdexFetcher do
     {:ok, p} = Poison.decode(message)
 
     case p do
-      nil -> nil
       %{"type" => "subscriptions"} -> nil
       %{"type" => "ticker"} ->
         case try_get_valid_pair(p, c) do
@@ -101,8 +96,7 @@ defmodule Dexaggregatex.MarketFetching.DdexFetcher do
               :error -> acc
             end
           end)
-				:error ->
-          nil
+				:error -> nil
       end
 
     %ExchangeMarket{
@@ -124,10 +118,8 @@ defmodule Dexaggregatex.MarketFetching.DdexFetcher do
 		[ba, qa] = [c[bs], c[qs]]
 
     case valid_values?(strings: [bs, qs, ba, qa], numbers: [lp, cb, ca, bv]) do
-      true ->
-				{:ok, market_pair(strings: [bs, qs, ba, qa], numbers: [lp, cb, ca, bv])}
-      false ->
-        :error
+      true -> {:ok, market_pair(strings: [bs, qs, ba, qa], numbers: [lp, cb, ca, bv])}
+      false -> :error
     end
   end
 
@@ -163,7 +155,7 @@ defmodule Dexaggregatex.MarketFetching.DdexFetcher do
 					|> Map.put(c["baseToken"], c["baseTokenAddress"])
 					|> Map.put(c["quoteToken"], c["quoteTokenAddress"])
 				end)}
-			:error ->
+			_ ->
 				:error
 		end
 	end
@@ -176,7 +168,7 @@ defmodule Dexaggregatex.MarketFetching.DdexFetcher do
 		case fetch_and_decode("#{@api_base_url}/#{@market_endpoint}") do
 			{:ok, %{"data" => %{"tickers" => m}}} ->
 				{:ok, m}
-			:error ->
+			_ ->
 				:error
 		end
 	end
@@ -189,7 +181,7 @@ defmodule Dexaggregatex.MarketFetching.DdexFetcher do
     case fetch_and_decode("#{@api_base_url}/#{@currencies_endpoint}") do
       {:ok, %{"data" => %{"markets" => markets}}} ->
 				{:ok, Enum.map(markets, fn p -> p["id"] end)}
-			:error ->
+			_ ->
 				:error
     end
   end

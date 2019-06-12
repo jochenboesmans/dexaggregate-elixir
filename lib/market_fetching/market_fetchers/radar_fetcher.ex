@@ -2,6 +2,7 @@ defmodule Dexaggregatex.MarketFetching.RadarFetcher do
 	@moduledoc """
 	Fetches the Radar market and updates the global Market accordingly.
 	"""
+	# TODO: Implement WebSocket client whenever Radar implements TICKER and CANDLE topics.
 	use Task, restart: :permanent
 
 	import Dexaggregatex.MarketFetching.{Util, Common}
@@ -63,8 +64,7 @@ defmodule Dexaggregatex.MarketFetching.RadarFetcher do
 								acc
 						end
 					end)
-				:error ->
-					nil
+				:error -> nil
 			end
 
 		%ExchangeMarket{

@@ -56,15 +56,11 @@ defmodule Dexaggregatex.MarketFetching.OasisFetcher do
 							"vol" => bv,
 						} = p
 						[ba, qa] = [c[bs], c[qs]]
-
 						case valid_values?(strings: [bs, qs, ba, qa], numbers: [lp, cb, ca, bv]) do
-							true ->
-								[market_pair(strings: [bs, qs, ba, qa], numbers: [lp, cb, ca, bv]) | acc]
-							false ->
-								acc
+							true -> [market_pair(strings: [bs, qs, ba, qa], numbers: [lp, cb, ca, bv]) | acc]
+							false -> acc
 						end
-					:error ->
-						acc
+					:error -> acc
 				end
 			end)
 
@@ -100,10 +96,8 @@ defmodule Dexaggregatex.MarketFetching.OasisFetcher do
 	@spec fetch_pair(base_symbol: String.t, quote_symbol: String.t) :: {:ok, map} | :error
 	defp fetch_pair(base_symbol: bs, quote_symbol: qs) do
 		case fetch_and_decode("#{@base_api_url}/markets/#{bs}/#{qs}") do
-			{:ok, %{"data" => pair}} ->
-				{:ok, pair}
-			:error ->
-				:error
+			{:ok, %{"data" => pair}} -> {:ok, pair}
+			_ -> :error
 		end
 	end
 end

@@ -123,9 +123,7 @@ defmodule Dexaggregatex.MarketFetching.UniswapFetcher do
 					%{"exchanges" => exs, "exchangeDayDatas" => edds}
 				}
 			}} -> {:ok, %{exchanges: exs, exchangeDayDatas: edds}}
-			{:ok, %Neuron.Response{}} -> :error
-			{:error, %Neuron.Response{}} -> :error
-			{:error, %Neuron.JSONParseError{}} -> :error
+			_ -> :error
 		end
 	end
 end

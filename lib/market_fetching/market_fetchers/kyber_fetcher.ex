@@ -56,17 +56,13 @@ defmodule Dexaggregatex.MarketFetching.KyberFetcher do
                 [ba, qa] = [c[bs], c[qs]]
 
                 case valid_values?(strings: [bs, qs, ba, qa], numbers: [lp, cb, ca, bv]) do
-                  true ->
-                    [market_pair(strings: [bs, qs, ba, qa], numbers: [lp, cb, ca, bv]) | acc]
-                  false ->
-                    acc
+                  true -> [market_pair(strings: [bs, qs, ba, qa], numbers: [lp, cb, ca, bv]) | acc]
+                  false -> acc
                 end
               end)
-            :error ->
-              nil
+            :error -> nil
           end
-        :error ->
-          nil
+        :error -> nil
       end
 
     %ExchangeMarket{
@@ -101,9 +97,8 @@ defmodule Dexaggregatex.MarketFetching.KyberFetcher do
 	@spec get_from_api(String.t) :: {:ok, [map]} | :error
   defp get_from_api(url) do
     case fetch_and_decode(url) do
-			{:ok, %{"error" => true}} -> :error
 			{:ok, %{"error" => false, "data" => data}} -> {:ok, data}
-      :error -> :error
+			_ -> :error
     end
   end
 end

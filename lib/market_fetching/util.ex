@@ -21,8 +21,10 @@ defmodule Dexaggregatex.MarketFetching.Util do
 	@spec fetch_and_decode(String.t, [tuple]) :: :error | {:ok, Poison.Parser.t}
 	def fetch_and_decode(url, headers \\ []) do
 		case HTTPoison.get(url, headers) do
-			{:ok, %HTTPoison.Response{body: body}} ->
+			{:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
 				Poison.decode(body)
+			{:ok, _} ->
+				:error
 			{:error, _} ->
 				:error
 		end
@@ -34,8 +36,10 @@ defmodule Dexaggregatex.MarketFetching.Util do
 	@spec post_and_decode(String.t) :: :error | {:ok, Poison.Parser.t}
 	def post_and_decode(url) do
 		case HTTPoison.post(url, Poison.encode!(%{})) do
-			{:ok, %HTTPoison.Response{body: body}} ->
+			{:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
 				Poison.decode(body)
+			{:ok, _} ->
+				:error
 			{:error, _} ->
 				:error
 		end

@@ -64,8 +64,7 @@ defmodule Dexaggregatex.MarketFetching.ParadexFetcher do
 							end)
 						:error -> nil
 					end
-				:error ->
-					nil
+				:error -> nil
 			end
 
 		%ExchangeMarket{
@@ -100,10 +99,8 @@ defmodule Dexaggregatex.MarketFetching.ParadexFetcher do
 	@spec currencies() :: {:ok, %{required(String.t) => String.t}} | :error
 	defp currencies() do
 		case fetch_and_decode_with_api_key("#{@base_api_url}/tokens") do
-			{:ok, c} ->
-				{:ok, index_currencies(c)}
-			:error ->
-				:error
+			{:ok, c} -> {:ok, index_currencies(c)}
+			_ -> :error
 		end
 	end
 
@@ -114,9 +111,8 @@ defmodule Dexaggregatex.MarketFetching.ParadexFetcher do
 	@spec base_volume(String.t) :: {:ok, binary} | :error
 	defp base_volume(id) do
 		case fetch_and_decode_with_api_key("#{@base_api_url}/ohlcv?market=#{id}&period=1d&amount=1") do
-			{:ok, %{"error" => _}} -> :error
 			{:ok, [%{"volume" => bv}]} -> {:ok, bv}
-			:error -> :error
+			_ -> :error
 		end
 	end
 
@@ -126,9 +122,8 @@ defmodule Dexaggregatex.MarketFetching.ParadexFetcher do
 	@spec ticker(String.t) :: {:ok, [binary]} | :error
 	defp ticker(id) do
 		case fetch_and_decode_with_api_key("#{@base_api_url}/ticker?market=#{id}") do
-			{:ok, %{"error" => _}} -> :error
 			{:ok, [%{"lastPrice" => last, "bestBid" => bid, "bestAsk" => ask}]} -> {:ok, [last, bid, ask]}
-			:error -> :error
+			_ -> :error
 		end
 	end
 
