@@ -11,11 +11,9 @@ defmodule Dexaggregatex.API.Router do
 	scope "/" do
 		pipe_through :api
 
-		if Mix.env == :dev do
-			forward "/graphiql", Absinthe.Plug.GraphiQL,
-				schema: GraphQL.Schema,
-				socket: Socket
-		end
+		forward "/graphiql", Absinthe.Plug.GraphiQL,
+			schema: GraphQL.Schema,
+			socket: Socket
 
 		forward "/graphql", Absinthe.Plug,
 			schema: GraphQL.Schema
