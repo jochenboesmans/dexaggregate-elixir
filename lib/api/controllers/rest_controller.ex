@@ -21,18 +21,18 @@ defmodule Dexaggregatex.API.RestController do
 
 	defp get_market() do
 		MarketClient.get(:market)
-		|> queryable_market(%{})
+		|> queried_market(%{})
 	end
 
 	defp get_dai_rebased_market() do
 		dai_address = "0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359"
 		MarketClient.get({:rebased_market, dai_address}).pairs
-		|> queryable_rebased_market(%{rebase_address: dai_address})
+		|> queried_rebased_market(%{rebase_address: dai_address})
 	end
 
 	defp get_exchanges() do
 		MarketClient.get(:exchanges)
-		|> queryable_exchanges_in_market
+		|> queried_exchanges_in_market
 	end
 
 	defp get_last_update() do

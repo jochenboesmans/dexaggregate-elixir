@@ -10,6 +10,10 @@ defmodule Dexaggregatex.API.GraphQL.Schema do
 		field :market, list_of(:pair) do
 			arg :exchanges, list_of(non_null(:string))
 			arg :market_ids, list_of(non_null(:id))
+			arg :base_symbols, list_of(non_null(:string))
+			arg :base_addresses, list_of(non_null(:string))
+			arg :quote_symbols, list_of(non_null(:string))
+			arg :quote_addresses, list_of(non_null(:string))
 			resolve &Content.get_market/3
 		end
 
@@ -18,6 +22,10 @@ defmodule Dexaggregatex.API.GraphQL.Schema do
 			arg :rebase_address, non_null(:string)
 			arg :exchanges, list_of(non_null(:string))
 			arg :market_ids, list_of(non_null(:id))
+			arg :base_symbols, list_of(non_null(:string))
+			arg :base_addresses, list_of(non_null(:string))
+			arg :quote_symbols, list_of(non_null(:string))
+			arg :quote_addresses, list_of(non_null(:string))
 			resolve &Content.get_rebased_market/3
 		end
 
@@ -37,6 +45,10 @@ defmodule Dexaggregatex.API.GraphQL.Schema do
 		field :market, list_of(:pair) do
 			arg :exchanges, list_of(non_null(:string))
 			arg :market_ids, list_of(non_null(:id))
+			arg :base_symbols, list_of(non_null(:string))
+			arg :base_addresses, list_of(non_null(:string))
+			arg :quote_symbols, list_of(non_null(:string))
+			arg :quote_addresses, list_of(non_null(:string))
 
 			config fn (_args, _info) -> {:ok, topic: "*"} end
 
@@ -48,6 +60,10 @@ defmodule Dexaggregatex.API.GraphQL.Schema do
 			arg :rebase_address, non_null(:string)
 			arg :exchanges, list_of(non_null(:string))
 			arg :market_ids, list_of(non_null(:id))
+			arg :base_symbols, list_of(non_null(:string))
+			arg :base_addresses, list_of(non_null(:string))
+			arg :quote_symbols, list_of(non_null(:string))
+			arg :quote_addresses, list_of(non_null(:string))
 
 			config fn (_args, _info) -> {:ok, topic: "*"} end
 

@@ -3,23 +3,29 @@ defmodule Dexaggregatex.API.Format do
 
   alias Dexaggregatex.Market.Structs.{Market, RebasedMarket, LastUpdate}
 
-  def queryable_market(m, args) do
-    filter_market_by_exchanges(m, args)
+  @simple_filters [:quote_symbols, :quote_addresses, :base_symbols, :base_addresses]
+
+  def queried_market(m, args) do
+    @simple_filters
+    |> Enum.reduce(m, fn (sf, acc) -> filter_market_by_simple_filter(acc, args, sf) end)
     |> filter_market_by_market_ids(args)
+    |> filter_market_by_exchanges(args)
     |> format_market()
   end
 
-  def queryable_rebased_market(m, args) do
-    filter_market_by_exchanges(m, args)
+  def queried_rebased_market(m, args) do
+    @simple_filters
+    |> Enum.reduce(m, fn (sf, acc) -> filter_market_by_simple_filter(acc, args, sf) end)
     |> filter_market_by_market_ids(args)
+    |> filter_market_by_exchanges(args)
     |> format_rebased_market(args)
   end
 
-  def queryable_exchanges_in_market(eim) do
+  def queried_exchanges_in_market(eim) do
     format_exchanges_in_market(eim)
   end
 
-  def queryable_last_update(%LastUpdate{timestamp: ts, utc_time: ut, exchange: ex}) do
+  def queried_last_update(%LastUpdate{timestamp: ts, utc_time: ut, exchange: ex}) do
     %{
       timestamp: ts,
       utc_time: NaiveDateTime.to_string(ut),
@@ -74,6 +80,31 @@ defmodule Dexaggregatex.API.Format do
       false ->
         m
     end
+  end
+
+  defp field_value(filter, p) do
+    case filter do
+      :quote_symbols -> p.quote_symbol
+      :quote_addresses -> p.quote_address
+      :base_symbols -> p.base_symbol
+      :base_addresses -> p.base_address
+    end
+  end
+
+  defp filter_market_by_simple_filter(m, args, simple_filter) do
+    case Map.has_key?(args, simple_filter) do
+      true ->
+        Enum.reduce(m, %{}, fn ({k, p}, acc) ->
+          case Enum.member?(args[simple_filter], field_value(simple_filter, p)) do
+            true ->
+              Map.put(acc, k, p)
+            false ->
+              acc
+          end
+        end)
+      false ->
+        m
+      end
   end
 
   defp filter_market_by_exchanges(m, args) do

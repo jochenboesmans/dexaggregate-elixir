@@ -9,23 +9,23 @@ defmodule Dexaggregatex.API.GraphQL.Resolvers.Content do
 
 	def get_market(_parent, args, _resolution) do
 		%Market{pairs: m} = MarketClient.get(:market)
-		{:ok, queryable_market(m, args)}
+		{:ok, queried_market(m, args)}
 	end
 
 	def get_rebased_market(_parent, %{rebase_address: ra} = args, _resolution) do
 		m = %Market{} = MarketClient.get(:market)
 		%RebasedMarket{pairs: rm} = Rebasing.rebase_market(ra, m, 3)
-		{:ok, queryable_rebased_market(rm, args)}
+		{:ok, queried_rebased_market(rm, args)}
 	end
 
 	def get_exchanges(_parent, _args, _resolution) do
 		e = MarketClient.get(:exchanges)
-		{:ok, queryable_exchanges_in_market(e)}
+		{:ok, queried_exchanges_in_market(e)}
 	end
 
 	def get_last_update(_parent, _args, _resolution) do
 		lu = %LastUpdate{} = MarketClient.get(:last_update)
-		{:ok, queryable_last_update(lu)}
+		{:ok, queried_last_update(lu)}
 	end
 
 end
