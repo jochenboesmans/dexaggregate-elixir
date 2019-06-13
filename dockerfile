@@ -23,4 +23,4 @@ COPY --from=phx-builder /opt/app/mix.* /opt/app/
 
 USER default
 
-CMD ["MIX_ENV=prod", "mix", "phx.server"]
+CMD ["mix", "phx.server"]
