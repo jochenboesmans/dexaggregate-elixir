@@ -1,6 +1,6 @@
 defmodule Dexaggregatex.Market.Rebasing.Cache do
   @moduledoc """
-    Simple cache to avoid recomputation during rebasing.
+  Simple cache to avoid recomputation during rebasing.
   """
   use GenServer
 

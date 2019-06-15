@@ -43,26 +43,6 @@ defmodule Dexaggregatex.Market.Server do
 	end
 
 	@doc """
-	Returns the market rebased in a token with a specified rebase_address.
-	"""
-	@impl true
-	@spec handle_call({:get_rebased_market, String.t}, GenServer.from, map)
-				:: {:reply, RebasedMarket.t, map}
-	def handle_call({:get_rebased_market, ra}, _from, %{market: m} = state) do
-		{:reply, Rebasing.rebase_market(ra, m, 3), state}
-	end
-
-	@doc """
-	Returns a list of all the exchanges of which pairs are included in the market.
-	"""
-	@impl true
-	@spec handle_call(:get_exchanges, GenServer.from, map)
-				:: {:reply, [atom], map}
-	def handle_call(:get_exchanges, _from, %{market: m} = state) do
-		{:reply, exchanges_in_market(m), state}
-	end
-
-	@doc """
 	Returns a data structure containing data about the last market update.
 	"""
 	@impl true
@@ -78,6 +58,7 @@ defmodule Dexaggregatex.Market.Server do
 	@impl true
 	@spec handle_cast({:update, MarketFetchingPair.t}, map) :: {:noreply, map}
 	def handle_cast({:update, %MarketFetchingPair{} = p}, %{market: m} = state) do
+		Rebasing.Cache.clear()
 		%MarketFetchingPair{market_data: %PairMarketData{exchange: exchange}} = p
 		add_pair_result = add_pair(m, p)
 		update_return(add_pair_result, exchange, state)
@@ -89,6 +70,7 @@ defmodule Dexaggregatex.Market.Server do
 	@impl true
 	@spec handle_cast({:update, ExchangeMarket.t}, map) :: {:noreply, map}
 	def handle_cast({:update, %ExchangeMarket{} = em}, %{market: m} = state) do
+		Rebasing.Cache.clear()
 		%ExchangeMarket{exchange: exchange} = em
 		add_exchange_market_result = add_exchange_market(m, em)
 		update_return(add_exchange_market_result, exchange, state)
@@ -120,6 +102,7 @@ defmodule Dexaggregatex.Market.Server do
 			current_bid: cb,
 			current_ask: ca,
 			base_volume: bv,
+			timestamp: :os.system_time(:millisecond)
 		}
 
 		case Map.has_key?(pairs, id) do
@@ -181,18 +164,6 @@ defmodule Dexaggregatex.Market.Server do
 										 Endpoint, updated_market,
 										 [market: "*", rebased_market: "*", exchanges: "*", last_update: "*"]) end}
 		], strategy: :one_for_one)
-	end
-
-	@doc """
-	Returns a set of exchanges currently included in the market.
-	"""
-	@spec exchanges_in_market(Market.t) :: MapSet.t(atom)
-	defp exchanges_in_market(%Market{pairs: pairs}) do
-		Enum.reduce(pairs, MapSet.new(), fn ({_k, p}, acc1) ->
-			Enum.reduce(p.market_data, acc1, fn {exchange, _emd}, acc2->
-				MapSet.put(acc2, exchange)
-			end)
-		end)
 	end
 
 end

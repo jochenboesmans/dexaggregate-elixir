@@ -3,25 +3,25 @@ defmodule Dexaggregatex.Market.Rebasing do
 	Logic for rebasing pairs of a market to a token, denominating all rates in this token.
 	"""
 
-	import Dexaggregatex.Market.Util
-	alias Dexaggregatex.Market.Structs
-	alias Dexaggregatex.Market.Structs.{ExchangeMarketData, Pair, RebasedMarket}
+	alias Dexaggregatex.Market.Structs.{Market, ExchangeMarketData, Pair, RebasedMarket}
 	alias Dexaggregatex.Market.Rebasing
+
+	import Dexaggregatex.Market.Util
 
 	# Makes sure private functions are testable.
 	@compile if Mix.env == :test, do: :export_all
 
 	@doc """
-		Rebases all pairs in a given market to a token with a given rebase_address.
+	Rebases all pairs in a given market to a token with a given rebase_address.
 	"""
-	def rebase_market(rebase_address, %Structs.Market{pairs: pairs}, max_depth) do
+	@spec rebase_market(String.t, Market.t, integer) :: RebasedMarket.t
+	def rebase_market(rebase_address, %Market{pairs: pairs}, max_depth) do
 		rebased_pairs =
 			case Rebasing.Cache.get({:rebase_market, {rebase_address, max_depth}}) do
-				{:found, cached_market} ->
-					cached_market
+				{:found, cached_market} -> cached_market
 				{:not_found, _} ->
 					created_tasks = Enum.map(pairs, fn ({pair_id, p}) ->
-						{pair_id, Task.async(fn -> rebase_pair([p, rebase_address, pairs, max_depth]) end)}
+						{pair_id, Task.async(fn -> rebase_pair(p, rebase_address, pairs, max_depth) end)}
 					end)
 
 					rebased_market = Enum.reduce(created_tasks, %{}, fn ({k, p}, acc) ->
@@ -39,27 +39,30 @@ defmodule Dexaggregatex.Market.Rebasing do
 		}
 	end
 
-  def rebase_pair([p, rebase_address, market, max_depth]) do
+	@spec rebase_pair(Pair.t, String.t, map, integer) :: Pair.t
+  def rebase_pair(p, rebase_address, market, max_depth) do
     %{p | market_data: rebase_market_data(p, rebase_address, market, max_depth)}
   end
 
 	@doc """
-		Rebases all market data for a given pair to a token with a given rebase_address as the token's address.
+	Rebases all market data for a given pair to a token with a given rebase_address as the token's address.
 	"""
-	def rebase_market_data(%Pair{market_data: pmd} = p, rebase_address, market, max_depth) do
-		Enum.reduce(pmd, %{}, fn ({exchange_id, emd}, acc) ->
+	@spec rebase_market_data(Pair.t, String.t, map, integer) :: map
+	def rebase_market_data(%Pair{market_data: pmd} = p, ra, pairs, max_depth) do
+		Enum.reduce(pmd, %{}, fn ({exchange_id, %ExchangeMarketData{last_price: lp, current_bid: cb, current_ask: ca, base_volume: bv, timestamp: ts} = emd}, acc) ->
 			rebased_emd = %{emd |
-				last_price: deeply_rebase_rate(emd.last_price, p, rebase_address, market, max_depth),
-				current_bid: deeply_rebase_rate(emd.current_bid, p, rebase_address, market, max_depth),
-				current_ask: deeply_rebase_rate(emd.current_ask, p, rebase_address, market, max_depth),
-				base_volume: deeply_rebase_rate(emd.base_volume, p, rebase_address, market, max_depth),
+				last_price: deeply_rebase_rate(lp, p, ra, pairs, max_depth),
+				current_bid: deeply_rebase_rate(cb, p, ra, pairs, max_depth),
+				current_ask: deeply_rebase_rate(ca, p, ra, pairs, max_depth),
+				base_volume: deeply_rebase_rate(bv, p, ra, pairs, max_depth),
+				timestamp: ts
 			}
 			Map.put(acc, exchange_id, rebased_emd)
 		end)
 	end
 
 	@doc """
-		Rebases a given rate of a pair based in a token with a given base_address to a token with a given rebase_address.
+	Rebases a given rate of a pair based in a token with a given base_address to a token with a given rebase_address.
 
 		## Examples
 			iex> dai_address = "0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359"
@@ -77,6 +80,7 @@ defmodule Dexaggregatex.Market.Rebasing do
 			...>			  current_bid: 195,
 			...>			  current_ask: 205,
 			...>			  base_volume: 100_000,
+			...>				timestamp: 0
 			...>		  }
 			...>	  }
 			...>  }
@@ -84,17 +88,18 @@ defmodule Dexaggregatex.Market.Rebasing do
 			iex> Dexaggregatex.Market.Rebasing.rebase_rate(100, dai_address, eth_address, sample_market)
 			20_000.0
 	"""
-	def rebase_rate(rate, rebase_address, base_address, market) do
-		case Rebasing.Cache.get({:rebase_rate, {rate, rebase_address, base_address}}) do
+	@spec rebase_rate(number, String.t, String.t, map) :: number
+	def rebase_rate(rate, ra, ba, market) do
+		case Rebasing.Cache.get({:rebase_rate, {rate, ra, ba}}) do
 			{:found, cached_result} ->
 				cached_result
 			{:not_found, _} ->
 				result =
-					case rebase_address == base_address do
+					case ra == ba do
 						true ->
 							rate
 						false ->
-							rebase_pair_id = pair_id(rebase_address, base_address)
+							rebase_pair_id = pair_id(ra, ba)
 							case Map.has_key?(market, rebase_pair_id) do
 								true ->
 									rate * volume_weighted_spread_average(market[rebase_pair_id], market)
@@ -103,7 +108,7 @@ defmodule Dexaggregatex.Market.Rebasing do
 							end
 					end
 
-				Rebasing.Cache.add({:rebase_rate, {rate, rebase_address, base_address}, result})
+				Rebasing.Cache.add({:rebase_rate, {rate, ra, ba}, result})
 				result
 		end
 	end
@@ -126,12 +131,14 @@ defmodule Dexaggregatex.Market.Rebasing do
 			...>			  current_bid: 0,
 			...>			  current_ask: 0,
 			...>			  base_volume: 100,
+			...>				timestamp: 0
 			...>		  },
 			...>			:kyber => %Dexaggregatex.Market.Structs.ExchangeMarketData{
 			...>				last_price: 0,
 			...>				current_bid: 0,
 			...>				current_ask: 0,
 			...>				base_volume: 150,
+			...>				timestamp: 0
 			...>			}
 			...>	  }
 			...>  }
@@ -140,6 +147,7 @@ defmodule Dexaggregatex.Market.Rebasing do
 			250
 
 	"""
+	@spec combined_volume_across_exchanges(Pair.t, map) :: number
 	def combined_volume_across_exchanges(p, market) do
 		case Rebasing.Cache.get({:combined_volume_across_exchanges, p}) do
 			{:found, cached_result} ->
@@ -157,6 +165,7 @@ defmodule Dexaggregatex.Market.Rebasing do
 		Deeply rebases a given rate of a given token in the market as the volume-weighted rate of all possible paths
 		from the given base_address to the given rebase_address with a maximum path length of 2 rebases.
 	"""
+	@spec deeply_rebase_rate(number, Pair.t, String.t, map, integer) :: number
 	def deeply_rebase_rate(rate, original_pair, rebase_address, market, max_depth) do
 		case Rebasing.Cache.get({:deeply_rebase_rate, {rate, original_pair, rebase_address, max_depth}}) do
 			{:found, cached_result} ->
@@ -422,12 +431,14 @@ defmodule Dexaggregatex.Market.Rebasing do
 			...>			  current_bid: 200,
 			...>			  current_ask: 400,
 			...>			  base_volume: 1,
+			...>				timestamp: 0
 			...>		  },
 			...>			:kyber => %Dexaggregatex.Market.Structs.ExchangeMarketData{
 			...>				last_price: 0,
 			...>				current_bid: 150,
 			...>				current_ask: 300,
 			...>				base_volume: 4,
+			...>				timestamp: 0
 			...>			}
 			...>	  }
 			...>  }

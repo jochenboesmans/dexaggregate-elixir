@@ -52,17 +52,19 @@ defmodule Dexaggregatex.Market.Structs do
 		@moduledoc """
 		Data structure containing exchange-specific market data for a pair.
 		"""
-		@enforce_keys [:last_price, :current_bid, :current_ask, :base_volume]
-		defstruct [:last_price, :current_bid, :current_ask, :base_volume]
+		@enforce_keys [:last_price, :current_bid, :current_ask, :base_volume, :timestamp]
+		defstruct [:last_price, :current_bid, :current_ask, :base_volume, :timestamp]
 
 		@typedoc """
 		* last_price: number representing the last price for the quote token.
 		* current_bid: number representing the highest current bid price for the quote token.
 		* current_ask: number representing the lowest current ask price for the quote token.
 		* base_volume: number representing a pair's volume.
+		* timestamp: integer representing the UNIX timestamp on which this ExchangeMarketData
+			was included in the market.
 		"""
 		@type t :: %__MODULE__{last_price: number, current_bid: number,
-								 current_ask: number, base_volume: number}
+								 current_ask: number, base_volume: number, timestamp: integer}
 	end
 
 	defmodule LastUpdate do

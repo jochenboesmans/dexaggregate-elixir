@@ -25,6 +25,7 @@ defmodule Test.Dexaggregatex.Market.Rebasing do
 						current_bid: 0,
 						current_ask: 0,
 						base_volume: 0,
+						timestamp: 0
 					}
 				}
 			}
@@ -39,6 +40,7 @@ defmodule Test.Dexaggregatex.Market.Rebasing do
 						current_bid: 0,
 						current_ask: 0,
 						base_volume: 0,
+						timestamp: 0
 					}
 				}
 			}}

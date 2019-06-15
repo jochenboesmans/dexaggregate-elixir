@@ -8,6 +8,11 @@ defmodule Dexaggregatex.API.GraphQL.Schema.Types do
 		field :pairs, list_of(:pair)
 	end
 
+	@desc "A market in which all prices and volumes are denominated in each pair's respective base token."
+	object :market do
+		field :pairs, list_of(:pair)
+	end
+
 	@desc "A pair in the market."
 	object :pair do
 		field :id, non_null(:id)
@@ -25,6 +30,7 @@ defmodule Dexaggregatex.API.GraphQL.Schema.Types do
 		field :current_bid, :float
 		field :current_ask, :float
 		field :base_volume, :float
+		field :timestamp, :integer
 	end
 
 	@desc "Data about the last update to the market."

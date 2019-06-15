@@ -7,7 +7,7 @@ defmodule Dexaggregatex.API.GraphQL.Schema do
 
 	query do
 		@desc "Get the market, not rebased."
-		field :market, list_of(:pair) do
+		field :market, :market do
 			arg :exchanges, list_of(non_null(:string))
 			arg :market_ids, list_of(non_null(:id))
 			arg :base_symbols, list_of(non_null(:string))
