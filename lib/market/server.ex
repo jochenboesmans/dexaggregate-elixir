@@ -4,8 +4,7 @@ defmodule Dexaggregatex.Market.Server do
 	"""
 	use GenServer
 
-	alias Dexaggregatex.Market.Rebasing
-	alias Dexaggregatex.Market.Structs.{Market, RebasedMarket, LastUpdate, ExchangeMarketData}
+	alias Dexaggregatex.Market.Structs.{Market, LastUpdate, ExchangeMarketData}
 	alias Dexaggregatex.Market.Structs.Pair, as: MarketPair
 	alias Dexaggregatex.MarketFetching.Structs.{ExchangeMarket, PairMarketData}
 	alias Dexaggregatex.MarketFetching.Structs.Pair, as: MarketFetchingPair
@@ -40,26 +39,6 @@ defmodule Dexaggregatex.Market.Server do
 	@spec handle_call(:get_market, GenServer.from, map) :: {:reply, Market.t, map}
 	def handle_call(:get_market, _from,  %{market: m} = state) do
 		{:reply, m, state}
-	end
-
-	@doc """
-	Returns the market rebased in a token with a specified rebase_address.
-	"""
-	@impl true
-	@spec handle_call({:get_rebased_market, String.t}, GenServer.from, map)
-				:: {:reply, RebasedMarket.t, map}
-	def handle_call({:get_rebased_market, ra}, _from, %{market: m} = state) do
-		{:reply, Rebasing.rebase_market(ra, m, 3), state}
-	end
-
-	@doc """
-	Returns a list of all the exchanges of which pairs are included in the market.
-	"""
-	@impl true
-	@spec handle_call(:get_exchanges, GenServer.from, map)
-				:: {:reply, [atom], map}
-	def handle_call(:get_exchanges, _from, %{market: m} = state) do
-		{:reply, exchanges_in_market(m), state}
 	end
 
 	@doc """
@@ -181,18 +160,6 @@ defmodule Dexaggregatex.Market.Server do
 										 Endpoint, updated_market,
 										 [market: "*", rebased_market: "*", exchanges: "*", last_update: "*"]) end}
 		], strategy: :one_for_one)
-	end
-
-	@doc """
-	Returns a set of exchanges currently included in the market.
-	"""
-	@spec exchanges_in_market(Market.t) :: MapSet.t(atom)
-	defp exchanges_in_market(%Market{pairs: pairs}) do
-		Enum.reduce(pairs, MapSet.new(), fn ({_k, p}, acc1) ->
-			Enum.reduce(p.market_data, acc1, fn {exchange, _emd}, acc2->
-				MapSet.put(acc2, exchange)
-			end)
-		end)
 	end
 
 end

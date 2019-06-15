@@ -20,23 +20,24 @@ defmodule Dexaggregatex.API.RestController do
 	end
 
 	defp get_market() do
-		MarketClient.get(:market)
-		|> queried_market(%{})
+		MarketClient.market()
+		|> format_market()
 	end
 
 	defp get_dai_rebased_market() do
 		dai_address = "0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359"
-		MarketClient.get({:rebased_market, dai_address}).pairs
-		|> queried_rebased_market(%{rebase_address: dai_address})
+		MarketClient.rebased_market(dai_address)
+		|> format_rebased_market()
 	end
 
 	defp get_exchanges() do
-		MarketClient.get(:exchanges)
-		|> queried_exchanges_in_market
+		MarketClient.exchanges_in_market()
+		|> format_exchanges_in_market()
 	end
 
 	defp get_last_update() do
-		MarketClient.get(:last_update)
+		MarketClient.last_update()
+		|> format_last_update()
 	end
 
 	defp put_json_on_conn(conn, data) do
