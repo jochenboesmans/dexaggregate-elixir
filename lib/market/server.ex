@@ -9,6 +9,8 @@ defmodule Dexaggregatex.Market.Server do
 	alias Dexaggregatex.MarketFetching.Structs.{ExchangeMarket, PairMarketData}
 	alias Dexaggregatex.MarketFetching.Structs.Pair, as: MarketFetchingPair
 	alias Dexaggregatex.API.Endpoint
+	alias Dexaggregatex.Market.Neighbors
+	alias Dexaggregatex.Market.Rebasing
 
 	import Dexaggregatex.Market.Util
 
@@ -58,8 +60,8 @@ defmodule Dexaggregatex.Market.Server do
 	@spec handle_cast({:update, MarketFetchingPair.t}, map) :: {:noreply, map}
 	def handle_cast({:update, %MarketFetchingPair{} = p}, %{market: m} = state) do
 		%MarketFetchingPair{market_data: %PairMarketData{exchange: exchange}} = p
-		add_pair_result = add_pair(m, p)
-		update_return(add_pair_result, exchange, state)
+		{update_status, market} = add_pair(m, p)
+		update_return({update_status, market}, exchange, state)
 	end
 
 	@doc """
@@ -68,9 +70,9 @@ defmodule Dexaggregatex.Market.Server do
 	@impl true
 	@spec handle_cast({:update, ExchangeMarket.t}, map) :: {:noreply, map}
 	def handle_cast({:update, %ExchangeMarket{} = em}, %{market: m} = state) do
-		%ExchangeMarket{exchange: exchange} = em
-		add_exchange_market_result = add_exchange_market(m, em)
-		update_return(add_exchange_market_result, exchange, state)
+		%ExchangeMarket{exchange: exchange, market: pairs} = em
+		{update_status, market} = add_exchange_market(m, em)
+		update_return({update_status, market}, exchange, state)
 	end
 
 	@doc """
@@ -78,7 +80,7 @@ defmodule Dexaggregatex.Market.Server do
 	"""
 	@spec add_pair(Market.t, MarketFetchingPair.t)
 				:: {:no_update, Market.t} | {:update, Market.t}
-	defp add_pair(%Market{pairs: pairs}, %MarketFetchingPair{} = p) do
+	defp add_pair(%Market{pairs: pairs} = m, %MarketFetchingPair{} = p) do
 		%MarketFetchingPair{
 			base_address: ba,
 			quote_address: qa,
@@ -114,7 +116,10 @@ defmodule Dexaggregatex.Market.Server do
 							ex => emd
 						}
 					}
-				{:update, %Market{pairs: Map.put(pairs, id, market_entry)}}
+				new_market = %Market{pairs: Map.put(pairs, id, market_entry)}
+				Neighbors.add_pairs([market_entry], new_market)
+				Rebasing.Cache.clear()
+				{:update, new_market}
 			# Append or update ExchangeMarketData of existing MarketPair if it does.
 			true ->
 				case pairs[id].market_data[ex] == emd do
@@ -122,6 +127,7 @@ defmodule Dexaggregatex.Market.Server do
 						{:no_update, %Market{pairs: pairs}}
 					false ->
 						market_entry = %{pairs[id] | market_data: Map.put(pairs[id].market_data, ex, emd)}
+						Rebasing.Cache.clear()
 						{:update, %Market{pairs: Map.put(pairs, id, market_entry)}}
 				end
 		end

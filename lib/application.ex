@@ -3,7 +3,8 @@ defmodule Dexaggregatex.Application do
 		Market.Server,
 		MarketFetching.FetcherSupervisor,
 		API.Endpoint,
-		Market.Rebasing
+		Market.Rebasing,
+		Market.Neighbors
 	}
 	use Application
 
@@ -13,7 +14,8 @@ defmodule Dexaggregatex.Application do
 			FetcherSupervisor,
 			Endpoint,
 			{Absinthe.Subscription, [Endpoint]},
-			Rebasing.Cache
+			Rebasing.Cache,
+			Neighbors
 		]
 		options = [
 			# All children will be restarted if one crashes.

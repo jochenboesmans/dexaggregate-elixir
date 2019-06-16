@@ -51,7 +51,6 @@ defmodule Dexaggregatex.Market.Client do
 	"""
 	@spec update(Pair.t | ExchangeMarket.t) :: :ok
 	def update(p_or_em) do
-		Rebasing.Cache.clear()
 		GenServer.cast(Server, {:update, p_or_em})
 	end
 
