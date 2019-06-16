@@ -49,11 +49,13 @@ defmodule Dexaggregatex.Market.Rebasing do
 	"""
 	def rebase_market_data(%Pair{market_data: pmd} = p, rebase_address, market, max_depth) do
 		Enum.reduce(pmd, %{}, fn ({exchange_id, emd}, acc) ->
+			brp = try_expand_path_from_base([pair_id(p)], rebase_address, max_depth, market)
+			qrp = try_expand_path_from_quote([pair_id(p)], rebase_address, max_depth, market)
 			rebased_emd = %{emd |
-				last_price: deeply_rebase_rate(emd.last_price, p, rebase_address, market, max_depth),
-				current_bid: deeply_rebase_rate(emd.current_bid, p, rebase_address, market, max_depth),
-				current_ask: deeply_rebase_rate(emd.current_ask, p, rebase_address, market, max_depth),
-				base_volume: deeply_rebase_rate(emd.base_volume, p, rebase_address, market, max_depth),
+				last_price: deeply_rebase_rate(emd.last_price, p, rebase_address, market, max_depth, brp, qrp),
+				current_bid: deeply_rebase_rate(emd.current_bid, p, rebase_address, market, max_depth, brp, qrp),
+				current_ask: deeply_rebase_rate(emd.current_ask, p, rebase_address, market, max_depth, brp, qrp),
+				base_volume: deeply_rebase_rate(emd.base_volume, p, rebase_address, market, max_depth, brp, qrp),
 			}
 			Map.put(acc, exchange_id, rebased_emd)
 		end)
@@ -141,30 +143,21 @@ defmodule Dexaggregatex.Market.Rebasing do
 			250
 
 	"""
-	def combined_volume_across_exchanges(p, market) do
-		case Rebasing.Cache.get({:combined_volume_across_exchanges, p}) do
-			{:found, cached_result} ->
-				cached_result
-			{:not_found, _} ->
-				%Pair{market_data: pmd} = market[pair_id(p)]
-				result = Enum.reduce(pmd, 0, fn ({_exchange_id, %ExchangeMarketData{base_volume: bv}}, sum) -> sum + bv end)
-
-				Rebasing.Cache.add({:combined_volume_across_exchanges, p, result})
-				result
-		end
+	def combined_volume_across_exchanges(%Pair{market_data: pmd} = p, market) do
+		Enum.reduce(pmd, 0, fn ({_exchange_id, %ExchangeMarketData{base_volume: bv}}, sum) -> sum + bv end)
 	end
 
 	@doc """
 		Deeply rebases a given rate of a given token in the market as the volume-weighted rate of all possible paths
 		from the given base_address to the given rebase_address with a maximum path length of 2 rebases.
 	"""
-	def deeply_rebase_rate(rate, original_pair, rebase_address, market, max_depth) do
-		case Rebasing.Cache.get({:deeply_rebase_rate, {rate, original_pair, rebase_address, max_depth}}) do
+	def deeply_rebase_rate(rate, original_pair, rebase_address, market, max_depth, brp, qrp) do
+		case Rebasing.Cache.get({:deeply_rebase_rate, {rate, pair_id(original_pair), rebase_address, max_depth}}) do
 			{:found, cached_result} ->
 				cached_result
 			{:not_found, _} ->
 				%{combined_volume: cv, volume_weighted_sum: vws} =
-					sums_for_deep_rebasing(rate, original_pair, rebase_address, market, max_depth)
+					sums_for_deep_rebasing(rate, original_pair, rebase_address, market, max_depth, brp, qrp)
 
 				result =
 					case cv do
@@ -176,7 +169,7 @@ defmodule Dexaggregatex.Market.Rebasing do
 							vws / cv
 					end
 
-				Rebasing.Cache.add({:deeply_rebase_rate, {rate, original_pair, rebase_address, max_depth}, result})
+				Rebasing.Cache.add({:deeply_rebase_rate, {rate, pair_id(original_pair), rebase_address, max_depth}, result})
 				result
 		end
 	end
@@ -184,15 +177,13 @@ defmodule Dexaggregatex.Market.Rebasing do
 	@doc """
 	Calculates the values that determine a volume-weighted rate.
 	"""
-	defp sums_for_deep_rebasing(rate, original_pair, rebase_address, pairs, max_depth) do
-		base_rebase_paths = try_expand_path_from_base([pair_id(original_pair)], rebase_address, max_depth, pairs)
-		quote_rebase_paths = try_expand_path_from_quote([pair_id(original_pair)], rebase_address, max_depth, pairs)
+	defp sums_for_deep_rebasing(rate, original_pair, rebase_address, pairs, max_depth, brp, qrp) do
 
 		r =
-			Enum.reduce(base_rebase_paths, %{combined_volume: 0, volume_weighted_sum: 0}, fn (base_rebase_path, sums) ->
+			Enum.reduce(brp, %{combined_volume: 0, volume_weighted_sum: 0}, fn (base_rebase_path, sums) ->
 				base_update_sums(sums, base_rebase_path, rate, pairs, rebase_address)
 			end)
-		Enum.reduce(quote_rebase_paths, r, fn (quote_rebase_path, sums) ->
+		Enum.reduce(qrp, r, fn (quote_rebase_path, sums) ->
 			quote_update_sums(sums, quote_rebase_path, rate, pairs, rebase_address)
 		end)
 	end
@@ -396,32 +387,22 @@ defmodule Dexaggregatex.Market.Rebasing do
 			240.0
 	"""
 	def volume_weighted_spread_average(p, market) do
-		case Rebasing.Cache.get({:volume_weighted_spread_average, p}) do
-			{:found, cached_result} ->
-				cached_result
-			{:not_found, _} ->
-				result =
-					case Map.has_key?(market, pair_id(p)) do
-						true ->
-							%Pair{market_data: pmd} = market[pair_id(p)]
-							combined_volume = combined_volume_across_exchanges(p, market)
-							weighted_sums = %{
-								current_bids: Enum.reduce(pmd, 0,
-									fn ({_pair_id, %ExchangeMarketData{base_volume: bv, current_bid: cb}}, sum) -> sum + (bv * cb) end
-								),
-								current_asks: Enum.reduce(pmd, 0,
-									fn ({_pair_id, %ExchangeMarketData{base_volume: bv, current_ask: ca}}, sum) -> sum + (bv * ca) end
-								)
-							}
-							average(weighted_sums, combined_volume)
-						false ->
-							0
-					end
-
-				Rebasing.Cache.add({:volume_weighted_spread_average, p, result})
-				result
+		case Map.has_key?(market, pair_id(p)) do
+			true ->
+				%Pair{market_data: pmd} = market[pair_id(p)]
+				combined_volume = combined_volume_across_exchanges(p, market)
+				weighted_sums = %{
+					current_bids: Enum.reduce(pmd, 0,
+						fn ({_pair_id, %ExchangeMarketData{base_volume: bv, current_bid: cb}}, sum) -> sum + (bv * cb) end
+					),
+					current_asks: Enum.reduce(pmd, 0,
+						fn ({_pair_id, %ExchangeMarketData{base_volume: bv, current_ask: ca}}, sum) -> sum + (bv * ca) end
+					)
+				}
+				average(weighted_sums, combined_volume)
+			false ->
+				0
 		end
-
 	end
 
 	defp average(weighted_sums, total_sum) do

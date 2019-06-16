@@ -4,6 +4,7 @@ defmodule Dexaggregatex.API.Format do
   """
 
   alias Dexaggregatex.Market.Structs.{Market, RebasedMarket, LastUpdate, Pair}
+  import  Dexaggregatex.Market.Util
 
   @spec format_market(Market.t) :: Market.t
   def format_market(%Market{pairs: pairs} = m) do
@@ -44,12 +45,27 @@ defmodule Dexaggregatex.API.Format do
   end
 
   @spec format_last_update(LastUpdate.t) :: map
-  def format_last_update(%LastUpdate{timestamp: ts, utc_time: ut, exchange: ex}) do
-    %{
-      timestamp: ts,
-      utc_time: NaiveDateTime.to_string(ut),
-      exchange: Atom.to_string(ex)
-    }
+  def format_last_update(%LastUpdate{utc_time: ut, pair: pair}) do
+    case pair == nil do
+      true ->
+        %{
+          utc_time: nil,
+          pair: nil
+        }
+      false ->
+        new_p = Map.put(pair, :id, pair_id(pair))
+        new_md =
+          Enum.map(pair.market_data, fn {exchange, emd} ->
+            Map.put(emd, :exchange, exchange)
+          end)
+          |> Enum.sort_by(&(&1.base_volume), &>=/2)
+        fmt_p = %{new_p | market_data: new_md}
+
+        %{
+          utc_time: NaiveDateTime.to_string(ut),
+          pair: fmt_p
+        }
+    end
   end
 
   @spec combined_volume_across_exchanges(Pair.t) :: number

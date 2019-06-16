@@ -7,11 +7,9 @@ defmodule Dexaggregatex.Market.Rebasing.Cache do
   @initial_state %{
     rebase_market: %{},
     rebase_rate: %{},
-    combined_volume_across_exchanges: %{},
     deeply_rebase_rate: %{},
     expand_path_from_base: %{},
     expand_path_from_quote: %{},
-    volume_weighted_spread_average: %{}
   }
 
   def start_link(_options) do

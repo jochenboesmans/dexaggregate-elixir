@@ -52,32 +52,32 @@ defmodule Dexaggregatex.Market.Structs do
 		@moduledoc """
 		Data structure containing exchange-specific market data for a pair.
 		"""
-		@enforce_keys [:last_price, :current_bid, :current_ask, :base_volume]
-		defstruct [:last_price, :current_bid, :current_ask, :base_volume]
+		@enforce_keys [:last_price, :current_bid, :current_ask, :base_volume, :timestamp]
+		defstruct [:last_price, :current_bid, :current_ask, :base_volume, :timestamp]
 
 		@typedoc """
 		* last_price: number representing the last price for the quote token.
 		* current_bid: number representing the highest current bid price for the quote token.
 		* current_ask: number representing the lowest current ask price for the quote token.
 		* base_volume: number representing a pair's volume.
+		* timestamp: integer representing the UNIX timestamp at which this EMD was added to the market.
 		"""
 		@type t :: %__MODULE__{last_price: number, current_bid: number,
-								 current_ask: number, base_volume: number}
+								 current_ask: number, base_volume: number, timestamp: integer}
 	end
 
 	defmodule LastUpdate do
 		@moduledoc """
 		Data structure representing the last update of the market.
 		"""
-		@enforce_keys [:timestamp, :utc_time, :exchange]
-		defstruct [:timestamp, :utc_time, :exchange]
+		@enforce_keys [:utc_time, :pair]
+		defstruct [:utc_time, :pair]
 
 		@typedoc """
-		* timestamp: integer representing a UNIX timestamp (ms) of the last update.
 		* utc_time: struct representing the utc time of the last update.
-		* exchange: atom representing the exchange that caused the last update.
+		* pair: struct representing the pair that was last updated.
 		"""
-		@type t :: %__MODULE__{timestamp: integer, utc_time: NaiveDateTime.t, exchange: atom}
+		@type t :: %__MODULE__{utc_time: NaiveDateTime.t, pair: Pair.t}
 	end
 
 end

@@ -25,12 +25,12 @@ defmodule Dexaggregatex.API.GraphQL.Schema.Types do
 		field :current_bid, :float
 		field :current_ask, :float
 		field :base_volume, :float
+		field :timestamp, :integer
 	end
 
 	@desc "Data about the last update to the market."
 	object :last_update do
-		field :timestamp, :integer
 		field :utc_time, :string
-		field :exchange, :string
+		field :pair, :pair
 	end
 end
