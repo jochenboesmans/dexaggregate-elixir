@@ -5,11 +5,7 @@ defmodule Dexaggregatex.Market.Rebasing.Cache do
   use GenServer
 
   @initial_state %{
-    rebase_market: %{},
-    rebase_rate: %{},
-    deeply_rebase_rate: %{},
-    expand_path_from_base: %{},
-    expand_path_from_quote: %{},
+    rebase_market: %{}
   }
 
   def start_link(_options) do
