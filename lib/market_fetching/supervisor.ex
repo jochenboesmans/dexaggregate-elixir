@@ -1,4 +1,4 @@
-defmodule Dexaggregatex.MarketFetching.FetcherSupervisor do
+defmodule Dexaggregatex.MarketFetching.Supervisor do
 	@moduledoc """
 	Supervisor for all MarketFetcher processes.
 	"""
