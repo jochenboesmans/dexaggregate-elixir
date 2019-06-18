@@ -1,33 +1,47 @@
 defmodule Dexaggregatex.API.RestController do
-
+	@moduledoc false
 	alias Dexaggregatex.Market.Client, as: MarketClient
 	alias Dexaggregatex.API
 
 	import API.Format
 	use API, :controller
 
-	def get(conn, %{"what_to_get" => what} = _params) do
-		result =
-			case what do
-				"last_update" -> get_last_update()
-				"exchanges" -> get_exchanges()
-				"dai_rebased_market" -> get_dai_rebased_market()
-				"market" -> get_market()
-				_ -> %{"error" => "please use a valid route."}
+	def get(conn, %{"what_to_get" => what} = params) do
+		IO.inspect(params)
+		case what do
+			"last_update" -> successful_fetch(conn, :last_update, params)
+			"exchanges" -> successful_fetch(conn, :exchanges, params)
+			"rebased_market" -> successful_fetch(conn, :rebased_market, params)
+			"market" -> successful_fetch(conn, :market, params)
+			_ -> unsuccessful_fetch(conn)
+		end
+	end
+
+	defp unsuccessful_fetch(conn) do
+		send_resp(conn, 404, "Please use a valid route.")
+	end
+
+	defp successful_fetch(conn, top_param, %{"rebase_address" => ra} = _params) do
+		data =
+			case top_param do
+				:last_update -> get_last_update()
+				:exchanges -> get_exchanges()
+				:rebased_market -> get_rebased_market(ra)
+				:market -> get_market()
 			end
 			|> Poison.encode!
-		put_json_on_conn(conn, result)
+
+		conn
+		|> put_resp_content_type("application/json")
+		|> send_resp(200, data)
 	end
 
 	defp get_market() do
-		MarketClient.market()
-		|> format_market()
+		MarketClient.market() |> format_market()
 	end
 
-	defp get_dai_rebased_market() do
-		dai_address = "0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359"
-		MarketClient.rebased_market(dai_address)
-		|> format_rebased_market()
+	defp get_rebased_market(rebase_address) do
+		MarketClient.rebased_market(rebase_address) |> format_rebased_market()
 	end
 
 	defp get_exchanges() do
@@ -38,11 +52,5 @@ defmodule Dexaggregatex.API.RestController do
 	defp get_last_update() do
 		MarketClient.last_update()
 		|> format_last_update()
-	end
-
-	defp put_json_on_conn(conn, data) do
-		conn
-		|> put_resp_content_type("application/json")
-		|> send_resp(200, data)
 	end
 end
