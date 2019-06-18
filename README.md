@@ -1,4 +1,4 @@
-# dexaggregatex
+# Dexaggregatex
 
 GraphQL API serving aggregated market data from decentralized exchanges.
 
@@ -173,7 +173,7 @@ Example response:
 ```
 
 All of these subscriptions are also available as simple GraphQL queries (change `subscription` operation to `query` or
-leave it out entirely.
+leave it out entirely).
 
 ## Architectural overview
 
