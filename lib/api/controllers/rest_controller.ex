@@ -7,12 +7,11 @@ defmodule Dexaggregatex.API.RestController do
 	use API, :controller
 
 	def get(conn, %{"what_to_get" => what} = params) do
-		IO.inspect(params)
 		case what do
-			"last_update" -> successful_fetch(conn, :last_update, params)
-			"exchanges" -> successful_fetch(conn, :exchanges, params)
+			"last_update" -> successful_fetch(conn, :last_update)
+			"exchanges" -> successful_fetch(conn, :exchanges)
 			"rebased_market" -> successful_fetch(conn, :rebased_market, params)
-			"market" -> successful_fetch(conn, :market, params)
+			"market" -> successful_fetch(conn, :market)
 			_ -> unsuccessful_fetch(conn)
 		end
 	end
@@ -21,12 +20,14 @@ defmodule Dexaggregatex.API.RestController do
 		send_resp(conn, 404, "Please use a valid route.")
 	end
 
-	defp successful_fetch(conn, top_param, %{"rebase_address" => ra} = _params) do
+	defp successful_fetch(conn, top_param, params \\ nil) do
 		data =
 			case top_param do
 				:last_update -> get_last_update()
 				:exchanges -> get_exchanges()
-				:rebased_market -> get_rebased_market(ra)
+				:rebased_market ->
+					%{"rebase_address" => ra} = params
+					get_rebased_market(ra)
 				:market -> get_market()
 			end
 			|> Poison.encode!
