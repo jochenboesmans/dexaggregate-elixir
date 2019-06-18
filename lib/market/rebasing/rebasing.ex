@@ -128,46 +128,35 @@ defmodule Dexaggregatex.Market.Rebasing do
 	@doc """
 	Updates the given volume-weighted-rate-determining sums based on the given rebase_path.
 	"""
-	defp base_update_sums(sums, base_rebase_path, original_rate, pairs, rebase_address) do
-		max_i = Enum.count(base_rebase_path) - 1
+	defp base_update_sums(sums, brp, original_rate, pairs, rebase_address) do
+		path_length = Enum.count(brp)
+		max_i = path_length - 1
 
+		brp_wi = Enum.with_index(brp)
 		# Rebase the original_rate for every pair of the rebase_path.
-		rebased_rate =
-			Enum.with_index(base_rebase_path)
+		%{rate: rebased_rate, weighted_sum: ws} =
 			# Iterate through the rebase_path starting from the original_pair, going to the pair based in rebase_address,
 			#	rebasing the original_rate to the base_address of all pairs that aren't the original one.
-			|> List.foldr(original_rate,
-				fn ({rp_id, i}, acc) ->
-					%Pair{base_address: rp_ba, quote_address: rp_qa} = pairs[rp_id]
+			# Calculate each involved pair's combined volume and rebase it in the base address of the ultimate rebase pair.
+			# This rebase_path's weight is the average volume of all involved pairs except the original one.
+			List.foldr(brp_wi, %{rate: original_rate, weighted_sum: 0},
+				fn ({rp_id, i}, %{rate: r, weighted_sum: ws} = acc) ->
+					p = %Pair{base_address: rp_ba, quote_address: rp_qa} = pairs[rp_id]
 					case i === max_i do
 						true ->
 							# Keep original_rate since it's already based in the original pair's base address.
+							# Exclude volumes of start pair for weight.
 							acc
 						false ->
 							# Rebase the rate currently based in this pair's quote address (previous pair's base address)
 							# to this pair's base address.
-							rebase_rate(acc, rp_ba, rp_qa, pairs)
+							%{acc |
+								rate: rebase_rate(r, rp_ba, rp_qa, pairs),
+								weighted_sum: ws + (combined_volume_across_exchanges(p) |> rebase_rate(rebase_address, rp_ba, pairs))
+							}
 					end
 				end)
-
-		# Calculate each involved pair's combined volume and rebase it in the base address of the ultimate rebase pair.
-		# This rebase_path's weight is the average volume of all involved pairs.
-		weight =
-			Enum.reduce(Enum.with_index(base_rebase_path), 0, fn ({rp_id, i}, sum) ->
-				%Pair{base_address: rp_ba} = pairs[rp_id]
-				cond do
-          # Exclude volumes of start pair.
-          i === max_i ->
-            sum
-          # Include volumes of all other pairs.
-          true ->
-            rebased_phase_volume =
-              combined_volume_across_exchanges(pairs[rp_id])
-              |> rebase_rate(rebase_address, rp_ba, pairs)
-            sum + rebased_phase_volume
-        end
-
-			end) / Enum.count(base_rebase_path)
+		weight = weighted_average(%{weighted_sum: ws}, path_length)
 
 		%{sums |
 			volume_weighted_sum: sums.volume_weighted_sum + (weight * rebased_rate),
@@ -178,46 +167,35 @@ defmodule Dexaggregatex.Market.Rebasing do
 	@doc """
 	Updates the given volume-weighted-rate-determining sums based on the given rebase_path.
 	"""
-	defp quote_update_sums(sums, quote_rebase_path, original_rate, pairs, rebase_address) do
-		max_i = Enum.count(quote_rebase_path) - 1
+	defp quote_update_sums(sums, qrp, original_rate, pairs, rebase_address) do
+		path_length = Enum.count(qrp)
+		max_i = path_length - 1
 
+		qrp_wi = Enum.with_index(qrp)
 		# Rebase the original_rate for every pair of the rebase_path.
-		rebased_rate =
-			Enum.with_index(quote_rebase_path)
+		%{rate: rebased_rate, weighted_sum: ws} =
 			# Iterate through the rebase_path starting from the original_pair, going to the pair based in rebase_address,
 			#	rebasing the original_rate to the base_address of all pairs that aren't the last one.
-			|> List.foldr(original_rate,
-					 fn ({rp_id, i}, acc) ->
-						 %Pair{base_address: rp_ba, quote_address: rp_qa} = pairs[rp_id]
-						 case i === 0 do
-							 true ->
-								 # Keep rate since it's already based in the rebase address.
-								 acc
-							 false ->
-								 # Rebase the rate currently based in this pair's base address
-								 # to this pair's quote address (next pair's base address).
-								 rebase_rate(acc, rp_qa, rp_ba, pairs)
-						 end
-					 end)
-
-		# Calculate each involved pair's combined volume and rebase it in the base address of the ultimate rebase pair.
-		# This rebase_path's weight is the average volume of all involved pairs.
-		weight =
-			Enum.reduce(Enum.with_index(quote_rebase_path), 0, fn ({rp_id, i}, sum) ->
-				%Pair{base_address: rp_ba} = pairs[rp_id]
-				cond do
-					# Exclude volumes of start pair.
-					i === max_i ->
-						sum
-					# Include volumes of all other pairs.
-					true ->
-						rebased_phase_volume =
-							combined_volume_across_exchanges(pairs[rp_id])
-							|> rebase_rate(rebase_address, rp_ba, pairs)
-						sum + rebased_phase_volume
-				end
-
-			end) / Enum.count(quote_rebase_path)
+			List.foldr(qrp_wi, %{rate: original_rate, weighted_sum: 0},
+				fn ({rp_id, i}, %{rate: r, weighted_sum: ws} = acc) ->
+					p = %Pair{base_address: rp_ba, quote_address: rp_qa} = pairs[rp_id]
+					cond do
+						i !== 0 && i !== max_i ->
+							# Rebase the rate currently based in this pair's base address
+							# to this pair's quote address (next pair's base address).
+							%{acc |
+								rate: rebase_rate(r, rp_qa, rp_ba, pairs),
+								weighted_sum: ws + (combined_volume_across_exchanges(p) |> rebase_rate(rebase_address, rp_ba, pairs))
+							}
+						i === 0 ->
+							# Keep rate since it's already based in the rebase address.
+							%{acc | weighted_sum: ws + (combined_volume_across_exchanges(p) |> rebase_rate(rebase_address, rp_ba, pairs))}
+						i === max_i ->
+							# Keep weighted_sum since original pair is same for all paths.
+							%{acc | rate: rebase_rate(r, rp_qa, rp_ba, pairs)}
+					end
+				end)
+		weight = weighted_average(%{weighted_sum: ws}, path_length)
 
 		%{sums |
 			volume_weighted_sum: sums.volume_weighted_sum + (weight * rebased_rate),
