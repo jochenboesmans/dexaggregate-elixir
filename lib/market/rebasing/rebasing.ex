@@ -89,8 +89,7 @@ defmodule Dexaggregatex.Market.Rebasing do
 	"""
 	def rebase_rate(rate, rebase_address, base_address, market) do
 		case rebase_address == base_address do
-			true ->
-				rate
+			true -> rate
 			false ->
 				rebase_pair_id = pair_id(rebase_address, base_address)
 				case Map.has_key?(market, rebase_pair_id) do
