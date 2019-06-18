@@ -4,10 +4,12 @@ defmodule Dexaggregatex.MarketFetching.OasisFetcher do
 	"""
 	use Task, restart: :permanent
 
-	import Dexaggregatex.MarketFetching.{Util, Common}
 	alias Dexaggregatex.MarketFetching.Structs.{ExchangeMarket, Pair, PairMarketData}
+	import Dexaggregatex.Util
+	import Dexaggregatex.MarketFetching.{Util, Common}
 
-  @base_api_url "http://api.oasisdex.com/v1"
+
+	@base_api_url "http://api.oasisdex.com/v1"
   @currencies %{
     "MKR" => "0x9f8f72aa9304c8b593d555f12ef6589cc3a579a2",
     "ETH" => "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",

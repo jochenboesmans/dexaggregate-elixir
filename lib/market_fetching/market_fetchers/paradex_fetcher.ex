@@ -4,8 +4,9 @@ defmodule Dexaggregatex.MarketFetching.ParadexFetcher do
 	"""
 	use Task, restart: :permanent
 
-	import Dexaggregatex.MarketFetching.{Util, Common}
 	alias Dexaggregatex.MarketFetching.Structs.{Pair, ExchangeMarket, PairMarketData}
+	import Dexaggregatex.Util
+	import Dexaggregatex.MarketFetching.{Util, Common}
 
   @base_api_url "https://api.paradex.io/api/v1"
 	@poll_interval 10_000

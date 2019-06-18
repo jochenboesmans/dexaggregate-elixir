@@ -5,9 +5,10 @@ defmodule Dexaggregatex.MarketFetching.DdexFetcher do
   use WebSockex
 	use Task
 
-	import Dexaggregatex.MarketFetching.{Util, Common}
 	alias Dexaggregatex.MarketFetching.Structs.{Pair, ExchangeMarket, PairMarketData}
 	alias Dexaggregatex.Market
+	import Dexaggregatex.MarketFetching.{Util, Common}
+	import Dexaggregatex.Util
 
 	@api_base_url "https://api.ddex.io/v3"
 	@market_endpoint "markets/tickers"

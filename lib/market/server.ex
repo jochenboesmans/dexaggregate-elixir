@@ -11,8 +11,10 @@ defmodule Dexaggregatex.Market.Server do
 	alias Dexaggregatex.API.Endpoint
 	alias Dexaggregatex.Market.Neighbors
 	alias Dexaggregatex.Market.Rebasing
-
 	import Dexaggregatex.Market.Util
+
+	# Makes sure private functions are testable.
+	@compile if Mix.env == :test, do: :export_all
 
 	@doc """
 	Start a Market process linked to the current process.

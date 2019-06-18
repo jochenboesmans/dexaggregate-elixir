@@ -4,8 +4,9 @@ defmodule Dexaggregatex.MarketFetching.UniswapFetcher do
 	"""
 	use Task, restart: :permanent
 
-	import Dexaggregatex.MarketFetching.{Util, Common}
 	alias Dexaggregatex.MarketFetching.Structs.{Pair, ExchangeMarket, PairMarketData}
+	import Dexaggregatex.Util
+	import Dexaggregatex.MarketFetching.{Util, Common}
 
 	@graph_http "https://api.thegraph.com/subgraphs/name/graphprotocol/uniswap"
 	# Use ws for subscriptions later.

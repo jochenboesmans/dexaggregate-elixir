@@ -97,30 +97,4 @@ defmodule Dexaggregatex.MarketFetching.Util do
 				end
 		end
 	end
-
-	@doc """
-	Safely raises a number to a power.
-
-	## Examples
-		iex> Dexaggregatex.MarketFetching.Util.safe_power(0, 0)
-		1
-
-		iex> Dexaggregatex.MarketFetching.Util.safe_power(0, -1)
-		0
-
-		iex> Dexaggregatex.MarketFetching.Util.safe_power(2, -1)
-		0.5
-	"""
-	@spec safe_power(number, number) :: number
-	def safe_power(number, power) do
-		case number == 0 do
-			true ->
-				case power == 0 do
-					true -> 1
-					false -> number
-				end
-			false ->
-				:math.pow(number, power)
-		end
-	end
 end

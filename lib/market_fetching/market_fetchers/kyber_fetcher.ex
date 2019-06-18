@@ -4,8 +4,9 @@ defmodule Dexaggregatex.MarketFetching.KyberFetcher do
   """
   use Task, restart: :permanent
 
-  import Dexaggregatex.MarketFetching.{Util, Common}
   alias Dexaggregatex.MarketFetching.Structs.{ExchangeMarket, Pair, PairMarketData}
+	import Dexaggregatex.Util
+	import Dexaggregatex.MarketFetching.{Util, Common}
 
   @base_api_url "https://api.kyber.network"
   @market_endpoint "market"
