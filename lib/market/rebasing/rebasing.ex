@@ -5,7 +5,7 @@ defmodule Dexaggregatex.Market.Rebasing do
 
 	alias Dexaggregatex.Market.Structs.{Market, ExchangeMarketData, Pair, RebasedMarket}
 	alias Dexaggregatex.Market.Rebasing
-	alias Dexaggregatex.Market.Neighbors
+	alias Dexaggregatex.Market.Rebasing.{Neighbors, Paths}
 	import Dexaggregatex.Market.Util
 	import Dexaggregatex.Util
 
@@ -47,7 +47,7 @@ defmodule Dexaggregatex.Market.Rebasing do
 	@doc """
 	Rebases all market data for a given pair to a token with a given rebase_address as the token's address.
 	"""
-	def rebase_market_data(%Pair{market_data: pmd} = p, rebase_address, %Market{pairs: pairs} = m, max_depth) do
+	defp rebase_market_data(%Pair{market_data: pmd} = p, rebase_address, %Market{pairs: pairs} = m, max_depth) do
 		Enum.reduce(pmd, %{}, fn ({exchange_id, emd}, acc) ->
 			p_id = pair_id(p)
 			brp = try_expand_path([p_id], rebase_address, max_depth, pairs, :base)
@@ -89,62 +89,23 @@ defmodule Dexaggregatex.Market.Rebasing do
 			iex> trunc(Dexaggregatex.Market.Rebasing.rebase_rate(100, dai_address, eth_address, sample_market))
 			20_000
 	"""
-	def rebase_rate(rate, rebase_address, base_address, pairs) do
+	defp rebase_rate(rate, rebase_address, base_address, pairs) do
 		case rebase_address == base_address do
 			true -> rate
 			false ->
 				rebase_pair_id = pair_id(rebase_address, base_address)
 				case Map.has_key?(pairs, rebase_pair_id) do
-					true ->
-						rate * volume_weighted_spread_average(pairs[rebase_pair_id])
-					false ->
-						0
+					true -> rate * volume_weighted_spread_average(pairs[rebase_pair_id])
+					false -> 0
 				end
 		end
-	end
-
-	@doc """
-	Calculates the combined volume across all exchanges of a given token in the market,
-	denominated in the base token of the market pair.
-
-		## Examples
-			iex> dai_address = "0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359"
-			iex> eth_address = "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
-			iex> dai_eth = %Dexaggregatex.Market.Structs.Pair{
-			...>    base_symbol: "DAI",
-			...>		quote_symbol: "ETH",
-			...>		quote_address: eth_address,
-			...>		base_address: dai_address,
-			...>		market_data: %{
-			...>			:oasis => %Dexaggregatex.Market.Structs.ExchangeMarketData{
-			...>			  last_price: 0,
-			...>			  current_bid: 0,
-			...>			  current_ask: 0,
-			...>			  base_volume: 100,
-			...>				timestamp: :os.system_time(:millisecond)
-			...>		  },
-			...>			:kyber => %Dexaggregatex.Market.Structs.ExchangeMarketData{
-			...>				last_price: 0,
-			...>				current_bid: 0,
-			...>				current_ask: 0,
-			...>				base_volume: 150,
-			...>				timestamp: :os.system_time(:millisecond)
-			...>			}
-			...>	  }
-			...>  }
-			iex> Dexaggregatex.Market.Rebasing.combined_volume_across_exchanges(dai_eth)
-			250
-
-	"""
-	def combined_volume_across_exchanges(%Pair{market_data: pmd}) do
-		Enum.reduce(pmd, 0, fn ({_exchange_id, %ExchangeMarketData{base_volume: bv}}, sum) -> sum + bv end)
 	end
 
 	@doc """
 	Deeply rebases a given rate of a given token in the market as the volume-weighted rate of all possible paths
 	from the given base_address to the given rebase_address with a maximum path length of 2 rebases.
 	"""
-	def deeply_rebase_rate(rate, original_pair, rebase_address, %Market{pairs: pairs} = _m, max_depth, brp, qrp) do
+	defp deeply_rebase_rate(rate, original_pair, rebase_address, %Market{pairs: pairs} = _m, max_depth, brp, qrp) do
 		%{combined_volume: cv, volume_weighted_sum: vws} =
 			sums_for_deep_rebasing(rate, original_pair, rebase_address, pairs, max_depth, brp, qrp)
 
@@ -322,7 +283,7 @@ defmodule Dexaggregatex.Market.Rebasing do
 			iex> Dexaggregatex.Market.Rebasing.volume_weighted_spread_average(eth_dai)
 			240.0
 	"""
-	def volume_weighted_spread_average(%Pair{market_data: pmd} = p) do
+	defp volume_weighted_spread_average(%Pair{market_data: pmd} = p) do
 		combined_volume = combined_volume_across_exchanges(p)
 		weighted_sums = %{
 			current_bids: Enum.reduce(pmd, 0,
@@ -331,5 +292,42 @@ defmodule Dexaggregatex.Market.Rebasing do
 				fn ({_eid, %ExchangeMarketData{base_volume: bv, current_ask: ca} = emd}, sum) -> sum + (bv * ca) end)
 		}
 		weighted_average(weighted_sums, combined_volume)
+	end
+
+	@doc """
+	Calculates the combined volume across all exchanges of a given token in the market,
+	denominated in the base token of the market pair.
+
+		## Examples
+			iex> dai_address = "0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359"
+			iex> eth_address = "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+			iex> dai_eth = %Dexaggregatex.Market.Structs.Pair{
+			...>    base_symbol: "DAI",
+			...>		quote_symbol: "ETH",
+			...>		quote_address: eth_address,
+			...>		base_address: dai_address,
+			...>		market_data: %{
+			...>			:oasis => %Dexaggregatex.Market.Structs.ExchangeMarketData{
+			...>			  last_price: 0,
+			...>			  current_bid: 0,
+			...>			  current_ask: 0,
+			...>			  base_volume: 100,
+			...>				timestamp: :os.system_time(:millisecond)
+			...>		  },
+			...>			:kyber => %Dexaggregatex.Market.Structs.ExchangeMarketData{
+			...>				last_price: 0,
+			...>				current_bid: 0,
+			...>				current_ask: 0,
+			...>				base_volume: 150,
+			...>				timestamp: :os.system_time(:millisecond)
+			...>			}
+			...>	  }
+			...>  }
+			iex> Dexaggregatex.Market.Rebasing.combined_volume_across_exchanges(dai_eth)
+			250
+
+	"""
+	defp combined_volume_across_exchanges(%Pair{market_data: pmd}) do
+		Enum.reduce(pmd, 0, fn ({_exchange_id, %ExchangeMarketData{base_volume: bv}}, sum) -> sum + bv end)
 	end
 end

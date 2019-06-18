@@ -1,6 +1,6 @@
 defmodule Dexaggregatex.Market.Supervisor do
   @moduledoc false
-  alias Dexaggregatex.Market.{Server, Rebasing, Neighbors}
+  alias Dexaggregatex.Market.{Server, Rebasing}
   use Supervisor
 
   def start_link(init_args) do
@@ -11,8 +11,7 @@ defmodule Dexaggregatex.Market.Supervisor do
   def init(_args) do
     children = [
       Server,
-      Rebasing.Cache,
-      Neighbors
+      Rebasing.Supervisor
     ]
     options = [
       # All children will be restarted if one crashes.

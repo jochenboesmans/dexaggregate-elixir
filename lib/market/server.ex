@@ -9,7 +9,6 @@ defmodule Dexaggregatex.Market.Server do
 	alias Dexaggregatex.MarketFetching.Structs.{ExchangeMarket, PairMarketData}
 	alias Dexaggregatex.MarketFetching.Structs.Pair, as: MarketFetchingPair
 	alias Dexaggregatex.API.Endpoint
-	alias Dexaggregatex.Market.Neighbors
 	alias Dexaggregatex.Market.Rebasing
 	import Dexaggregatex.Market.Util
 
@@ -120,7 +119,7 @@ defmodule Dexaggregatex.Market.Server do
 						}
 					}
 				new_market = %Market{pairs: Map.put(pairs, id, market_entry)}
-				Neighbors.add_pairs([market_entry], new_market)
+				Rebasing.Neighbors.add_pairs([market_entry], new_market)
 				Rebasing.Cache.clear()
 				{:update, new_market, market_entry}
 			# Append or update ExchangeMarketData of existing MarketPair if it does.

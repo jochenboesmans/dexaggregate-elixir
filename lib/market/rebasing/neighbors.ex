@@ -1,4 +1,4 @@
-defmodule Dexaggregatex.Market.Neighbors do
+defmodule Dexaggregatex.Market.Rebasing.Neighbors do
 	@moduledoc """
 	Process maintaining neighbor relations between pairs in the market.
 	"""
