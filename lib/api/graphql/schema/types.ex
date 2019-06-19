@@ -2,6 +2,11 @@ defmodule Dexaggregatex.API.GraphQL.Schema.Types do
 	@moduledoc false
 	use Absinthe.Schema.Notation
 
+	@desc "A market in which all prices and volumes are based in each pair's respective base token."
+	object :market do
+		field :pairs, list_of(:pair), description: "A list of pairs in the market."
+	end
+
 	@desc "A market in which all prices and volumes are based in the same token."
 	object :rebased_market do
 		field :base_address, :string, description: "The address of the token in which all market data is based. For example: \"0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359\" would indicate that all prices and volumes are denominated in DAI."

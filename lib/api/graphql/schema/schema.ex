@@ -7,7 +7,7 @@ defmodule Dexaggregatex.API.GraphQL.Schema do
 
 	query do
 		description "All available queries."
-		field :market, list_of(:pair) do
+		field :market, :market do
 			description "Get the market, with all market data based in each pair's respective base token."
 			arg :exchanges, list_of(non_null(:string)), description: "A list of exchanges by which to filter the market. For example: [\"kyber\",\"uniswap\"] will only return market data from Kyber and Uniswap exchanges."
 			arg :pair_ids, list_of(non_null(:id)), description: "A list of pair ids by which to filter the market. For example: [\"HTGttJeVuGjnHq+nlifj9CAlSXnr49PRE3Y+f8lP4vZKvLCcxeWjUXJ5oBEwax+BczfAC7st5HSuOSnOZjKF8A==\"] will only return market data from the ETH/DAI pair."
@@ -43,7 +43,7 @@ defmodule Dexaggregatex.API.GraphQL.Schema do
 
 	subscription do
 		description "All available subscriptions."
-		field :market, list_of(:pair) do
+		field :market, :market do
 			description "Subscribe to the market, with all market data based in each pair's respective base token."
 			arg :exchanges, list_of(non_null(:string)), description: "A list of exchanges by which to filter the market. For example: [\"kyber\",\"uniswap\"] will only return market data from Kyber and Uniswap exchanges."
 			arg :pair_ids, list_of(non_null(:id)), description: "A list of pair ids by which to filter the market. For example: [\"HTGttJeVuGjnHq+nlifj9CAlSXnr49PRE3Y+f8lP4vZKvLCcxeWjUXJ5oBEwax+BczfAC7st5HSuOSnOZjKF8A==\"] will only return market data from the ETH/DAI pair."
