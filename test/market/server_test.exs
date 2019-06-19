@@ -2,9 +2,9 @@ defmodule Test.Dexaggregatex.Market.Server do
 	@moduledoc false
 	use ExUnit.Case, async: true
 
-	alias Dexaggregatex.Market.Structs.{Market, LastUpdate, ExchangeMarketData}
-	alias Dexaggregatex.Market.Structs.Pair, as: MarketPair
-	alias Dexaggregatex.MarketFetching.Structs.{ExchangeMarket, PairMarketData}
+	alias Dexaggregatex.Market.Structs.{Market}
+	#alias Dexaggregatex.Market.Structs.Pair, as: MarketPair
+	alias Dexaggregatex.MarketFetching.Structs.{PairMarketData}
 	alias Dexaggregatex.MarketFetching.Structs.Pair, as: MarketFetchingPair
 	import Dexaggregatex.Market.Util
 

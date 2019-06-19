@@ -2,8 +2,7 @@ defmodule Test.Dexaggregatex.Market.Rebasing do
 	@moduledoc false
 	use ExUnit.Case, async: true
 
-	import Dexaggregatex.Market.Util
-	alias Dexaggregatex.Market.Structs.{Market, Pair, ExchangeMarketData}
+	alias Dexaggregatex.Market.Structs.{Pair, ExchangeMarketData}
 	alias Dexaggregatex.Market.Rebasing
 
 	doctest Rebasing
