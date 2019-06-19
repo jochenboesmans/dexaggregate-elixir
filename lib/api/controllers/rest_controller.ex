@@ -46,12 +46,10 @@ defmodule Dexaggregatex.API.RestController do
 	end
 
 	defp get_exchanges() do
-		MarketClient.exchanges_in_market()
-		|> format_exchanges_in_market()
+		MarketClient.exchanges_in_market() |> format_exchanges_in_market()
 	end
 
 	defp get_last_update() do
-		MarketClient.last_update()
-		|> format_last_update()
+		MarketClient.last_update() |> format_last_update()
 	end
 end

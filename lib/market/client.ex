@@ -54,6 +54,11 @@ defmodule Dexaggregatex.Market.Client do
 		GenServer.cast(Server, {:update, p_or_em})
 	end
 
+	@spec feed_swept_market(map) :: :ok
+	def feed_swept_market(sweeping_result) do
+		GenServer.cast(Server, {:eat_swept_market, sweeping_result})
+	end
+
 	@simple_filters [:quote_symbols, :quote_addresses, :base_symbols, :base_addresses]
 
 	defp apply_filters(m, filters) do

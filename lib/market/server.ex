@@ -60,9 +60,8 @@ defmodule Dexaggregatex.Market.Server do
 	@impl true
 	@spec handle_cast({:update, MarketFetchingPair.t}, map) :: {:noreply, map}
 	def handle_cast({:update, %MarketFetchingPair{} = p}, %{market: m} = state) do
-		%MarketFetchingPair{market_data: %PairMarketData{exchange: exchange}} = p
 		add_result = add_pair(m, p)
-		update_return(add_result, exchange, state)
+		update_return(add_result, state)
 	end
 
 	@doc """
@@ -71,9 +70,14 @@ defmodule Dexaggregatex.Market.Server do
 	@impl true
 	@spec handle_cast({:update, ExchangeMarket.t}, map) :: {:noreply, map}
 	def handle_cast({:update, %ExchangeMarket{} = em}, %{market: m} = state) do
-		%ExchangeMarket{exchange: exchange, market: pairs} = em
 		add_result = add_exchange_market(m, em)
-		update_return(add_result, exchange, state)
+		update_return(add_result, state)
+	end
+
+	def handle_cast({:eat_swept_market, %{swept_market: %Market{} = sm, removed_pairs: rp}}, state) do
+		Rebasing.Neighbors.remove_pairs(rp)
+		Rebasing.Cache.clear()
+		{:noreply, %{state | market: sm}}
 	end
 
 	@doc """
@@ -145,7 +149,6 @@ defmodule Dexaggregatex.Market.Server do
 								{:update, %Market{pairs: Map.put(pairs, id, market_entry)}, market_entry}
 						end
 				end
-
 		end
 	end
 
@@ -164,8 +167,8 @@ defmodule Dexaggregatex.Market.Server do
 		end)
 	end
 
-	@spec update_return({atom, Market.t, Pair.t}, atom, map) :: {:noreply, map}
-	defp update_return(add_result, exchange, state) do
+	@spec update_return({atom, Market.t, Pair.t}, map) :: {:noreply, map}
+	defp update_return(add_result, state) do
 		case add_result do
 			{:no_update, _updated_market, _updated_pair} -> {:noreply, state}
 			{:update, updated_market, updated_pair} ->

@@ -304,7 +304,6 @@ defmodule Dexaggregatex.Market.Rebasing do
 			...>  }
 			iex> Dexaggregatex.Market.Rebasing.combined_volume_across_exchanges(dai_eth)
 			250
-
 	"""
 	@spec combined_volume_across_exchanges(Pair.t) :: number
 	defp combined_volume_across_exchanges(%Pair{market_data: pmd}) do

@@ -53,7 +53,6 @@ defmodule Dexaggregatex.API.GraphQL.Schema do
 			arg :quote_addresses, list_of(non_null(:string)), description: "A list of quote addresses by which to filter the market. For example: [\"0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359\"] will return all market data for pairs that quote DAI. Using addresses instead of symbols assures token uniqueness (there might be multiple tokens with the same symbol)."
 
 			config fn (_args, _info) -> {:ok, topic: "*"} end
-
 			resolve &Content.get_market/3
 		end
 
@@ -68,7 +67,6 @@ defmodule Dexaggregatex.API.GraphQL.Schema do
 			arg :quote_addresses, list_of(non_null(:string)), description: "A list of quote addresses by which to filter the market. For example: [\"0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359\"] will return all market data for pairs that quote DAI. Using addresses instead of symbols assures token uniqueness (there might be multiple tokens with the same symbol)."
 
 			config fn (_args, _info) -> {:ok, topic: "*"} end
-
 			resolve &Content.get_rebased_market/3
 		end
 

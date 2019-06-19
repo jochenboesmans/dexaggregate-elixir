@@ -28,8 +28,8 @@ defmodule Dexaggregatex.Market.Rebasing.Neighbors do
 		GenServer.cast(__MODULE__, {:add_pairs, pairs, m})
 	end
 
-	def remove_pair(%Pair{} = p, %Market{} = m) do
-		GenServer.cast(__MODULE__, {:remove_pair, p, m})
+	def remove_pairs(pairs) do
+		GenServer.cast(__MODULE__, {:remove_pairs, pairs})
 	end
 
 	@impl true
@@ -116,21 +116,22 @@ defmodule Dexaggregatex.Market.Rebasing.Neighbors do
 	end
 
 	@doc """
-	Removes a given pair out of all neighbor relations.
+	Removes given pairs out of all neighbor relations.
 	"""
 	@impl true
-	def handle_cast({:remove_pair, %Pair{base_address: r_ba, quote_address: r_qa} = r_p, %Market{pairs: pairs} = m},
-				%{base_neighbors: old_bn, quote_neighbors: old_qn} = state) do
-		r_p_id = pair_id(r_p)
+	def handle_cast({:remove_pairs, pairs}, %{base_neighbors: old_bn, quote_neighbors: old_qn} = state) do
+		%{bn: new_bn, qn: new_qn} =
+			Enum.reduce(pairs, %{bn: old_bn, qn: old_qn}, fn (%Pair{base_address: ba, quote_address: qa} = p, %{bn: bn_acc, qn: qn_acc}) ->
+				p_id = pair_id(ba, qa)
+				new_bn =
+					Map.delete(bn_acc, p_id)
+					|> Enum.map(fn {n_p_id, bn} -> {n_p_id, List.delete(bn, p_id)} end)
+				new_qn =
+					Map.delete(qn_acc, p_id)
+					|> Enum.map(fn {n_p_id, qn} -> {n_p_id, List.delete(qn, p_id)} end)
 
-		new_bn =
-			Map.delete(old_bn, r_p_id)
-			|> Enum.map(fn {pair_id, bn} -> {pair_id, List.delete(bn, r_p_id)} end)
-
-		new_qn =
-			Map.delete(old_qn, r_p_id)
-			|> Enum.map(fn {pair_id, qn} -> {pair_id, List.delete(qn, r_p_id)} end)
-
+				%{bn: new_bn, qn: new_qn}
+			end)
 		{:noreply, %{state | base_neighbors: new_bn, quote_neighbors: new_qn}}
 	end
 
