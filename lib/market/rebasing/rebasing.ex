@@ -195,7 +195,7 @@ defmodule Dexaggregatex.Market.Rebasing do
 							%{acc | rate: rebase_rate(r, rp_qa, rp_ba, pairs)}
 					end
 				end)
-		weight = weighted_average(%{weighted_sum: ws}, path_length)
+		weight = weighted_average(%{weighted_sum: ws}, path_length - 1)
 
 		%{sums |
 			volume_weighted_sum: sums.volume_weighted_sum + (weight * rebased_rate),

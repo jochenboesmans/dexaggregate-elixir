@@ -4,6 +4,8 @@ GraphQL API serving aggregated market data from decentralized exchanges.
 
 ## Example usage
 
+Use the `/graphiql` endpoint to explore the API's full documentation and test queries. Below are some examples.
+
 1. Subscribe to an aggregated market model with all prices and volumes denominated in DAI (as specified by the rebaseAddress argument). 
 ```graphql
 subscription daiRebasedIdexMarket {
@@ -175,11 +177,13 @@ Example response:
 All of these subscriptions are also available as simple GraphQL queries (change `subscription` operation to `query` or
 leave it out entirely).
 
+Use the `/graphql` endpoint to connect to the API with your favorite GraphQL client.
+
 ## Architectural overview
 
 This back-end is a scalable Elixir OTP application. Its supervision tree includes highly concurrent processes, 
 such as rebasing market data to a given token by finding and traversing all paths to the token and weighting rates 
-according to their paths' volumes.
+according to their paths' volumes (see [rebasing](#on-rebasing))
 
 ### Supervision tree
 
@@ -220,6 +224,14 @@ computation of rebased markets.
 Phoenix endpoint exposing a REST and GraphQL API. Usage of the GraphQL API is recommended since it's way more flexible 
 and supports subscriptions.
 
+## On rebasing
 
+Rebased markets are pure functions of the exchange data. No external price oracles are used.
+
+Market pairs are rebased by finding and traversing paths from the original pair to a pair with a base token in which the 
+market is to be rebased. This process is bidirectional, meaning that both paths connecting to the base token of the 
+original pair and paths connecting to the quote token of the original pair are being considered. Paths are weighted by 
+their pairs' average volume. These weights are used to determine the ultimate rebased rate (making rebased rates from 
+paths with a higher average volume more important).
 
 
