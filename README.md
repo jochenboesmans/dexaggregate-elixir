@@ -1,7 +1,7 @@
 # Dexaggregatex
 
 GraphQL API serving aggregated market data from decentralized exchanges.
-It should be live at [dexaggregate.com](dexaggregate.com/graphiql).
+It should be live at [dexaggregate.com](http://dexaggregate.com/graphiql).
 
 ## Example usage
 
