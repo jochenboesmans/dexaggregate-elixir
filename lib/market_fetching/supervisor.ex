@@ -23,10 +23,6 @@ defmodule Dexaggregatex.MarketFetching.Supervisor do
 			{TokenstoreFetcher, []},
 			{UniswapFetcher, []},
 		]
-		options = [
-			strategy: :one_for_one,
-			name: __MODULE__,
-		]
-		Supervisor.init(children, options)
+		Supervisor.init(children, strategy: :one_for_one)
 	end
 end

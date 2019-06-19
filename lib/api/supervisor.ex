@@ -13,12 +13,8 @@ defmodule Dexaggregatex.API.Supervisor do
       Endpoint,
       {Absinthe.Subscription, [Endpoint]}
     ]
-    options = [
-      # All children will be restarted if one crashes.
-      strategy: :one_for_all,
-      name: __MODULE__
-    ]
-    Supervisor.init(children, options)
+    # All children will be restarted if one crashes.
+    Supervisor.init(children, strategy: :one_for_all)
   end
 
   # Tell Phoenix to update the endpoint configuration
