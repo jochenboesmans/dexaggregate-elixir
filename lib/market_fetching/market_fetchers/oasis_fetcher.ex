@@ -51,7 +51,6 @@ defmodule Dexaggregatex.MarketFetching.OasisFetcher do
 				case fetch_pair(base_symbol: bs, quote_symbol: qs) do
 					{:ok, p} ->
 						%{
-							"pair" => id,
 							"last" => lp,
 							"bid" => cb,
 							"ask" => ca,

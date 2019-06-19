@@ -4,7 +4,7 @@ defmodule Dexaggregatex.API.Format do
   """
 
   alias Dexaggregatex.Market.Structs.{Market, RebasedMarket, LastUpdate, Pair}
-  import  Dexaggregatex.Market.Util
+  import Dexaggregatex.Market.Util
 
   @spec format_market(Market.t) :: Market.t
   def format_market(%Market{pairs: pairs} = m) do

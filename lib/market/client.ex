@@ -34,8 +34,8 @@ defmodule Dexaggregatex.Market.Client do
 	"""
 	@spec rebased_market(String.t, map) :: RebasedMarket.t
 	def rebased_market(ra, filters \\ %{}) do
-		m = GenServer.call(Server, :get_market)
-		Rebasing.rebase_market(ra, m, 3)
+		GenServer.call(Server, :get_market)
+		|> Rebasing.rebase_market(ra, 3)
 		|> apply_filters(filters)
 	end
 

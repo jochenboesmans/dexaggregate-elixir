@@ -14,7 +14,7 @@ defmodule Dexaggregatex.MarketFetching.Structs do
 		* exchange: atom representing exchange (i.e. :uniswap).
 		* market: list of pairs on the exchange.
 		"""
-		@type t :: %__MODULE__{exchange: atom, market: [Pair]}
+		@type t :: %__MODULE__{exchange: atom, market: [Pair.t]}
 	end
 
 	defmodule Pair do

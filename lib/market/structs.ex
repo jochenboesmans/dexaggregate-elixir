@@ -14,7 +14,7 @@ defmodule Dexaggregatex.Market.Structs do
 		* base_address: string representing the address of the token in which this market's data is based.
 		* pairs: list of pairs in the market.
 		"""
-		@type t :: %__MODULE__{base_address: String.t, pairs: [Pair]}
+		@type t :: %__MODULE__{base_address: String.t, pairs: [Pair.t]}
 	end
 
 	defmodule Market do
