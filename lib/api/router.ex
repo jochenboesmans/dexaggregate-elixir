@@ -7,6 +7,8 @@ defmodule Dexaggregatex.API.Router do
 	pipeline :api do
 	end
 
+	get "/", RestController, :root
+
 	scope "/" do
 		pipe_through :api
 
@@ -16,7 +18,6 @@ defmodule Dexaggregatex.API.Router do
 
 		forward "/graphql", Absinthe.Plug,
 			schema: GraphQL.Schema
-
 
 		get "/:what_to_get", RestController, :get
 		get "/:what_to_get/:rebase_address", RestController, :get

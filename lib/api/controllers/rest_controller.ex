@@ -6,6 +6,10 @@ defmodule Dexaggregatex.API.RestController do
 	import API.Format
 	use API, :controller
 
+	def root(conn, _params) do
+		unsuccessful_fetch(conn)
+	end
+
 	def get(conn, %{"what_to_get" => what} = params) do
 		case what do
 			"last_update" -> successful_fetch(conn, :last_update)

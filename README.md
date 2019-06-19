@@ -1,8 +1,11 @@
 # Dexaggregatex
 
 GraphQL API serving aggregated market data from decentralized exchanges.
+It should be live at [dexaggregate.com](dexaggregate.com/graphiql).
 
 ## Example usage
+
+### GraphQL
 
 Use the `/graphiql` endpoint to explore the API's full documentation and test queries. Below are some examples.
 
@@ -21,7 +24,8 @@ subscription daiRebasedIdexMarket {
         lastPrice,
         currentAsk,
         currentBid,
-        baseVolume
+        baseVolume,
+        timestamp
       }
     }
   }
@@ -41,26 +45,28 @@ Example response:
           "baseSymbol": "ETH",
           "marketData": [
             {
-              "baseVolume": 287695.7818312325,
-              "currentAsk": 0.01105725149559744,
-              "currentBid": 0.010817169674888352,
+              "baseVolume": 405381.2493035906,
+              "currentAsk": 0.2508877262059843,
+              "currentBid": 0.2436510666697288,
               "exchange": "idex",
-              "lastPrice": 0.01105994904415046
+              "lastPrice": 0.24771709183285293,
+              "timestamp": 1560968095304
             }
           ],
-          "quoteAddress": "0x1b80eeeadcc590f305945bcc258cfa770bbe1890",
-          "quoteSymbol": "BQQQ"
+          "quoteAddress": "0x445f51299ef3307dbd75036dd896565f5b4bf7a5",
+          "quoteSymbol": "VIDT"
         },
         {
           "baseAddress": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
           "baseSymbol": "ETH",
           "marketData": [
             {
-              "baseVolume": 283869.7495462329,
-              "currentAsk": 0.13264790472392743,
-              "currentBid": 0.1246618110188598,
+              "baseVolume": 282258.1202783009,
+              "currentAsk": 0.1467061017684216,
+              "currentBid": 0.14084513715165947,
               "exchange": "idex",
-              "lastPrice": 0.1246618110188598
+              "lastPrice": 0.1467061017684216,
+              "timestamp": 1560968095299
             }
           ],
           "quoteAddress": "0x763fa6806e1acf68130d2d0f0df754c93cc546b2",
@@ -77,16 +83,65 @@ Example response:
 ```graphql
 subscription kyberMarket {
   market (exchanges: ["kyber"]) {
-    baseSymbol,
-    baseAddress,
-    quoteSymbol,
-    quoteAddress,
-    marketData {
-      exchange,
-      lastPrice,
-      currentAsk,
-      currentBid,
-      baseVolume
+    pairs {
+      baseSymbol,
+      baseAddress,
+      quoteSymbol,
+      quoteAddress,
+      marketData {
+        exchange,
+        lastPrice,
+        currentAsk,
+        currentBid,
+        baseVolume
+        timestamp
+      }
+    }
+  }
+}
+```
+
+Example response:
+
+```json5
+{
+  "data": {
+    "market": {
+      "pairs": [
+        {
+          "baseAddress": "0xf0ee6b27b759c9893ce4f094b49ad28fd15a23e4",
+          "baseSymbol": "ENG",
+          "marketData": [
+            {
+              "baseVolume": 5665.50667791,
+              "currentAsk": 452.72673789999993,
+              "currentBid": 442.41367917761823,
+              "exchange": "kyber",
+              "lastPrice": 433.02504128,
+              "timestamp": 1560968125059
+            }
+          ],
+          "quoteAddress": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+          "quoteSymbol": "ETH"
+        },
+        {
+          "baseAddress": "0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359",
+          "baseSymbol": "DAI",
+          "marketData": [
+            {
+              "baseVolume": 371179.6956054791,
+              "currentAsk": 267.123495,
+              "currentBid": 269.00754538500814,
+              "exchange": "kyber",
+              "lastPrice": 269.0017302283346,
+              "timestamp": 1560968125059
+            }
+          ],
+          "quoteAddress": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+          "quoteSymbol": "ETH"
+        },
+        ...
+      ]
     }
   }
 }
@@ -107,7 +162,8 @@ subscription lastUpdate {
         lastPrice,
         currentAsk,
         currentBid,
-        baseVolume
+        baseVolume,
+        timestamp
       }  
     }
   }
@@ -121,28 +177,22 @@ Example response:
   "data": {
     "lastUpdate": {
       "pair": {
-        "baseAddress": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
-        "baseSymbol": "ETH",
+        "baseAddress": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+        "baseSymbol": "WETH",
         "marketData": [
           {
-            "baseVolume": 14184.500348420259,
-            "currentAsk": 0.003696198287649789,
-            "currentBid": 0.003696198287649789,
-            "exchange": "uniswap",
-            "lastPrice": 0.003696396887266987
-          },
-          {
-            "baseVolume": 9188.77990512,
-            "currentAsk": 0.0036900369003690036,
-            "currentBid": 0.0037317920733527027,
-            "exchange": "oasis",
-            "lastPrice": 0.0036870997671707368
+            "baseVolume": 104.04102771634618,
+            "currentAsk": 1,
+            "currentBid": 1,
+            "exchange": "kyber",
+            "lastPrice": 1,
+            "timestamp": 1560968423771
           }
         ],
-        "quoteAddress": "0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359",
-        "quoteSymbol": "DAI"
+        "quoteAddress": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+        "quoteSymbol": "ETH"
       },
-      "utcTime": "2019-06-18 06:35:29.013503"
+      "utcTime": "2019-06-19 18:20:23.771268"
     }
   }
 }
@@ -174,14 +224,26 @@ Example response:
 }
 ```
 
+All market data is ordered by descending base volume by default.
+
 All of these subscriptions are also available as simple GraphQL queries (change `subscription` operation to `query` or
 leave it out entirely).
 
-Use the `/graphql` endpoint to connect to the API with your favorite GraphQL client.
+Use the `/graphql` endpoint to connect to the API with a GraphQL client of your choice.
+
+## REST
+
+There are simplified versions of the queries available in the HTTP REST API:
+
+* [/market](dexaggregate.com/market)
+* [/rebased_market/:rebase_address](dexaggregate.com/rebase_address/0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359)
+* [/exchanges](dexaggregate.com/exchanges)
+* [/last_update](dexaggregate.com/last_update)
+
 
 ## Architectural overview
 
-This back-end is a scalable Elixir OTP application. Its supervision tree includes highly concurrent processes, 
+This back-end is an Elixir OTP application. Its supervision tree includes concurrent processes, 
 such as rebasing market data to a given token by finding and traversing all paths to the token and weighting rates 
 according to their paths' volumes (see [rebasing](#on-rebasing))
 
