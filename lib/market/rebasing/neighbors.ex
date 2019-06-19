@@ -126,9 +126,11 @@ defmodule Dexaggregatex.Market.Rebasing.Neighbors do
 				new_bn =
 					Map.delete(bn_acc, p_id)
 					|> Enum.map(fn {n_p_id, bn} -> {n_p_id, List.delete(bn, p_id)} end)
+					|> Enum.into(%{})
 				new_qn =
 					Map.delete(qn_acc, p_id)
 					|> Enum.map(fn {n_p_id, qn} -> {n_p_id, List.delete(qn, p_id)} end)
+					|> Enum.into(%{})
 
 				%{bn: new_bn, qn: new_qn}
 			end)
