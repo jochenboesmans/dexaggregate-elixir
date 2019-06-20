@@ -99,8 +99,8 @@ defmodule Dexaggregatex.Market.Server do
 	@doc """
 	Adds a single pair to the market.
 	"""
-	@spec add_pair(Market.t, MarketFetchingPair.t)
-				:: {:no_update, Market.t, Pair.t} | {:update, Market.t, Pair.t}
+	@typep add_result :: {:update, Market.t, MarketPair.t} | :no_update
+	@spec add_pair(Market.t, MarketFetchingPair.t) :: add_result
 	defp add_pair(%Market{pairs: pairs} = m, %MarketFetchingPair{} = p) do
 		%MarketFetchingPair{
 			base_address: ba,
@@ -158,7 +158,7 @@ defmodule Dexaggregatex.Market.Server do
 						} = pairs[id].market_data[ex]
 						cond do
 							old_lp === lp && old_cb === cb && old_ca === ca && old_bv === bv ->
-								{:no_update, m, nil}
+								:no_update
 							true ->
 								market_entry = %{pairs[id] | market_data: Map.put(pairs[id].market_data, ex, emd)}
 								Rebasing.Cache.clear()
@@ -171,24 +171,37 @@ defmodule Dexaggregatex.Market.Server do
 	@doc """
 	Adds all pairs of a given ExchangeMarket to the market.
 	"""
-	@spec add_exchange_market(Market.t, ExchangeMarket.t)
-				:: {:no_update, Market.t, MarketPair.t} | {:update, Market.t, MarketPair.t}
+	@spec add_exchange_market(Market.t, ExchangeMarket.t) :: add_result
 	defp add_exchange_market(%Market{} = prev_market, %ExchangeMarket{market: m}) do
-		Enum.reduce(m, {:no_update, prev_market, nil}, fn (p, {update_status, latest_market, latest_pair}) ->
+		initial_return = %{
+			update_status: :no_update,
+			latest_market: prev_market,
+			latest_pair: nil
+		}
+		Enum.reduce(m, initial_return, fn (p, acc) ->
 			# Change update_status to :update if one or more pairs get updated.
-			case add_pair(latest_market, p) do
-				{:update, updated_market, updated_pair} -> {:update, updated_market, updated_pair}
-				{:no_update, _updated_market, _updated_pair} -> {update_status, latest_market, latest_pair}
+			case add_pair(acc.latest_market, p) do
+				{:update, updated_market, updated_pair} ->
+					%{acc | update_status: :update,
+						latest_market: updated_market,
+						latest_pair: updated_pair}
+				:no_update -> acc
 			end
 		end)
+		|> case do
+				 %{update_status: :no_update} -> :no_update
+				 upd -> {upd.update_status, upd.latest_market, upd.latest_pair}
+			 end
 	end
 
-	@spec update_return({:update, Market.t, MarketPair.t} | {:no_update, Market.t, nil}, MarketServerState.t)
-				:: {:noreply, MarketServerState.t}
-	defp update_return({update_status, %Market{} = updated_market, updated_pair}, %MarketServerState{} = state) do
-		case update_status do
+	@doc """
+	Handles the result of adding market data to the server state.
+	"""
+	@spec update_return(add_result, MarketServerState.t) :: {:noreply, MarketServerState.t}
+	defp update_return(add_result, %MarketServerState{} = state) do
+		case add_result do
 			:no_update -> {:noreply, state}
-			:update ->
+			{:update, %Market{} = updated_market, %MarketPair{} = updated_pair} ->
 				updated_last_update = %LastUpdate{
 					utc_time: NaiveDateTime.utc_now(),
 					pair: updated_pair
@@ -198,6 +211,9 @@ defmodule Dexaggregatex.Market.Server do
 		end
 	end
 
+	@doc """
+	Notifies the API that an update should be published.
+	"""
 	@spec trigger_API_broadcast(Market.t) :: Supervisor.on_start
 	defp trigger_API_broadcast(%Market{} = updated_market) do
 		Task.start(fn -> Absinthe.Subscription.publish(Endpoint, updated_market,
