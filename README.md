@@ -1,7 +1,7 @@
 # Dexaggregatex
 
 GraphQL API serving aggregated market data from decentralized exchanges.
-It should be live at [dexaggregate.com](dexaggregate.com/graphiql).
+It should be live at [dexaggregate.com](http://dexaggregate.com/graphiql).
 
 ## Example usage
 
@@ -235,10 +235,10 @@ Use the `/graphql` endpoint to connect to the API with a GraphQL client of your 
 
 There are simplified versions of the queries available in the HTTP REST API:
 
-* [/market](dexaggregate.com/market)
-* [/rebased_market/:rebase_address](dexaggregate.com/rebase_address/0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359)
-* [/exchanges](dexaggregate.com/exchanges)
-* [/last_update](dexaggregate.com/last_update)
+* [/market](http://dexaggregate.com/market)
+* [/rebased_market/:rebase_address](http://dexaggregate.com/rebased_market/0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359)
+* [/exchanges](http://dexaggregate.com/exchanges)
+* [/last_update](http://dexaggregate.com/last_update)
 
 
 ## Architectural overview
