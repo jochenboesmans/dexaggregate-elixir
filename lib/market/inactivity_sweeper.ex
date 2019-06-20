@@ -1,4 +1,18 @@
 defmodule Dexaggregatex.Market.InactivitySweeper do
+	defmodule Result do
+		alias Dexaggregatex.Market.Structs.{Market, Pair}
+		@moduledoc """
+		Data structure representing a the result of a sweep operation.
+		"""
+		@enforce_keys [:swept_market, :removed_pairs]
+		defstruct [:swept_market, :removed_pairs]
+		@typedoc """
+		* swept_market: data structure representing market without the inactive data.
+		* removed_pairs: data structure representing the pairs removed during sweeping.
+		"""
+		@type t :: %__MODULE__{swept_market: Market.t, removed_pairs: [Pair.t]}
+	end
+
 	@moduledoc """
 	Routinely sweeps inactive pairs from the market.
 	"""
@@ -6,6 +20,7 @@ defmodule Dexaggregatex.Market.InactivitySweeper do
 
 	alias Dexaggregatex.Market.Client, as: MarketClient
 	alias Dexaggregatex.Market.Structs.{Market, Pair, ExchangeMarketData}
+	alias Dexaggregatex.Market.InactivitySweeper.Result
 
 	@sweep_interval 60_000
 	@max_age 3_600_000
@@ -22,6 +37,7 @@ defmodule Dexaggregatex.Market.InactivitySweeper do
 	end
 
 	@doc """
+	Routinely sweeps inactive data from a market.
 	"""
 	@spec sweep() :: any
 	def sweep() do
@@ -30,23 +46,24 @@ defmodule Dexaggregatex.Market.InactivitySweeper do
 		|> Enum.each(fn x -> sweep_market(x) end)
 	end
 
+	@doc """
+	Sweeps inactive data from a market.
+	"""
 	@spec sweep_market(Market.t) :: any
 	defp sweep_market(%Market{pairs: pairs}) do
-		%{removed_pairs: rp, swept_pairs: sp} =
-			Enum.reduce(pairs, %{removed_pairs: [], swept_pairs: %{}},
-				fn ({p_id, %Pair{market_data: pmd} = p}, %{removed_pairs: rp, swept_pairs: sp} = pairs_acc) ->
-				swept_pmd =
-					Enum.reduce(pmd, %{}, fn ({e, %ExchangeMarketData{timestamp: ts} = emd}, acc) ->
-						case :os.system_time(:millisecond) - ts < @max_age do
-							true -> Map.put(acc, e, emd)
-							false -> acc
-						end
-					end)
-				case Enum.count(swept_pmd) do
-					0 -> %{pairs_acc | removed_pairs: [p | rp]}
-					_ -> %{pairs_acc | swept_pairs: Map.put(sp, p_id, %{p | market_data: swept_pmd})}
-				end
-			end)
-		MarketClient.feed_swept_market(%{removed_pairs: rp, swept_market: %Market{pairs: sp}})
+		Enum.reduce(pairs, %Result{swept_market: %Market{pairs: %{}}, removed_pairs: []},
+			fn ({p_id, %Pair{market_data: pmd} = p}, %Result{swept_market: %Market{pairs: sp} = sm, removed_pairs: rp} = result_acc) ->
+			swept_pmd =
+				Enum.filter(pmd, fn ({e, %ExchangeMarketData{timestamp: ts} = emd}) ->
+					:os.system_time(:millisecond) - ts < @max_age
+				end) |> Enum.into(%{})
+			case Enum.count(swept_pmd) do
+				0 -> %{result_acc | removed_pairs: [p | rp]}
+				_ -> %{result_acc |
+							 swept_market: %{sm | pairs:
+								 Map.put(sp, p_id, %{p | market_data: swept_pmd})}}
+			end
+		end)
+		|> MarketClient.eat_swept_market()
 	end
 end

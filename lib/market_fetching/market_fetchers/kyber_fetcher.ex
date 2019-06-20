@@ -39,7 +39,7 @@ defmodule Dexaggregatex.MarketFetching.KyberFetcher do
 	"""
   @spec exchange_market() :: ExchangeMarket.t
   def exchange_market() do
-    complete_market =
+		pairs =
       case get_from_api("#{@base_api_url}/#{@currencies_endpoint}") do
         {:ok, currencies} ->
           case get_from_api("#{@base_api_url}/#{@market_endpoint}") do
@@ -68,7 +68,7 @@ defmodule Dexaggregatex.MarketFetching.KyberFetcher do
 
     %ExchangeMarket{
       exchange: :kyber,
-      market: complete_market,
+			pairs: pairs,
     }
   end
 

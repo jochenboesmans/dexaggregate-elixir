@@ -6,7 +6,7 @@ defmodule Dexaggregatex.API.Format do
   alias Dexaggregatex.Market.Structs.{Market, RebasedMarket, LastUpdate, Pair}
   import Dexaggregatex.Market.Util
 
-  @spec format_market(Market.t) :: Market.t
+  @spec format_market(Market.t) :: map
   def format_market(%Market{pairs: pairs} = m) do
     fmt_pairs =
       Enum.reduce(pairs, [], fn ({k, %Pair{market_data: md} = p}, acc) ->
@@ -19,11 +19,11 @@ defmodule Dexaggregatex.API.Format do
 
         [%{new_p | market_data: new_md} | acc]
       end)
-    %{m | pairs: fmt_pairs}
+    %{pairs: fmt_pairs}
   end
 
-  @spec format_rebased_market(RebasedMarket.t) :: RebasedMarket.t
-  def format_rebased_market(%RebasedMarket{pairs: pairs} = rm) do
+  @spec format_rebased_market(RebasedMarket.t) :: map
+  def format_rebased_market(%RebasedMarket{pairs: pairs, base_address: ba} = rm) do
     fmt_pairs =
       Enum.reduce(pairs, [], fn ({k, p}, acc) ->
         new_p = Map.put(p, :id, k)
@@ -36,7 +36,7 @@ defmodule Dexaggregatex.API.Format do
       end)
       |> Enum.sort_by(&combined_volume_across_exchanges/1, &>=/2)
 
-    %{rm | pairs: fmt_pairs}
+    %{base_address: ba, pairs: fmt_pairs}
   end
 
   @spec format_exchanges_in_market(MapSet.t(atom)) :: [String.t]

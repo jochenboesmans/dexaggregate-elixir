@@ -37,7 +37,7 @@ defmodule Dexaggregatex.MarketFetching.ParadexFetcher do
 	"""
 	@spec exchange_market() :: ExchangeMarket.t
 	def exchange_market() do
-		complete_market =
+		pairs =
 			case fetch_and_decode_with_api_key("#{@base_api_url}/markets") do
 				{:ok, market} ->
 					case currencies() do
@@ -70,7 +70,7 @@ defmodule Dexaggregatex.MarketFetching.ParadexFetcher do
 
 		%ExchangeMarket{
 			exchange: :paradex,
-			market: complete_market
+			pairs: pairs
 		}
 	end
 

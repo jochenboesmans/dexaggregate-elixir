@@ -38,7 +38,7 @@ defmodule Dexaggregatex.MarketFetching.RadarFetcher do
 	"""
 	@spec exchange_market() :: ExchangeMarket.t
 	def exchange_market() do
-		complete_market =
+		pairs =
 			case fetch_and_decode("#{@base_api_url}/#{@market_endpoint}?include=base,ticker,stats") do
 				{:ok, market} ->
 					Enum.reduce(market, [], fn (p, acc) ->
@@ -69,7 +69,7 @@ defmodule Dexaggregatex.MarketFetching.RadarFetcher do
 
 		%ExchangeMarket{
 			exchange: :radar,
-			market: complete_market
+			pairs: pairs
 		}
 	end
 end

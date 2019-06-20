@@ -3,9 +3,9 @@ defmodule Dexaggregatex.Market.Server do
 		@moduledoc """
 		Data structure representing a Market Server's state.
 		"""
+		alias Dexaggregatex.Market.Structs.{Market, LastUpdate}
 		@enforce_keys [:market, :last_update]
 		defstruct [:market, :last_update]
-
 		@typedoc """
 		* market: data structure representing the latest market.
 		* last_update: data structure representing the last update to the market.
@@ -23,6 +23,7 @@ defmodule Dexaggregatex.Market.Server do
 	alias Dexaggregatex.MarketFetching.Structs.{ExchangeMarket, PairMarketData}
 	alias Dexaggregatex.MarketFetching.Structs.Pair, as: MarketFetchingPair
 	alias Dexaggregatex.Market.Server.State, as: MarketServerState
+	alias Dexaggregatex.Market.InactivitySweeper.Result, as: SweepingResult
 	alias Dexaggregatex.API.Endpoint
 	alias Dexaggregatex.Market.Rebasing
 	import Dexaggregatex.Market.Util
@@ -42,7 +43,7 @@ defmodule Dexaggregatex.Market.Server do
 	Initializes the market with a clean state.
 	"""
 	@impl true
-	@spec init(term) :: {:ok, MarketServerState.t}
+	@spec init(any) :: {:ok, %MarketServerState{market: %Market{pairs: %{}}, last_update: %LastUpdate{utc_time: nil, pair: nil}}}
 	def init(_initial_market) do
 		{:ok, %MarketServerState{market: %Market{pairs: %{}}, last_update: %LastUpdate{utc_time: nil, pair: nil}}}
 	end
@@ -88,18 +89,20 @@ defmodule Dexaggregatex.Market.Server do
 	Handles a cleaned up market.
 	"""
 	@impl true
-	@spec handle_cast({:eat_swept_market, %{swept_market: Market.t, removed_pairs: [Pair.t]}}, MarketServerState.t)
-				:: MarketServerState.t
-	def handle_cast({:eat_swept_market, %{swept_market: %Market{} = sm, removed_pairs: rp}}, %MarketServerState{} = state) do
+	@spec handle_cast({:eat_swept_market, SweepingResult.t}, MarketServerState.t) :: {:noreply, MarketServerState.t}
+	def handle_cast({:eat_swept_market, %SweepingResult{swept_market: %Market{} = sm, removed_pairs: rp}}, %MarketServerState{} = state) do
 		Rebasing.Neighbors.remove_pairs(rp)
 		Rebasing.Cache.clear()
 		{:noreply, %{state | market: sm}}
 	end
 
+	@typedoc """
+	Result of adding market data to the market.
+	"""
+	@typep add_result :: {:update, Market.t, MarketPair.t} | {:no_update, nil, nil}
 	@doc """
 	Adds a single pair to the market.
 	"""
-	@typep add_result :: {:update, Market.t, MarketPair.t} | :no_update
 	@spec add_pair(Market.t, MarketFetchingPair.t) :: add_result
 	defp add_pair(%Market{pairs: pairs} = m, %MarketFetchingPair{} = p) do
 		%MarketFetchingPair{
@@ -158,7 +161,7 @@ defmodule Dexaggregatex.Market.Server do
 						} = pairs[id].market_data[ex]
 						cond do
 							old_lp === lp && old_cb === cb && old_ca === ca && old_bv === bv ->
-								:no_update
+								{:no_update, nil, nil}
 							true ->
 								market_entry = %{pairs[id] | market_data: Map.put(pairs[id].market_data, ex, emd)}
 								Rebasing.Cache.clear()
@@ -172,26 +175,26 @@ defmodule Dexaggregatex.Market.Server do
 	Adds all pairs of a given ExchangeMarket to the market.
 	"""
 	@spec add_exchange_market(Market.t, ExchangeMarket.t) :: add_result
-	defp add_exchange_market(%Market{} = prev_market, %ExchangeMarket{market: m}) do
+	defp add_exchange_market(%Market{} = prev_market, %ExchangeMarket{pairs: pairs}) do
 		initial_return = %{
 			update_status: :no_update,
 			latest_market: prev_market,
 			latest_pair: nil
 		}
-		Enum.reduce(m, initial_return, fn (p, acc) ->
+		r = Enum.reduce(pairs, initial_return, fn (%MarketFetchingPair{} = p, acc) ->
 			# Change update_status to :update if one or more pairs get updated.
 			case add_pair(acc.latest_market, p) do
+				{:no_update, nil, nil} -> acc
 				{:update, updated_market, updated_pair} ->
 					%{acc | update_status: :update,
 						latest_market: updated_market,
 						latest_pair: updated_pair}
-				:no_update -> acc
 			end
 		end)
-		|> case do
-				 %{update_status: :no_update} -> :no_update
-				 upd -> {upd.update_status, upd.latest_market, upd.latest_pair}
-			 end
+		case r.update_status do
+			:no_update -> {:no_update, nil, nil}
+			:update -> {:update, r.latest_market, r.latest_pair}
+		end
 	end
 
 	@doc """
@@ -200,7 +203,7 @@ defmodule Dexaggregatex.Market.Server do
 	@spec update_return(add_result, MarketServerState.t) :: {:noreply, MarketServerState.t}
 	defp update_return(add_result, %MarketServerState{} = state) do
 		case add_result do
-			:no_update -> {:noreply, state}
+			{:no_update, _, _} -> {:noreply, state}
 			{:update, %Market{} = updated_market, %MarketPair{} = updated_pair} ->
 				updated_last_update = %LastUpdate{
 					utc_time: NaiveDateTime.utc_now(),

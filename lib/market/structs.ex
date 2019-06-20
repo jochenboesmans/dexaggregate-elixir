@@ -3,51 +3,6 @@ defmodule Dexaggregatex.Market.Structs do
 	Data structures representing parts of the internal market model.
 	"""
 
-	defmodule RebasedMarket do
-		@moduledoc """
-		Data structure representing a market, for which all market data is based in a specific base token.
-		"""
-		@enforce_keys [:base_address, :pairs]
-		defstruct [:base_address, :pairs]
-
-		@typedoc """
-		* base_address: string representing the address of the token in which this market's data is based.
-		* pairs: list of pairs in the market.
-		"""
-		@type t :: %__MODULE__{base_address: String.t, pairs: [Pair.t]}
-	end
-
-	defmodule Market do
-		@moduledoc """
-		Data structure representing a raw market, for which all market data is based in each pair's respective base token.
-		"""
-		@enforce_keys [:pairs]
-		defstruct [:pairs]
-
-		@typedoc """
-		* pairs: map of ids and pairs in the market.
-		"""
-		@type t :: %__MODULE__{pairs: map}
-	end
-
-	defmodule Pair do
-		@moduledoc """
-		Data structure representing a pair in the market.
-		"""
-		@enforce_keys [:base_symbol, :quote_symbol, :quote_address, :base_address, :market_data]
-		defstruct [:base_symbol, :quote_symbol, :quote_address, :base_address, :market_data]
-
-		@typedoc """
-		* base_symbol: string representing the symbol of the base token.
-		* quote_symbol: string representing the symbol of the quote token.
-		* base_address: string representing the address of the base token.
-		* quote_symbol: string representing the address of the quote token.
-		* market_data: struct representing this pair's market data.
-		"""
-		@type t :: %__MODULE__{base_symbol: String.t, quote_symbol: String.t, base_address: String.t,
-							 quote_address: String.t, market_data: [ExchangeMarketData.t]}
-	end
-
 	defmodule ExchangeMarketData do
 		@moduledoc """
 		Data structure containing exchange-specific market data for a pair.
@@ -66,7 +21,55 @@ defmodule Dexaggregatex.Market.Structs do
 								 current_ask: number, base_volume: number, timestamp: integer}
 	end
 
+	defmodule Pair do
+		alias Dexaggregatex.Market.Structs.ExchangeMarketData
+		@moduledoc """
+		Data structure representing a pair in the market.
+		"""
+		@enforce_keys [:base_symbol, :quote_symbol, :quote_address, :base_address, :market_data]
+		defstruct [:base_symbol, :quote_symbol, :quote_address, :base_address, :market_data]
+
+		@typedoc """
+		* base_symbol: string representing the symbol of the base token.
+		* quote_symbol: string representing the symbol of the quote token.
+		* base_address: string representing the address of the base token.
+		* quote_symbol: string representing the address of the quote token.
+		* market_data: struct representing this pair's market data.
+		"""
+		@type t :: %__MODULE__{base_symbol: String.t, quote_symbol: String.t, base_address: String.t,
+								 quote_address: String.t, market_data: [ExchangeMarketData.t]}
+	end
+
+	defmodule RebasedMarket do
+		alias Dexaggregatex.Market.Structs.Pair
+		@moduledoc """
+		Data structure representing a market, for which all market data is based in a specific base token.
+		"""
+		@enforce_keys [:base_address, :pairs]
+		defstruct [:base_address, :pairs]
+
+		@typedoc """
+		* base_address: string representing the address of the token in which this market's data is based.
+		* pairs: map of pair_id => pair in the market.
+		"""
+		@type t :: %__MODULE__{base_address: String.t, pairs: %{optional(String.t) => Pair.t}}
+	end
+
+	defmodule Market do
+		@moduledoc """
+		Data structure representing a raw market, for which all market data is based in each pair's respective base token.
+		"""
+		@enforce_keys [:pairs]
+		defstruct [:pairs]
+
+		@typedoc """
+		* pairs: map of pair_id => pair in the market.
+		"""
+		@type t :: %__MODULE__{pairs: %{optional(String.t) => Pair.t}}
+	end
+
 	defmodule LastUpdate do
+		alias Dexaggregatex.Market.Structs.Pair
 		@moduledoc """
 		Data structure representing the last update of the market.
 		"""

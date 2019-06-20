@@ -46,7 +46,7 @@ defmodule Dexaggregatex.MarketFetching.OasisFetcher do
 	def exchange_market() do
 		c = @currencies
 
-		complete_market =
+		pairs =
 			Enum.reduce(@pairs, [], fn ([bs, qs], acc) ->
 				case fetch_pair(base_symbol: bs, quote_symbol: qs) do
 					{:ok, p} ->
@@ -67,7 +67,7 @@ defmodule Dexaggregatex.MarketFetching.OasisFetcher do
 
 		%ExchangeMarket{
 			exchange: :oasis,
-			market: complete_market
+			pairs: pairs
 		}
 	end
 

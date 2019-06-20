@@ -112,7 +112,7 @@ defmodule Dexaggregatex.Market.Rebasing.Neighbors do
 				Map.put(acc, new_p_id, new_qn_entry)
 			end)
 
-		{:noreply, %{state | base_neighbors: new_bn, quote_neighbors: new_qn}}
+		{:noreply, %{base_neighbors: new_bn, quote_neighbors: new_qn}}
 	end
 
 	@doc """
@@ -120,8 +120,9 @@ defmodule Dexaggregatex.Market.Rebasing.Neighbors do
 	"""
 	@impl true
 	def handle_cast({:remove_pairs, pairs}, %{base_neighbors: old_bn, quote_neighbors: old_qn} = state) do
-		%{bn: new_bn, qn: new_qn} =
-			Enum.reduce(pairs, %{bn: old_bn, qn: old_qn}, fn (%Pair{base_address: ba, quote_address: qa} = p, %{bn: bn_acc, qn: qn_acc}) ->
+		updated_state =
+			Enum.reduce(pairs, %{base_neighbors: old_bn, quote_neighbors: old_qn},
+				fn (%Pair{base_address: ba, quote_address: qa} = p, %{base_neighbors: bn_acc, quote_neighbors: qn_acc}) ->
 				p_id = pair_id(ba, qa)
 				new_bn =
 					Map.delete(bn_acc, p_id)
@@ -132,9 +133,8 @@ defmodule Dexaggregatex.Market.Rebasing.Neighbors do
 					|> Enum.map(fn {n_p_id, qn} -> {n_p_id, List.delete(qn, p_id)} end)
 					|> Enum.into(%{})
 
-				%{bn: new_bn, qn: new_qn}
+				%{base_neighbors: new_bn, quote_neighbors: new_qn}
 			end)
-		{:noreply, %{state | base_neighbors: new_bn, quote_neighbors: new_qn}}
+		{:noreply, updated_state}
 	end
-
 end

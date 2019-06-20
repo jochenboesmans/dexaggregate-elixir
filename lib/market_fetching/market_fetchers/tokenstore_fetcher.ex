@@ -37,7 +37,7 @@ defmodule Dexaggregatex.MarketFetching.TokenstoreFetcher do
 	"""
 	@spec exchange_market() :: ExchangeMarket.t
 	defp exchange_market() do
-		complete_market =
+		pairs =
 			case fetch_and_decode("#{@base_api_url}/#{@market_endpoint}") do
 				{:ok, market} ->
 					Enum.reduce(market, [],  fn ({_k, p}, acc) ->
@@ -64,7 +64,7 @@ defmodule Dexaggregatex.MarketFetching.TokenstoreFetcher do
 
 		%ExchangeMarket{
 			exchange: :tokenstore,
-			market: complete_market
+			pairs: pairs
 		}
 	end
 end

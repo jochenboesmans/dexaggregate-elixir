@@ -39,7 +39,7 @@ defmodule Dexaggregatex.MarketFetching.UniswapFetcher do
 	"""
 	@spec exchange_market() :: ExchangeMarket.t
 	def exchange_market() do
-		complete_market =
+		pairs =
 			case fetch_data() do
 				{:ok, %{exchanges: exs, exchangeDayDatas: edds}} ->
 					Enum.reduce(exs, [], fn (e, acc) ->
@@ -71,7 +71,7 @@ defmodule Dexaggregatex.MarketFetching.UniswapFetcher do
 
 		%ExchangeMarket{
 			exchange: :uniswap,
-			market: complete_market
+			pairs: pairs
 		}
 	end
 

@@ -6,6 +6,7 @@ defmodule Dexaggregatex.Market.Client do
 	alias Dexaggregatex.Market.Structs.{Market, RebasedMarket, LastUpdate}
 	alias Dexaggregatex.MarketFetching.Structs.{Pair, ExchangeMarket}
 	alias Dexaggregatex.Market.Rebasing
+	alias Dexaggregatex.Market.InactivitySweeper.Result, as: SweepingResult
 
 	@doc """
 	Get the latest unrebased market data.
@@ -54,9 +55,9 @@ defmodule Dexaggregatex.Market.Client do
 		GenServer.cast(Server, {:update, p_or_em})
 	end
 
-	@spec feed_swept_market(map) :: :ok
-	def feed_swept_market(sweeping_result) do
-		GenServer.cast(Server, {:eat_swept_market, sweeping_result})
+	@spec eat_swept_market(SweepingResult.t) :: :ok
+	def eat_swept_market(%SweepingResult{} = sr) do
+		GenServer.cast(Server, {:eat_swept_market, sr})
 	end
 
 	@simple_filters [:quote_symbols, :quote_addresses, :base_symbols, :base_addresses]

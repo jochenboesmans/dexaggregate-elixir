@@ -88,7 +88,7 @@ defmodule Dexaggregatex.MarketFetching.DdexFetcher do
 	"""
 	@spec initial_exchange_market(%{required(String.t) => String.t}) :: ExchangeMarket.t
   def initial_exchange_market(c) do
-    complete_market =
+		pairs =
       case market() do
         {:ok, m} ->
           Enum.reduce(m, [], fn (p, acc) ->
@@ -102,7 +102,7 @@ defmodule Dexaggregatex.MarketFetching.DdexFetcher do
 
     %ExchangeMarket{
       exchange: :ddex,
-      market: complete_market,
+			pairs: pairs,
     }
   end
 

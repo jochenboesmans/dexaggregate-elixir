@@ -43,7 +43,7 @@ defmodule Dexaggregatex.MarketFetching.IdexFetcher do
   """
   @spec exchange_market() :: ExchangeMarket.t
   def exchange_market() do
-    complete_market =
+    pairs =
       case post_and_decode("#{@base_api_url}/#{@currencies_endpoint}") do
         {:ok, c} ->
           case post_and_decode("#{@base_api_url}/#{@market_endpoint}") do
@@ -72,7 +72,7 @@ defmodule Dexaggregatex.MarketFetching.IdexFetcher do
 
     %ExchangeMarket{
       exchange: :idex,
-      market: complete_market,
+      pairs: pairs,
     }
   end
 
