@@ -1,4 +1,18 @@
 defmodule Dexaggregatex.Market.Server do
+	defmodule State do
+		@moduledoc """
+		Data structure representing a Market Server's state.
+		"""
+		@enforce_keys [:market, :last_update]
+		defstruct [:market, :last_update]
+
+		@typedoc """
+		* market: data structure representing the latest market.
+		* last_update: data structure representing the last update to the market.
+		"""
+		@type t :: %__MODULE__{market: Market.t, last_update: LastUpdate.t}
+	end
+
 	@moduledoc """
 	Stateful process maintaining the global market model.
 	"""
@@ -8,6 +22,7 @@ defmodule Dexaggregatex.Market.Server do
 	alias Dexaggregatex.Market.Structs.Pair, as: MarketPair
 	alias Dexaggregatex.MarketFetching.Structs.{ExchangeMarket, PairMarketData}
 	alias Dexaggregatex.MarketFetching.Structs.Pair, as: MarketFetchingPair
+	alias Dexaggregatex.Market.Server.State, as: MarketServerState
 	alias Dexaggregatex.API.Endpoint
 	alias Dexaggregatex.Market.Rebasing
 	import Dexaggregatex.Market.Util
@@ -27,20 +42,17 @@ defmodule Dexaggregatex.Market.Server do
 	Initializes the market with a clean state.
 	"""
 	@impl true
-	@spec init(term) :: {:ok, map}
+	@spec init(term) :: {:ok, MarketServerState.t}
 	def init(_initial_market) do
-		{:ok, %{
-			market: %Market{pairs: %{}},
-			last_update: %LastUpdate{utc_time: nil, pair: nil}
-		}}
+		{:ok, %MarketServerState{market: %Market{pairs: %{}}, last_update: %LastUpdate{utc_time: nil, pair: nil}}}
 	end
 
 	@doc """
 	Returns the latest unrebased market data, as maintained by this process.
 	"""
 	@impl true
-	@spec handle_call(:get_market, GenServer.from, map) :: {:reply, Market.t, map}
-	def handle_call(:get_market, _from,  %{market: m} = state) do
+	@spec handle_call(:get_market, GenServer.from, MarketServerState.t) :: {:reply, Market.t, MarketServerState.t}
+	def handle_call(:get_market, _from,  %MarketServerState{market: %Market{} = m} = state) do
 		{:reply, m, state}
 	end
 
@@ -48,9 +60,9 @@ defmodule Dexaggregatex.Market.Server do
 	Returns a data structure containing data about the last market update.
 	"""
 	@impl true
-	@spec handle_call(:get_last_update, GenServer.from, map)
-				:: {:reply, LastUpdate.t, map}
-	def handle_call(:get_last_update, _from, %{last_update: lu} = state) do
+	@spec handle_call(:get_last_update, GenServer.from, MarketServerState.t)
+				:: {:reply, LastUpdate.t, MarketServerState.t}
+	def handle_call(:get_last_update, _from, %MarketServerState{last_update: %LastUpdate{} = lu} = state) do
 		{:reply, lu, state}
 	end
 
@@ -58,23 +70,27 @@ defmodule Dexaggregatex.Market.Server do
 	Updates the market with the given pair.
 	"""
 	@impl true
-	@spec handle_cast({:update, MarketFetchingPair.t}, map) :: {:noreply, map}
-	def handle_cast({:update, %MarketFetchingPair{} = p}, %{market: m} = state) do
-		add_result = add_pair(m, p)
-		update_return(add_result, state)
+	@spec handle_cast({:update, MarketFetchingPair.t}, MarketServerState.t) :: {:noreply, MarketServerState.t}
+	def handle_cast({:update, %MarketFetchingPair{} = p}, %MarketServerState{market: %Market{} = m} = state) do
+		add_pair(m, p) |> update_return(state)
 	end
 
 	@doc """
 	Updates the market with the given exchange market.
 	"""
 	@impl true
-	@spec handle_cast({:update, ExchangeMarket.t}, map) :: {:noreply, map}
-	def handle_cast({:update, %ExchangeMarket{} = em}, %{market: m} = state) do
-		add_result = add_exchange_market(m, em)
-		update_return(add_result, state)
+	@spec handle_cast({:update, ExchangeMarket.t}, MarketServerState.t) :: {:noreply, MarketServerState.t}
+	def handle_cast({:update, %ExchangeMarket{} = em}, %MarketServerState{market: %Market{} = m} = state) do
+		add_exchange_market(m, em) |> update_return(state)
 	end
 
-	def handle_cast({:eat_swept_market, %{swept_market: %Market{} = sm, removed_pairs: rp}}, state) do
+	@doc """
+	Handles a cleaned up market.
+	"""
+	@impl true
+	@spec handle_cast({:eat_swept_market, %{swept_market: Market.t, removed_pairs: [Pair.t]}}, MarketServerState.t)
+				:: MarketServerState.t
+	def handle_cast({:eat_swept_market, %{swept_market: %Market{} = sm, removed_pairs: rp}}, %MarketServerState{} = state) do
 		Rebasing.Neighbors.remove_pairs(rp)
 		Rebasing.Cache.clear()
 		{:noreply, %{state | market: sm}}
@@ -156,7 +172,7 @@ defmodule Dexaggregatex.Market.Server do
 	Adds all pairs of a given ExchangeMarket to the market.
 	"""
 	@spec add_exchange_market(Market.t, ExchangeMarket.t)
-				:: {:no_update, Market.t, Pair.t} | {:update, Market.t, Pair.t}
+				:: {:no_update, Market.t, MarketPair.t} | {:update, Market.t, MarketPair.t}
 	defp add_exchange_market(%Market{} = prev_market, %ExchangeMarket{market: m}) do
 		Enum.reduce(m, {:no_update, prev_market, nil}, fn (p, {update_status, latest_market, latest_pair}) ->
 			# Change update_status to :update if one or more pairs get updated.
@@ -167,11 +183,12 @@ defmodule Dexaggregatex.Market.Server do
 		end)
 	end
 
-	@spec update_return({atom, Market.t, Pair.t}, map) :: {:noreply, map}
-	defp update_return(add_result, state) do
-		case add_result do
-			{:no_update, _updated_market, _updated_pair} -> {:noreply, state}
-			{:update, updated_market, updated_pair} ->
+	@spec update_return({:update, Market.t, MarketPair.t} | {:no_update, Market.t, nil}, MarketServerState.t)
+				:: {:noreply, MarketServerState.t}
+	defp update_return({update_status, %Market{} = updated_market, updated_pair}, %MarketServerState{} = state) do
+		case update_status do
+			:no_update -> {:noreply, state}
+			:update ->
 				updated_last_update = %LastUpdate{
 					utc_time: NaiveDateTime.utc_now(),
 					pair: updated_pair
@@ -181,12 +198,10 @@ defmodule Dexaggregatex.Market.Server do
 		end
 	end
 
-	defp trigger_API_broadcast(updated_market) do
-		Supervisor.start_link([
-			{Task, fn -> Absinthe.Subscription.publish(
-										 Endpoint, updated_market,
-										 [market: "*", rebased_market: "*", exchanges: "*", last_update: "*"]) end}
-		], strategy: :one_for_one)
+	@spec trigger_API_broadcast(Market.t) :: Supervisor.on_start
+	defp trigger_API_broadcast(%Market{} = updated_market) do
+		Task.start(fn -> Absinthe.Subscription.publish(Endpoint, updated_market,
+											 [market: "*", rebased_market: "*", exchanges: "*", last_update: "*"]) end)
 	end
 
 end
