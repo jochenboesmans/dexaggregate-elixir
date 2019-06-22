@@ -27,7 +27,7 @@ defmodule Dexaggregatex.MarketFetching.UniswapFetcher do
 	@doc """
 	Polls the Uniswap market and updates the global Market accordingly.
 	"""
-	@spec poll() :: any
+	@spec poll() :: :ok
 	def poll() do
 		Stream.interval(@poll_interval)
 		|> Stream.map(fn _x -> exchange_market() end)

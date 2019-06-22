@@ -2,12 +2,11 @@ defmodule Dexaggregatex.API.Format do
   @moduledoc """
   Functions for formatting data to API-appropriate structures.
   """
-
   alias Dexaggregatex.Market.Structs.{Market, RebasedMarket, LastUpdate, Pair}
   import Dexaggregatex.Market.Util
 
   @spec format_market(Market.t) :: map
-  def format_market(%Market{pairs: pairs} = m) do
+  def format_market(%Market{pairs: pairs}) do
     fmt_pairs =
       Enum.reduce(pairs, [], fn ({k, %Pair{market_data: md} = p}, acc) ->
         new_p = Map.put(p, :id, k)
@@ -23,7 +22,7 @@ defmodule Dexaggregatex.API.Format do
   end
 
   @spec format_rebased_market(RebasedMarket.t) :: map
-  def format_rebased_market(%RebasedMarket{pairs: pairs, base_address: ba} = rm) do
+  def format_rebased_market(%RebasedMarket{pairs: pairs, base_address: ba}) do
     fmt_pairs =
       Enum.reduce(pairs, [], fn ({k, p}, acc) ->
         new_p = Map.put(p, :id, k)

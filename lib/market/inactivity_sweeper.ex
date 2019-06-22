@@ -39,7 +39,7 @@ defmodule Dexaggregatex.Market.InactivitySweeper do
 	@doc """
 	Routinely sweeps inactive data from a market.
 	"""
-	@spec sweep() :: any
+	@spec sweep() :: :ok
 	def sweep() do
 		Stream.interval(@sweep_interval)
 		|> Stream.map(fn _x -> MarketClient.market() end)
@@ -49,12 +49,12 @@ defmodule Dexaggregatex.Market.InactivitySweeper do
 	@doc """
 	Sweeps inactive data from a market.
 	"""
-	@spec sweep_market(Market.t) :: any
+	@spec sweep_market(Market.t) :: :ok
 	defp sweep_market(%Market{pairs: pairs}) do
 		Enum.reduce(pairs, %Result{swept_market: %Market{pairs: %{}}, removed_pairs: []},
 			fn ({p_id, %Pair{market_data: pmd} = p}, %Result{swept_market: %Market{pairs: sp} = sm, removed_pairs: rp} = result_acc) ->
 			swept_pmd =
-				Enum.filter(pmd, fn ({e, %ExchangeMarketData{timestamp: ts} = emd}) ->
+				Enum.filter(pmd, fn ({_e, %ExchangeMarketData{timestamp: ts}}) ->
 					:os.system_time(:millisecond) - ts < @max_age
 				end) |> Enum.into(%{})
 			case Enum.count(swept_pmd) do

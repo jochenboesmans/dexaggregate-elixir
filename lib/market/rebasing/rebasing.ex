@@ -2,7 +2,6 @@ defmodule Dexaggregatex.Market.Rebasing do
 	@moduledoc """
 	Logic for rebasing pairs of a market to a token, denominating all rates in this token.
 	"""
-
 	alias Dexaggregatex.Market.Structs.{Market, ExchangeMarketData, Pair, RebasedMarket}
 	alias Dexaggregatex.Market.Rebasing
 	alias Dexaggregatex.Market.Rebasing.Neighbors
@@ -31,7 +30,7 @@ defmodule Dexaggregatex.Market.Rebasing do
 						Map.put(acc, k, result)
 					end)
 
-					Rebasing.Cache.add({:rebase_market, {rebase_address, max_depth}, rebased_market})
+					Rebasing.Cache.add({:rebase_market, {rebase_address, max_depth}}, rebased_market)
 					rebased_market
 			end
 
@@ -83,8 +82,8 @@ defmodule Dexaggregatex.Market.Rebasing do
 	@spec expand_path([String.t], String.t, integer, map, :base | :quote) :: [String.t]
 	defp expand_path([last_p_id | _] = path_to_expand, rebase_address, max_depth, pairs, direction) do
 		case direction do
-			:base -> Neighbors.get_base_neighbors(last_p_id)
-			:quote -> Neighbors.get_quote_neighbors(last_p_id)
+			:base -> Neighbors.get_neighbors(:base, last_p_id)
+			:quote -> Neighbors.get_neighbors(:quote, last_p_id)
 		end
 
 		# Make list of all paths that expand the one pair expanded paths.

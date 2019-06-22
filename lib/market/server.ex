@@ -104,7 +104,7 @@ defmodule Dexaggregatex.Market.Server do
 	Adds a single pair to the market.
 	"""
 	@spec add_pair(Market.t, MarketFetchingPair.t) :: add_result
-	defp add_pair(%Market{pairs: pairs} = m, %MarketFetchingPair{} = p) do
+	defp add_pair(%Market{pairs: pairs}, %MarketFetchingPair{} = p) do
 		%MarketFetchingPair{
 			base_address: ba,
 			quote_address: qa,

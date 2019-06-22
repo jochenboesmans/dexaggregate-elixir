@@ -93,7 +93,7 @@ defmodule Dexaggregatex.MarketFetching.Common do
 	@doc """
 	Updates the global market with the given exchange market if it holds valid pairs.
 	"""
-	@spec maybe_update(ExchangeMarket.t) :: any
+	@spec maybe_update(ExchangeMarket.t) :: :ok | nil
 	def maybe_update(%ExchangeMarket{pairs: pairs} = x) do
 		case pairs do
 			nil ->

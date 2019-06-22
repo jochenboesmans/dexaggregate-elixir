@@ -29,11 +29,22 @@ defmodule Dexaggregatex.MarketFetching.DdexFetcher do
 	@doc """
 	Starts all processes to routinely get the latest Ddex market and update the global Market accordingly.
 	"""
-	@spec start() :: any
+	@spec start() :: :ok
 	def start() do
-		{:ok, fetched_currencies} = currencies()
-		maybe_update(initial_exchange_market(fetched_currencies))
-		subscribe_to_market(fetched_currencies)
+		case currencies() do
+			{:ok, fetched_currencies} ->
+				maybe_update(initial_exchange_market(fetched_currencies))
+				try_subscribe_to_market(fetched_currencies)
+			_ -> start()
+		end
+	end
+
+	@spec try_subscribe_to_market(map) :: :ok
+	defp try_subscribe_to_market(currencies) do
+		case subscribe_to_market(currencies) do
+			:error -> try_subscribe_to_market(currencies)
+			_ -> :ok
+		end
 	end
 
 	@doc """
@@ -61,7 +72,8 @@ defmodule Dexaggregatex.MarketFetching.DdexFetcher do
 	Handles all incoming text messages from a subscription, updating the global market when it's market data.
 	"""
 	@spec handle_frame({:text, String.t}, map) :: {:ok, map}
-  def handle_frame({:text, message}, %{currencies: c} = state) do
+  @impl true
+	def handle_frame({:text, message}, %{currencies: c} = state) do
     {:ok, p} = Poison.decode(message)
 
     case p do
@@ -81,6 +93,7 @@ defmodule Dexaggregatex.MarketFetching.DdexFetcher do
 	Handles all send frame casts, sending the frame to the WebSocket endpoint.
 	"""
 	@spec handle_cast({:send, WebSockex.frame}, map) :: {:reply, WebSockex.frame, map}
+ 	@impl true
   def handle_cast({:send, frame}, state), do: {:reply, frame, state}
 
 	@doc """
@@ -88,7 +101,7 @@ defmodule Dexaggregatex.MarketFetching.DdexFetcher do
 	"""
 	@spec initial_exchange_market(%{required(String.t) => String.t}) :: ExchangeMarket.t
   def initial_exchange_market(c) do
-		pairs =
+		fetched_pairs =
       case market() do
         {:ok, m} ->
           Enum.reduce(m, [], fn (p, acc) ->
@@ -102,7 +115,7 @@ defmodule Dexaggregatex.MarketFetching.DdexFetcher do
 
     %ExchangeMarket{
       exchange: :ddex,
-			pairs: pairs,
+			pairs: fetched_pairs,
     }
   end
 
