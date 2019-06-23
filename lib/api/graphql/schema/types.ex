@@ -1,5 +1,7 @@
 defmodule Dexaggregatex.API.GraphQL.Schema.Types do
-	@moduledoc false
+	@moduledoc """
+	API-specific GraphQL types.
+	"""
 	use Absinthe.Schema.Notation
 
 	@desc "A market in which all prices and volumes are based in each pair's respective base token."

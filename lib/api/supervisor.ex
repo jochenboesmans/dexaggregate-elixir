@@ -1,6 +1,7 @@
 defmodule Dexaggregatex.API.Supervisor do
   @moduledoc false
   use Supervisor
+
   alias Dexaggregatex.API.Endpoint
 
   @spec start_link(any) :: Supervisor.on_start

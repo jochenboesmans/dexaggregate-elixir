@@ -1,6 +1,6 @@
 defmodule Dexaggregatex.API.GraphQL.Resolvers.Content do
 	@moduledoc """
-	Absinthe resolvers.
+	Absinthe resolvers for GraphQL queries.
 	"""
 	alias Dexaggregatex.Market.Client, as: MarketClient
 	alias Dexaggregatex.Market.Structs.{RebasedMarket, Market, LastUpdate}

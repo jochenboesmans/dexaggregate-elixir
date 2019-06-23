@@ -1,5 +1,7 @@
 defmodule Dexaggregatex.API.GraphQL.Schema do
-	@moduledoc false
+	@moduledoc """
+	Full GraphQL schema.
+	"""
 	use Absinthe.Schema
 
 	import_types Dexaggregatex.API.GraphQL.Schema.Types
