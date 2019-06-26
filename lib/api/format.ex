@@ -37,10 +37,10 @@ defmodule Dexaggregatex.API.Format do
   Formats a last update into a queryable structure.
   """
   @spec format_last_update(LastUpdate.t) :: map
-  def format_last_update(%LastUpdate{utc_time: ut, pair: pair}) do
+  def format_last_update(%LastUpdate{utc_time: ut, pair: pair, timestamp: ts}) do
     case pair == nil do
-      true -> %{utc_time: nil, pair: nil}
-      false -> %{utc_time: NaiveDateTime.to_string(ut), pair: format_pair(pair)}
+      true -> %{utc_time: nil, pair: nil, timestamp: nil}
+      false -> %{utc_time: NaiveDateTime.to_string(ut), pair: format_pair(pair), timestamp: ts}
     end
   end
 

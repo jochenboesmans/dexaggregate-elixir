@@ -43,9 +43,9 @@ defmodule Dexaggregatex.Market.Server do
 	Initializes the market with a clean state.
 	"""
 	@impl true
-	@spec init(any) :: {:ok, %MarketServerState{market: %Market{pairs: %{}}, last_update: %LastUpdate{utc_time: nil, pair: nil}}}
+	@spec init(any) :: {:ok, %MarketServerState{market: %Market{pairs: %{}}, last_update: %LastUpdate{utc_time: nil, pair: nil, timestamp: nil}}}
 	def init(_initial_market) do
-		{:ok, %MarketServerState{market: %Market{pairs: %{}}, last_update: %LastUpdate{utc_time: nil, pair: nil}}}
+		{:ok, %MarketServerState{market: %Market{pairs: %{}}, last_update: %LastUpdate{utc_time: nil, pair: nil, timestamp: nil}}}
 	end
 
 	@doc """
@@ -207,6 +207,7 @@ defmodule Dexaggregatex.Market.Server do
 			{:update, %Market{} = updated_market, %MarketPair{} = updated_pair} ->
 				updated_last_update = %LastUpdate{
 					utc_time: NaiveDateTime.utc_now(),
+					timestamp: :os.system_time(:millisecond),
 					pair: updated_pair
 				}
 				trigger_API_broadcast(updated_market)

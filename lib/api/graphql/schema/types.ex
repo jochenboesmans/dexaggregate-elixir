@@ -39,5 +39,6 @@ defmodule Dexaggregatex.API.GraphQL.Schema.Types do
 	object :last_update do
 		field :utc_time, :string, description: "The UTC time of the last update."
 		field :pair, :pair, description: "The pair that was last updated."
+		field :timestamp, :integer, description: "The UNIX timestamp of the last update."
 	end
 end

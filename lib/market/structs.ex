@@ -76,14 +76,15 @@ defmodule Dexaggregatex.Market.Structs do
 		@moduledoc """
 		Data structure representing the last update of the market.
 		"""
-		@enforce_keys [:utc_time, :pair]
-		defstruct [:utc_time, :pair]
+		@enforce_keys [:utc_time, :pair, :timestamp]
+		defstruct [:utc_time, :pair, :timestamp]
 
 		@typedoc """
 		* utc_time: struct representing the utc time of the last update.
 		* pair: struct representing the pair that was last updated.
+		* timestamp: integer representing the timestamp of the last update.
 		"""
-		@type t :: %__MODULE__{utc_time: NaiveDateTime.t, pair: Pair.t}
+		@type t :: %__MODULE__{utc_time: NaiveDateTime.t, pair: Pair.t, timestamp: integer}
 	end
 
 end
