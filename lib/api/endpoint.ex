@@ -1,8 +1,9 @@
 defmodule Dexaggregatex.API.Endpoint do
-	alias Dexaggregatex.API.{Socket, Router}
-
+	@moduledoc false
 	use Phoenix.Endpoint, otp_app: :dexaggregatex
 	use Absinthe.Phoenix.Endpoint
+
+	alias Dexaggregatex.API.{Socket, Router}
 
 	socket "/socket", Socket,
  		websocket: true,
@@ -26,6 +27,8 @@ defmodule Dexaggregatex.API.Endpoint do
 
 	plug Plug.MethodOverride
 	plug Plug.Head
+
+	plug CORSPlug, origin: "*"
 
 	plug Router
 end

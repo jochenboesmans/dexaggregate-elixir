@@ -1,5 +1,7 @@
 defmodule Dexaggregatex.API.GraphQL.Schema do
-	@moduledoc false
+	@moduledoc """
+	Full GraphQL schema.
+	"""
 	use Absinthe.Schema
 
 	import_types Dexaggregatex.API.GraphQL.Schema.Types
@@ -15,7 +17,7 @@ defmodule Dexaggregatex.API.GraphQL.Schema do
 			arg :base_addresses, list_of(non_null(:string)), description: "A list of base addresses by which to filter the market. For example: [\"0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\"] will return all market data for pairs based in ETH. Using addresses instead of symbols assures token uniqueness (there might be multiple tokens with the same symbol)."
 			arg :quote_symbols, list_of(non_null(:string)), description: "A list of quote symbols by which to filter the market. For example: [\"DAI\"] will return all market data for pairs that quote DAI."
 			arg :quote_addresses, list_of(non_null(:string)), description: "A list of quote addresses by which to filter the market. For example: [\"0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359\"] will return all market data for pairs that quote DAI. Using addresses instead of symbols assures token uniqueness (there might be multiple tokens with the same symbol)."
-			resolve &Content.get_market/3
+			resolve &Content.get_market/2
 		end
 
 		field :rebased_market, :rebased_market do
@@ -27,17 +29,17 @@ defmodule Dexaggregatex.API.GraphQL.Schema do
 			arg :base_addresses, list_of(non_null(:string)), description: "A list of base addresses by which to filter the market. For example: [\"0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\"] will return all market data for pairs based in ETH. Using addresses instead of symbols assures token uniqueness (there might be multiple tokens with the same symbol)."
 			arg :quote_symbols, list_of(non_null(:string)), description: "A list of quote symbols by which to filter the market. For example: [\"DAI\"] will return all market data for pairs that quote DAI."
 			arg :quote_addresses, list_of(non_null(:string)), description: "A list of quote addresses by which to filter the market. For example: [\"0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359\"] will return all market data for pairs that quote DAI. Using addresses instead of symbols assures token uniqueness (there might be multiple tokens with the same symbol)."
-			resolve &Content.get_rebased_market/3
+			resolve &Content.get_rebased_market/2
 		end
 
 		field :exchanges, list_of(:string) do
 			description "Get all exchanges currently in the market."
-			resolve &Content.get_exchanges/3
+			resolve &Content.get_exchanges/2
 		end
 
 		field :last_update, :last_update do
 			description "Get data about the last update to the market."
-			resolve &Content.get_last_update/3
+			resolve &Content.get_last_update/2
 		end
 	end
 
@@ -53,7 +55,7 @@ defmodule Dexaggregatex.API.GraphQL.Schema do
 			arg :quote_addresses, list_of(non_null(:string)), description: "A list of quote addresses by which to filter the market. For example: [\"0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359\"] will return all market data for pairs that quote DAI. Using addresses instead of symbols assures token uniqueness (there might be multiple tokens with the same symbol)."
 
 			config fn (_args, _info) -> {:ok, topic: "*"} end
-			resolve &Content.get_market/3
+			resolve &Content.get_market/2
 		end
 
 		field :rebased_market, :rebased_market do
@@ -67,19 +69,19 @@ defmodule Dexaggregatex.API.GraphQL.Schema do
 			arg :quote_addresses, list_of(non_null(:string)), description: "A list of quote addresses by which to filter the market. For example: [\"0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359\"] will return all market data for pairs that quote DAI. Using addresses instead of symbols assures token uniqueness (there might be multiple tokens with the same symbol)."
 
 			config fn (_args, _info) -> {:ok, topic: "*"} end
-			resolve &Content.get_rebased_market/3
+			resolve &Content.get_rebased_market/2
 		end
 
 		field :exchanges, list_of(:string) do
 			description "Subscribe to a list of all exchanges currently in the market."
 			config fn (_args, _info) -> {:ok, topic: "*"} end
-			resolve &Content.get_exchanges/3
+			resolve &Content.get_exchanges/2
 		end
 
 		field :last_update, :last_update do
 			description "Subscribe to data about the last update to the market."
 			config fn (_args, _info) -> {:ok, topic: "*"} end
-			resolve &Content.get_last_update/3
+			resolve &Content.get_last_update/2
 		end
 	end
 end

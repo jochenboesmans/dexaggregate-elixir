@@ -1,10 +1,14 @@
 defmodule Dexaggregatex.API.Router do
+	@moduledoc """
+	Simple router for requests to REST and GraphQL API.
+	"""
 	alias Dexaggregatex.API
 	alias API.{Socket, RestController, GraphQL}
 
 	use API, :router
 
 	pipeline :api do
+		plug :accepts, ["json"]
 	end
 
 	get "/", RestController, :root

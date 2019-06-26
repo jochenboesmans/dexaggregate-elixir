@@ -1,8 +1,9 @@
 defmodule Dexaggregatex.Market.Supervisor do
   @moduledoc false
-  alias Dexaggregatex.Market.{Server, InactivitySweeper, Rebasing}
   use Supervisor
+  alias Dexaggregatex.Market.{Server, InactivitySweeper, Rebasing}
 
+  @spec start_link(any) :: Supervisor.on_start
   def start_link(init_args) do
     Supervisor.start_link(__MODULE__, init_args, name: __MODULE__)
   end

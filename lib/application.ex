@@ -1,11 +1,10 @@
 defmodule Dexaggregatex.Application do
-	alias Dexaggregatex.{
-		MarketFetching,
-		Market,
-		API,
-	}
+	alias Dexaggregatex.{MarketFetching, Market, API}
 	use Application
 
+	@spec start(Application.start_type, term)
+				:: {:error, any} | {:ok, pid} | {:ok, pid, any}
+	@impl true
 	def start(_type, _args) do
 		children = [
 			MarketFetching.Supervisor,
@@ -19,5 +18,4 @@ defmodule Dexaggregatex.Application do
 		]
 		Supervisor.start_link(children, options)
 	end
-
 end

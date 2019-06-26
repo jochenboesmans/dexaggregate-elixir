@@ -1,8 +1,10 @@
 defmodule Dexaggregatex.API.Supervisor do
   @moduledoc false
-  alias Dexaggregatex.API.Endpoint
   use Supervisor
 
+  alias Dexaggregatex.API.Endpoint
+
+  @spec start_link(any) :: Supervisor.on_start
   def start_link(init_args) do
     Supervisor.start_link(__MODULE__, init_args, name: __MODULE__)
   end
@@ -19,6 +21,7 @@ defmodule Dexaggregatex.API.Supervisor do
 
   # Tell Phoenix to update the endpoint configuration
   # whenever the application is updated.
+  @spec config_change(any, any, any) :: :ok
   def config_change(changed, _new, removed) do
     Endpoint.config_change(changed, removed)
     :ok

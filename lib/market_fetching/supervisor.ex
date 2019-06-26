@@ -7,6 +7,7 @@ defmodule Dexaggregatex.MarketFetching.Supervisor do
 	alias Dexaggregatex.MarketFetching.{DdexFetcher, IdexFetcher, KyberFetcher, OasisFetcher,
 		ParadexFetcher, RadarFetcher, TokenstoreFetcher, UniswapFetcher}
 
+	@spec start_link(any) :: Supervisor.on_start
 	def start_link(init_arg) do
 		Supervisor.start_link(__MODULE__, init_arg, name: __MODULE__)
 	end

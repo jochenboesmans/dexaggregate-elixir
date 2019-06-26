@@ -36,8 +36,9 @@ defmodule Dexaggregatex.Market.Structs do
 		* quote_symbol: string representing the address of the quote token.
 		* market_data: struct representing this pair's market data.
 		"""
+		@type market_data :: %{optional(String.t) => ExchangeMarketData.t}
 		@type t :: %__MODULE__{base_symbol: String.t, quote_symbol: String.t, base_address: String.t,
-								 quote_address: String.t, market_data: [ExchangeMarketData.t]}
+								 quote_address: String.t, market_data: market_data}
 	end
 
 	defmodule RebasedMarket do
@@ -52,7 +53,8 @@ defmodule Dexaggregatex.Market.Structs do
 		* base_address: string representing the address of the token in which this market's data is based.
 		* pairs: map of pair_id => pair in the market.
 		"""
-		@type t :: %__MODULE__{base_address: String.t, pairs: %{optional(String.t) => Pair.t}}
+		@type pairs :: %{optional(String.t) => Pair.t}
+		@type t :: %__MODULE__{base_address: String.t, pairs: pairs}
 	end
 
 	defmodule Market do
@@ -65,7 +67,8 @@ defmodule Dexaggregatex.Market.Structs do
 		@typedoc """
 		* pairs: map of pair_id => pair in the market.
 		"""
-		@type t :: %__MODULE__{pairs: %{optional(String.t) => Pair.t}}
+		@type pairs :: %{optional(String.t) => Pair.t}
+		@type t :: %__MODULE__{pairs: pairs}
 	end
 
 	defmodule LastUpdate do
