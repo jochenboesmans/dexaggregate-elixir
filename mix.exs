@@ -57,6 +57,7 @@ defmodule Dexaggregatex.MixProject do
       {:ex_doc, "~> 0.19", only: [:dev], runtime: false},
       {:distillery, "~> 2.0"},
       {:edeliver, "~> 1.6"},
+	{:pid_file, "~> 0.1.0"},
       {:cors_plug, "~> 2.0"}
       # How to add deps (run "mix deps.get" afterwards):
       # {:dep_from_hexpm, "~> 0.3.0"},
