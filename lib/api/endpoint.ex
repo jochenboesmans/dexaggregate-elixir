@@ -28,5 +28,7 @@ defmodule Dexaggregatex.API.Endpoint do
 	plug Plug.MethodOverride
 	plug Plug.Head
 
+	plug CORSPlug, origin: "*"
+
 	plug Router
 end

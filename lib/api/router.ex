@@ -7,9 +7,15 @@ defmodule Dexaggregatex.API.Router do
 
 	use API, :router
 
+	pipeline :api do
+		plug :accepts, ["json"]
+	end
+
 	get "/", RestController, :root
 
 	scope "/" do
+		pipe_through :api
+
 		forward "/graphiql", Absinthe.Plug.GraphiQL,
 			schema: GraphQL.Schema,
 			socket: Socket
