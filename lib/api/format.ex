@@ -20,7 +20,7 @@ defmodule Dexaggregatex.API.Format do
   def format_rebased_market(%RebasedMarket{pairs: pairs, base_address: ba}) do
     fmt_pairs =
       Enum.reduce(pairs, [], fn ({_k, p}, acc) -> [format_pair(p) | acc] end)
-      |> Enum.sort_by(&combined_volume_across_exchanges/1, &>=/2)
+      |> Enum.sort_by(&formatted_combined_volume_across_exchanges/1, &>=/2)
 
     %{base_address: ba, pairs: fmt_pairs}
   end
@@ -55,8 +55,8 @@ defmodule Dexaggregatex.API.Format do
     %{new_p | market_data: new_md}
   end
 
-  @spec combined_volume_across_exchanges(Pair.t) :: number
-  defp combined_volume_across_exchanges(%Pair{market_data: md}) do
+  @spec formatted_combined_volume_across_exchanges(Pair.t) :: number
+  defp formatted_combined_volume_across_exchanges(%Pair{market_data: md}) do
     Enum.reduce(md, 0, fn (%{base_volume: bv}, acc) -> acc + bv end)
   end
 
