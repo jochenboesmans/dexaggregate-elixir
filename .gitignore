@@ -30,3 +30,6 @@ dexaggregatex-*.tar
 
 # Distillery release files
 /rel/
+
+# Pidfile (used in prod for daemonizing)
+dexaggregatex.pid
