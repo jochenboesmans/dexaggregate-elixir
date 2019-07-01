@@ -1,7 +1,7 @@
 defmodule Test.Dexaggregatex.MarketFetching.UniswapFetcher do
-	@moduledoc false
-	use ExUnit.Case, async: true
+  @moduledoc false
+  use ExUnit.Case, async: true
 
-	alias Dexaggregatex.MarketFetching.UniswapFetcher, as: UF
-	doctest UF
+  alias Dexaggregatex.MarketFetching.UniswapFetcher, as: UF
+  doctest UF
 end

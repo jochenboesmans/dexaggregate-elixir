@@ -4,7 +4,7 @@ defmodule Dexaggregatex.API.Supervisor do
 
   alias Dexaggregatex.API.Endpoint
 
-  @spec start_link(any) :: Supervisor.on_start
+  @spec start_link(any) :: Supervisor.on_start()
   def start_link(init_args) do
     Supervisor.start_link(__MODULE__, init_args, name: __MODULE__)
   end
@@ -15,6 +15,7 @@ defmodule Dexaggregatex.API.Supervisor do
       Endpoint,
       {Absinthe.Subscription, [Endpoint]}
     ]
+
     # All children will be restarted if one crashes.
     Supervisor.init(children, strategy: :one_for_all)
   end

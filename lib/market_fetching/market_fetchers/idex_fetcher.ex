@@ -5,7 +5,7 @@ defmodule Dexaggregatex.MarketFetching.IdexFetcher do
   * Note on Idex's WebSocket API: In order to derive most competitive rates from market orders, cancels and trades,
   an order book for each pair would have to be maintained and constantly updated.
   """
-  #use WebSockex
+  # use WebSockex
   use Task, restart: :permanent
 
   import Dexaggregatex.MarketFetching.{Util, Common}
@@ -18,7 +18,7 @@ defmodule Dexaggregatex.MarketFetching.IdexFetcher do
   @poll_interval 10_000
 
   # Makes sure private functions are testable.
-  @compile if Mix.env == :test, do: :export_all
+  @compile if Mix.env() == :test, do: :export_all
 
   @doc """
   Starts an IdexFetcher process linked to the caller process.
@@ -41,49 +41,65 @@ defmodule Dexaggregatex.MarketFetching.IdexFetcher do
   @doc """
   Fetches and formats data from the Idex API to make up the latest Idex ExchangeMarket.
   """
-  @spec exchange_market() :: ExchangeMarket.t
+  @spec exchange_market() :: ExchangeMarket.t()
   def exchange_market() do
     pairs =
       case post_and_decode("#{@base_api_url}/#{@currencies_endpoint}") do
         {:ok, c} ->
           case post_and_decode("#{@base_api_url}/#{@market_endpoint}") do
             {:ok, market} ->
-              Enum.reduce(market, [], fn ({k, p}, acc) ->
+              Enum.reduce(market, [], fn {k, p}, acc ->
                 %{
                   "last" => lp,
                   "highestBid" => cb,
                   "lowestAsk" => ca,
-                  "baseVolume" => bv,
+                  "baseVolume" => bv
                 } = p
+
                 [bs, qs] = String.split(k, "_")
 
                 ba = c[bs]["address"] |> fix_eth_address()
                 qa = c[qs]["address"] |> fix_eth_address()
 
                 case valid_values?(strings: [bs, qs, ba, qa], numbers: [lp, cb, ca, bv]) do
-                  true -> [generic_market_pair(strings: [bs, qs, ba, qa], numbers: [lp, cb, ca, bv], exchange: :idex) | acc]
-                  false -> acc
+                  true ->
+                    [
+                      generic_market_pair(
+                        strings: [bs, qs, ba, qa],
+                        numbers: [lp, cb, ca, bv],
+                        exchange: :idex
+                      )
+                      | acc
+                    ]
+
+                  false ->
+                    acc
                 end
               end)
-            :error -> nil
+
+            :error ->
+              nil
           end
-        :error -> nil
-    end
+
+        :error ->
+          nil
+      end
 
     %ExchangeMarket{
       exchange: :idex,
-      pairs: pairs,
+      pairs: pairs
     }
   end
 
   @doc """
   Changes a specified address to the internally used eth_address if it's another representation of it.
   """
-  @spec fix_eth_address(String.t) :: String.t
+  @spec fix_eth_address(String.t()) :: String.t()
   defp fix_eth_address(address) do
     case address do
       "0x0000000000000000000000000000000000000000" ->
         eth_address()
+
       something_else ->
         something_else
     end
