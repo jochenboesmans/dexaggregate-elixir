@@ -245,7 +245,11 @@ defmodule Dexaggregatex.Market.Rebasing do
         end
       end)
 
-    weight = weighted_average(%{weighted_sum: ws}, path_length - 1)
+    weight =
+      case path_length - 1 do
+        0 -> ws
+        not_zero -> weighted_average(%{weighted_sum: ws}, path_length)
+      end
 
     %{
       sums
