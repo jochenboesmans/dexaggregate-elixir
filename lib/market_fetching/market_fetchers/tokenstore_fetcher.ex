@@ -35,6 +35,8 @@ defmodule Dexaggregatex.MarketFetching.TokenstoreFetcher do
   @doc """
   Fetches and formats data from the Tokenstore API to make up the latest Tokenstore ExchangeMarket.
   """
+  # NOTE: Due to an extension of the API regarding the EOS exchange, it's currently impossible to fetch market pairs as
+  # proper base and quote address combinations.
   @spec exchange_market() :: ExchangeMarket.t()
   defp exchange_market() do
     pairs =

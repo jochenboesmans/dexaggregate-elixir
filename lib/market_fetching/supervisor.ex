@@ -29,7 +29,7 @@ defmodule Dexaggregatex.MarketFetching.Supervisor do
       {OasisFetcher, []},
       {ParadexFetcher, []},
       {RadarFetcher, []},
-      {TokenstoreFetcher, []},
+      #{TokenstoreFetcher, []},
       {UniswapFetcher, []}
     ]
 
